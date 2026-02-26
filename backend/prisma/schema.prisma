@@ -1,0 +1,74 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Painting {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  price       Float
+  images      String[] // array of image URLs
+  dimensions  String   // e.g. "60x80 cm"
+  medium      String   // e.g. "Oil on canvas"
+  year        Int?
+  sold        Boolean  @default(false)
+  featured    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  orderItems  OrderItem[]
+}
+
+model Order {
+  id               String      @id @default(cuid())
+  stripePaymentId  String      @unique
+  stripeSessionId  String      @unique
+  status           OrderStatus @default(PENDING)
+  
+  // Customer
+  customerEmail    String
+  customerName     String
+  
+  // Shipping address
+  shipName         String
+  shipStreet       String
+  shipCity         String
+  shipState        String
+  shipZip          String
+  shipCountry      String
+  shipPhone        String?
+  
+  // Shipping label (EasyPost)
+  trackingCode     String?
+  labelUrl         String?
+  carrier          String?
+  
+  total            Float
+  items            OrderItem[]
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model OrderItem {
+  id         String   @id @default(cuid())
+  order      Order    @relation(fields: [orderId], references: [id])
+  orderId    String
+  painting   Painting @relation(fields: [paintingId], references: [id])
+  paintingId String
+  price      Float    // snapshot at time of purchase
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
