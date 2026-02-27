@@ -1,18 +1,22 @@
 // src/api.js
 const BASE = import.meta.env.VITE_API_URL || '';
 
-export async function fetchPaintings(params = {}) {
+export async function getPaintings(params = {}) {
   const qs = new URLSearchParams(params).toString();
   const res = await fetch(`${BASE}/api/paintings${qs ? '?' + qs : ''}`);
   if (!res.ok) throw new Error('Failed to fetch paintings');
   return res.json();
 }
 
-export async function fetchPainting(id) {
+export const fetchPaintings = getPaintings;
+
+export async function getPainting(id) {
   const res = await fetch(`${BASE}/api/paintings/${id}`);
   if (!res.ok) throw new Error('Painting not found');
   return res.json();
 }
+
+export const fetchPainting = getPainting;
 
 export async function createCheckout({ paintingIds, customerEmail, shipping }) {
   const res = await fetch(`${BASE}/api/orders/checkout`, {
