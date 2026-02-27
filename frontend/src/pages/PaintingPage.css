@@ -1,0 +1,97 @@
+.painting-page { padding: calc(var(--nav-h) + 48px) 0 80px; }
+.painting-page__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  margin-bottom: 40px;
+  transition: color 0.2s;
+  text-decoration: none;
+}
+.painting-page__back:hover { color: var(--color-accent); }
+.painting-page__grid {
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  gap: 80px;
+  align-items: start;
+}
+.painting-page__imgs { display: flex; flex-direction: column; gap: 16px; }
+.painting-page__main-img {
+  width: 100%;
+  border-radius: var(--radius);
+  display: block;
+}
+.painting-page__thumbs { display: flex; gap: 12px; }
+.painting-page__thumb {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border-color 0.2s;
+}
+.painting-page__thumb.active { border-color: var(--color-accent); }
+.painting-page__info { position: sticky; top: calc(var(--nav-h) + 24px); }
+.painting-page__label { margin-bottom: 16px; }
+.painting-page__title {
+  font-size: clamp(32px, 4vw, 48px);
+  font-weight: 400;
+  margin-bottom: 8px;
+  line-height: 1.1;
+}
+.painting-page__year { color: var(--color-muted); font-size: 14px; margin-bottom: 24px; }
+.painting-page__price {
+  font-family: var(--font-display);
+  font-size: 32px;
+  color: var(--color-accent);
+  margin-bottom: 32px;
+}
+.painting-page__sold-badge {
+  display: inline-block;
+  border: 1px solid var(--color-border);
+  color: var(--color-muted);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 8px 20px;
+  margin-bottom: 32px;
+}
+.painting-page__desc {
+  font-size: 15px;
+  color: rgba(240,236,228,0.75);
+  line-height: 1.8;
+  margin-bottom: 32px;
+}
+.painting-page__details {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 24px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  margin-bottom: 32px;
+}
+.painting-page__detail {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+.painting-page__detail-label {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+.painting-page__add-btn { width: 100%; justify-content: center; }
+.painting-page__added { text-align: center; padding: 16px; font-family: var(--font-display); font-style: italic; color: var(--color-accent); }
+@media (max-width: 900px) {
+  .painting-page__grid { grid-template-columns: 1fr; }
+  .painting-page__info { position: static; }
+}
