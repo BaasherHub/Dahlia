@@ -17,7 +17,12 @@ const PORT = process.env.PORT || 3001;
 app.use('/api/webhook', express.raw({ type: 'application/json' }), webhookRouter);
 
 // Standard middleware
-app.use(cors({ origin: process.env.FRONTEND_URL || '*' }));
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'https://dahliabaasher.com',
+  'https://www.dahliabaasher.com',
+].filter(Boolean);
+app.use(cors({ origin: (origin, cb) => cb(null, !origin || allowedOrigins.includes(origin)) }));
 app.use(express.json());
 
 // Routes
