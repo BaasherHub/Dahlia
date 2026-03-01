@@ -5,8 +5,8 @@ import Nav from './components/Nav.jsx';
 import Footer from './components/Footer.jsx';
 import HomePage from './pages/HomePage.jsx';
 import GalleryPage from './pages/GalleryPage.jsx';
-import CollectionPage from './pages/CollectionPage.jsx';
 import PaintingPage from './pages/PaintingPage.jsx';
+import CollectionPage from './pages/CollectionPage.jsx';
 import CartPage from './pages/CartPage.jsx';
 import CheckoutPage from './pages/CheckoutPage.jsx';
 import OrderSuccessPage from './pages/OrderSuccessPage.jsx';
@@ -21,10 +21,9 @@ export default function App() {
         <Nav />
         <Routes>
           <Route path="/"                   element={<HomePage />} />
-          <Route path="/artworks"           element={<GalleryPage />} />
           <Route path="/gallery"            element={<GalleryPage />} />
-          <Route path="/collections/:id"    element={<CollectionPage />} />
           <Route path="/paintings/:id"      element={<PaintingPage />} />
+          <Route path="/collections/:id"    element={<CollectionPage />} />
           <Route path="/cart"               element={<CartPage />} />
           <Route path="/checkout"           element={<CheckoutPage />} />
           <Route path="/order/success"      element={<OrderSuccessPage />} />
