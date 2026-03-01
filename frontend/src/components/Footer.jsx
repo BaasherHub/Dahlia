@@ -11,7 +11,7 @@ export default function Footer() {
             <p className="footer__tagline">Contemporary Art · Toronto, Canada</p>
           </div>
           <div className="footer__links">
-            <Link to="/gallery">Works</Link>
+            <Link to="/artworks">Artworks</Link>
             <Link to="/about">About</Link>
             <Link to="/commissions">Commissions</Link>
             <Link to="/cart">Cart</Link>

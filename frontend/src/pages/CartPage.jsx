@@ -1,67 +1,57 @@
-// src/pages/CartPage.jsx
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext.jsx';
 import './CartPage.css';
 
 export default function CartPage() {
-  const { items, remove, total } = useCart();
-
-  if (items.length === 0) return (
-    <main className="cart-page container fade-up">
-      <div className="cart-page__empty">
-        <p className="label">Your cart</p>
-        <h1 className="cart-page__title">Nothing here yet</h1>
-        <Link to="/gallery" className="btn" style={{ marginTop: 32 }}>Browse Gallery</Link>
-      </div>
-    </main>
-  );
+  const { items, removeItem, total } = useCart();
+  const navigate = useNavigate();
 
   return (
-    <main className="cart-page container fade-up">
-      <div>
-        <p className="label">Your cart</p>
-        <h1 className="cart-page__title">Ready to check out</h1>
-      </div>
+    <main className="cart-page container">
+      <p className="label">Shopping</p>
+      <h1 className="cart-page__title">Your Cart</h1>
 
-      <div className="cart-page__grid">
-        {/* Items */}
-        <div className="cart-items">
-          {items.map((painting) => (
-            <div key={painting.id} className="cart-item">
-              <Link to={`/paintings/${painting.id}`} className="cart-item__img">
-                <img src={painting.images[0]} alt={painting.title} />
-              </Link>
-              <div className="cart-item__info">
-                <Link to={`/paintings/${painting.id}`}>
-                  <h3 className="cart-item__title">{painting.title}</h3>
-                </Link>
-                <p className="cart-item__meta">{painting.medium} · {painting.dimensions}</p>
-                <p className="cart-item__price">${painting.price.toLocaleString()}</p>
+      {items.length === 0 ? (
+        <div className="cart-page__empty">
+          <p className="cart-page__empty-title">Your cart is empty</p>
+          <Link to="/artworks" className="btn">Browse Works</Link>
+        </div>
+      ) : (
+        <div className="cart-page__grid">
+          <div className="cart-items">
+            {items.map((item, i) => (
+              <div key={i} className="cart-item">
+                <img src={item.images[0]} alt={item.title} className="cart-item__img" />
+                <div className="cart-item__details">
+                  <p className="cart-item__title">{item.title}</p>
+                  <p className="cart-item__meta">{item.medium} · {item.dimensions}</p>
+                  {item.selectedVersion && (
+                    <p className="cart-item__version">{item.selectedVersion === 'print' ? 'Limited Edition Print' : 'Original Painting'}</p>
+                  )}
+                  <p className="cart-item__price">${item.price?.toLocaleString()}</p>
+                </div>
+                <button className="cart-item__remove" onClick={() => removeItem(i)}>×</button>
               </div>
-              <button className="cart-item__remove" onClick={() => remove(painting.id)}>✕</button>
-            </div>
-          ))}
-        </div>
-
-        {/* Summary */}
-        <div className="cart-summary">
-          <h2 className="cart-summary__title">Order Summary</h2>
-          {items.map((p) => (
-            <div key={p.id} className="cart-summary__row">
-              <span>{p.title}</span>
-              <span>${p.price.toLocaleString()}</span>
-            </div>
-          ))}
-          <div className="cart-summary__total">
-            <span>Total</span>
-            <span>${total.toLocaleString()}</span>
+            ))}
           </div>
-          <Link to="/checkout" className="btn" style={{ width: '100%', justifyContent: 'center', marginTop: 24 }}>
-            Continue to Checkout
-          </Link>
-          <p className="cart-summary__note">Shipping calculated at checkout via Stripe</p>
+          <div className="cart-summary">
+            <h2 className="cart-summary__title">Order Summary</h2>
+            {items.map((item, i) => (
+              <div key={i} className="cart-summary__row">
+                <span>{item.title}{item.selectedVersion === 'print' ? ' (Print)' : ''}</span>
+                <span>${item.price?.toLocaleString()}</span>
+              </div>
+            ))}
+            <div className="cart-summary__total">
+              <span className="cart-summary__total-label">Total</span>
+              <span className="cart-summary__total-value">${total.toLocaleString()}</span>
+            </div>
+            <button className="btn cart-summary__checkout" onClick={() => navigate('/checkout')}>
+              Proceed to Checkout
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </main>
   );
 }

@@ -1,96 +1,148 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getPaintings } from '../api.js';
+import { getPaintings, getCollections } from '../api.js';
 import PaintingCard from '../components/PaintingCard.jsx';
 import './HomePage.css';
 
 export default function HomePage() {
-  const [paintings, setPaintings] = useState([]);
+  const [heroPainting, setHeroPainting] = useState(null);
+  const [originals, setOriginals] = useState([]);
+  const [prints, setPrints] = useState([]);
+  const [collections, setCollections] = useState([]);
 
   useEffect(() => {
-    getPaintings({ featured: true }).then(setPaintings).catch(() => {});
+    getPaintings().then(data => {
+      const hero = data.find(p => p.heroImage) || data[0];
+      setHeroPainting(hero);
+      setOriginals(data.filter(p => !p.sold && (p.category === 'original' || p.category === 'both')).slice(0, 3));
+      setPrints(data.filter(p => p.printAvailable && (p.category === 'print' || p.category === 'both')).slice(0, 3));
+    }).catch(() => {});
+    getCollections().then(setCollections).catch(() => {});
   }, []);
 
   return (
     <main className="home">
 
-      {/* Hero */}
+      {/* Hero — full screen painting */}
       <section className="hero">
-        <div className="hero__bg">
-          <div className="hero__overlay" />
-        </div>
+        {heroPainting && (
+          <div className="hero__img-wrap">
+            <img src={heroPainting.images?.[0]} alt={heroPainting.title} className="hero__img" />
+            <div className="hero__overlay" />
+          </div>
+        )}
+        {!heroPainting && <div className="hero__placeholder" />}
         <div className="hero__content container">
           <div className="hero__text fade-up">
-            <p className="label">Dahlia Baasher</p>
-            <div className="divider" style={{ marginTop: 16 }} />
-            <h1 className="hero__title">
-              Art that<br/>
-              <em>refuses</em><br/>
-              to be silent
-            </h1>
-            <p className="hero__sub">
-              Paintings that explore identity, power, and resistance — 
-              through the lens of the Sudanese experience.
-            </p>
+            <p className="label">Dahlia Baasher Studio</p>
+            <div className="divider" style={{ marginTop: 14, marginBottom: 20 }} />
+            <blockquote className="hero__quote">
+              "The intricacy of human nature is rooted in our need for emotional connection 
+              and social interaction, which is deceptively simple"
+            </blockquote>
             <div className="hero__actions">
-              <Link to="/gallery" className="btn">View Works</Link>
+              <Link to="/gallery" className="btn">View Artworks</Link>
               <Link to="/about" className="btn btn-ghost">About the Artist</Link>
             </div>
           </div>
         </div>
         <div className="hero__scroll">
-          <span>Scroll</span>
           <div className="hero__scroll-line" />
         </div>
       </section>
 
-      {/* Statement */}
-      <section className="statement container">
-        <div className="statement__inner">
-          <p className="label">Artist Statement</p>
-          <blockquote className="statement__quote">
-            "My artwork explores the complex intersection of identity, power and resistance 
-            within the Sudanese community. I create work that challenges the viewer to 
-            question what is normalized, what is erased, and who gets to be seen and heard."
-          </blockquote>
-          <p className="statement__attr">— Dahlia Baasher, Toronto</p>
-        </div>
-      </section>
-
-      {/* Featured Works */}
-      <section className="featured container">
-        <div className="featured__header">
-          <div>
-            <p className="label">Selected Works</p>
-            <h2 className="featured__title">Available Paintings</h2>
+      {/* Original Paintings */}
+      {originals.length > 0 && (
+        <section className="home-section container">
+          <div className="home-section__header">
+            <div>
+              <p className="label">Original Works</p>
+              <h2 className="home-section__title">Original Paintings</h2>
+            </div>
+            <Link to="/gallery?type=original" className="home-section__all">
+              View all <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </Link>
           </div>
-          <Link to="/gallery" className="featured__all">
-            View all works
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path d="M5 12h14M12 5l7 7-7 7"/>
-            </svg>
-          </Link>
-        </div>
-        <div className="featured__grid">
-          {paintings.length > 0
-            ? paintings.slice(0, 3).map(p => <PaintingCard key={p.id} painting={p} />)
-            : [1,2,3].map(i => <div key={i} className="painting-skeleton" />)
-          }
+          <div className="home-section__grid">
+            {originals.map(p => <PaintingCard key={p.id} painting={p} />)}
+          </div>
+        </section>
+      )}
+
+      {/* Limited Edition Prints */}
+      {prints.length > 0 && (
+        <section className="home-section home-section--alt">
+          <div className="container">
+            <div className="home-section__header">
+              <div>
+                <p className="label">Collectible Prints</p>
+                <h2 className="home-section__title">Limited Edition Prints</h2>
+              </div>
+              <Link to="/gallery?type=print" className="home-section__all">
+                View all <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </Link>
+            </div>
+            <div className="home-section__grid">
+              {prints.map(p => <PaintingCard key={p.id} painting={p} type="print" />)}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Collections */}
+      {collections.length > 0 && (
+        <section className="home-collections container">
+          <div className="home-section__header">
+            <div>
+              <p className="label">Browse by Series</p>
+              <h2 className="home-section__title">Collections</h2>
+            </div>
+            <Link to="/gallery" className="home-section__all">
+              All collections <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </Link>
+          </div>
+          <div className="collections-grid">
+            {collections.slice(0, 4).map(c => (
+              <Link key={c.id} to={`/collections/${c.id}`} className="collection-card">
+                {c.coverImage && <img src={c.coverImage} alt={c.name} className="collection-card__img" />}
+                {!c.coverImage && <div className="collection-card__placeholder" />}
+                <div className="collection-card__info">
+                  <h3 className="collection-card__name">{c.name}</h3>
+                  {c.description && <p className="collection-card__desc">{c.description}</p>}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Statement */}
+      <section className="statement">
+        <div className="container">
+          <div className="statement__inner">
+            <p className="label" style={{ marginBottom: 20 }}>Artist Statement</p>
+            <blockquote className="statement__quote">
+              "Painting allows me to hold space for stories that are often silenced—faces lost 
+              in protest, the quiet dignity of survival, the ongoing fight for justice."
+            </blockquote>
+            <p className="statement__attr">— Dahlia Baasher</p>
+            <Link to="/about" className="btn btn-outline" style={{ marginTop: 32 }}>Read Full Statement</Link>
+          </div>
         </div>
       </section>
 
       {/* Press */}
       <section className="press">
-        <div className="press__inner container">
-          <p className="label" style={{ textAlign: 'center', marginBottom: 40 }}>Exhibition History</p>
+        <div className="container">
+          <p className="label" style={{ textAlign: 'center', marginBottom: 48 }}>Exhibition History</p>
           <div className="press__grid">
             {[
-              { year: '2025', name: 'Black Art Fair', location: 'Nia Art Centre, Toronto' },
-              { year: '2024', name: 'The Other Art Fair', location: 'Barker Hangar, Santa Monica' },
-              { year: '2023', name: 'Houston Art Fair', location: 'Matthew Reeves, Texas' },
-              { year: '2023', name: 'Detour', location: 'Saatchi Art Gallery, London' },
-              { year: '2023', name: 'Ici Le Soudan', location: 'Institut Français d\'Egypte' },
-              { year: '2021', name: 'Solo Exhibition', location: 'Savanna Innovation Lab, Khartoum' },
+              { year: '2025', name: 'Detour at the Italy Pavilion EXPO Osaka', location: 'Osaka, Japan' },
+              { year: '2025', name: 'Black Art Fair', location: 'Nia Art Center, Toronto' },
+              { year: '2024', name: 'Detour at the Pinacoteca Ambrosiana', location: 'Milan, Italy' },
+              { year: '2024', name: 'The Other Art Fair by Saatchi Art', location: 'Barker Hangar, Los Angeles' },
+              { year: '2023', name: 'Detour at Saatchi Art Gallery', location: 'London, UK' },
+              { year: '2023', name: 'Ici Le Soudan', location: 'Institut Français d\'Egypte, Cairo' },
             ].map((ex, i) => (
               <div key={i} className="press__item">
                 <span className="press__year">{ex.year}</span>
@@ -101,8 +153,8 @@ export default function HomePage() {
               </div>
             ))}
           </div>
-          <div style={{ textAlign: 'center', marginTop: 48 }}>
-            <Link to="/about" className="btn btn-outline">Full Biography & Exhibitions</Link>
+          <div style={{ textAlign: 'center', marginTop: 40 }}>
+            <Link to="/about" className="btn btn-outline">Full Exhibition History</Link>
           </div>
         </div>
       </section>
@@ -112,9 +164,7 @@ export default function HomePage() {
         <div className="newsletter__card">
           <p className="label">Collector's List</p>
           <h2 className="newsletter__title">Stay close to the studio</h2>
-          <p className="newsletter__sub">
-            Early access to new works, exhibition invitations, and studio insights.
-          </p>
+          <p className="newsletter__sub">Early access to new works, exhibition invitations, and studio insights.</p>
           <NewsletterForm />
         </div>
       </section>
@@ -126,29 +176,12 @@ export default function HomePage() {
 function NewsletterForm() {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // In production connect to Resend/Mailchimp audience
-    setSubmitted(true);
-  };
-
-  if (submitted) return (
-    <p className="newsletter__thanks">
-      ✦ Thank you — you're on the list.
-    </p>
-  );
-
+  const handleSubmit = (e) => { e.preventDefault(); setSubmitted(true); };
+  if (submitted) return <p className="newsletter__thanks">✦ Thank you — you're on the list.</p>;
   return (
     <form className="newsletter__form" onSubmit={handleSubmit}>
-      <input
-        className="form-input newsletter__input"
-        type="email"
-        placeholder="your@email.com"
-        value={email}
-        onChange={e => setEmail(e.target.value)}
-        required
-      />
+      <input className="form-input newsletter__input" type="email" placeholder="your@email.com"
+        value={email} onChange={e => setEmail(e.target.value)} required />
       <button type="submit" className="btn">Join the List</button>
     </form>
   );
