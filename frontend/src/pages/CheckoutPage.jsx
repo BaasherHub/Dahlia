@@ -1,33 +1,200 @@
-// src/pages/CheckoutPage.jsx
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext.jsx';
 import { createCheckout } from '../api.js';
 import './CheckoutPage.css';
 
-// Countries and whether they use postal codes and states/provinces
 const COUNTRIES = [
-  { code: 'CA', name: 'Canada',              hasPostal: true,  hasState: true,  stateName: 'Province',      postalFormat: 'A1A 1A1' },
-  { code: 'US', name: 'United States',       hasPostal: true,  hasState: true,  stateName: 'State',         postalFormat: '10001' },
-  { code: 'GB', name: 'United Kingdom',      hasPostal: true,  hasState: false, stateName: '',              postalFormat: 'SW1A 1AA' },
-  { code: 'AU', name: 'Australia',           hasPostal: true,  hasState: true,  stateName: 'State',         postalFormat: '2000' },
-  { code: 'DE', name: 'Germany',             hasPostal: true,  hasState: false, stateName: '',              postalFormat: '10115' },
-  { code: 'FR', name: 'France',              hasPostal: true,  hasState: false, stateName: '',              postalFormat: '75001' },
-  { code: 'AE', name: 'UAE',                 hasPostal: false, hasState: true,  stateName: 'Emirate',       postalFormat: '' },
-  { code: 'SA', name: 'Saudi Arabia',        hasPostal: true,  hasState: false, stateName: '',              postalFormat: '12271' },
-  { code: 'EG', name: 'Egypt',               hasPostal: true,  hasState: false, stateName: '',              postalFormat: '11511' },
-  { code: 'NG', name: 'Nigeria',             hasPostal: false, hasState: true,  stateName: 'State',         postalFormat: '' },
-  { code: 'GH', name: 'Ghana',               hasPostal: false, hasState: false, stateName: '',              postalFormat: '' },
-  { code: 'KE', name: 'Kenya',               hasPostal: true,  hasState: false, stateName: '',              postalFormat: '00100' },
-  { code: 'ZA', name: 'South Africa',        hasPostal: true,  hasState: false, stateName: '',              postalFormat: '2000' },
-  { code: 'MA', name: 'Morocco',             hasPostal: true,  hasState: false, stateName: '',              postalFormat: '20000' },
-  { code: 'IN', name: 'India',               hasPostal: true,  hasState: true,  stateName: 'State',         postalFormat: '110001' },
-  { code: 'JP', name: 'Japan',               hasPostal: true,  hasState: false, stateName: '',              postalFormat: '100-0001' },
-  { code: 'SG', name: 'Singapore',           hasPostal: true,  hasState: false, stateName: '',              postalFormat: '018989' },
-  { code: 'NL', name: 'Netherlands',         hasPostal: true,  hasState: false, stateName: '',              postalFormat: '1011 AB' },
-  { code: 'SE', name: 'Sweden',              hasPostal: true,  hasState: false, stateName: '',              postalFormat: '111 29' },
-  { code: 'NO', name: 'Norway',              hasPostal: true,  hasState: false, stateName: '',              postalFormat: '0150' },
-  { code: 'OTHER', name: 'Other country',    hasPostal: false, hasState: false, stateName: '',              postalFormat: '' },
+  { code: 'AF', name: 'Afghanistan' },
+  { code: 'AL', name: 'Albania' },
+  { code: 'DZ', name: 'Algeria' },
+  { code: 'AD', name: 'Andorra' },
+  { code: 'AO', name: 'Angola' },
+  { code: 'AG', name: 'Antigua and Barbuda' },
+  { code: 'AR', name: 'Argentina' },
+  { code: 'AM', name: 'Armenia' },
+  { code: 'AU', name: 'Australia' },
+  { code: 'AT', name: 'Austria' },
+  { code: 'AZ', name: 'Azerbaijan' },
+  { code: 'BS', name: 'Bahamas' },
+  { code: 'BH', name: 'Bahrain' },
+  { code: 'BD', name: 'Bangladesh' },
+  { code: 'BB', name: 'Barbados' },
+  { code: 'BY', name: 'Belarus' },
+  { code: 'BE', name: 'Belgium' },
+  { code: 'BZ', name: 'Belize' },
+  { code: 'BJ', name: 'Benin' },
+  { code: 'BT', name: 'Bhutan' },
+  { code: 'BO', name: 'Bolivia' },
+  { code: 'BA', name: 'Bosnia and Herzegovina' },
+  { code: 'BW', name: 'Botswana' },
+  { code: 'BR', name: 'Brazil' },
+  { code: 'BN', name: 'Brunei' },
+  { code: 'BG', name: 'Bulgaria' },
+  { code: 'BF', name: 'Burkina Faso' },
+  { code: 'BI', name: 'Burundi' },
+  { code: 'CV', name: 'Cabo Verde' },
+  { code: 'KH', name: 'Cambodia' },
+  { code: 'CM', name: 'Cameroon' },
+  { code: 'CA', name: 'Canada' },
+  { code: 'CF', name: 'Central African Republic' },
+  { code: 'TD', name: 'Chad' },
+  { code: 'CL', name: 'Chile' },
+  { code: 'CN', name: 'China' },
+  { code: 'CO', name: 'Colombia' },
+  { code: 'KM', name: 'Comoros' },
+  { code: 'CD', name: 'Congo (DRC)' },
+  { code: 'CG', name: 'Congo (Republic)' },
+  { code: 'CR', name: 'Costa Rica' },
+  { code: 'HR', name: 'Croatia' },
+  { code: 'CU', name: 'Cuba' },
+  { code: 'CY', name: 'Cyprus' },
+  { code: 'CZ', name: 'Czech Republic' },
+  { code: 'DK', name: 'Denmark' },
+  { code: 'DJ', name: 'Djibouti' },
+  { code: 'DM', name: 'Dominica' },
+  { code: 'DO', name: 'Dominican Republic' },
+  { code: 'EC', name: 'Ecuador' },
+  { code: 'EG', name: 'Egypt' },
+  { code: 'SV', name: 'El Salvador' },
+  { code: 'GQ', name: 'Equatorial Guinea' },
+  { code: 'ER', name: 'Eritrea' },
+  { code: 'EE', name: 'Estonia' },
+  { code: 'SZ', name: 'Eswatini' },
+  { code: 'ET', name: 'Ethiopia' },
+  { code: 'FJ', name: 'Fiji' },
+  { code: 'FI', name: 'Finland' },
+  { code: 'FR', name: 'France' },
+  { code: 'GA', name: 'Gabon' },
+  { code: 'GM', name: 'Gambia' },
+  { code: 'GE', name: 'Georgia' },
+  { code: 'DE', name: 'Germany' },
+  { code: 'GH', name: 'Ghana' },
+  { code: 'GR', name: 'Greece' },
+  { code: 'GD', name: 'Grenada' },
+  { code: 'GT', name: 'Guatemala' },
+  { code: 'GN', name: 'Guinea' },
+  { code: 'GW', name: 'Guinea-Bissau' },
+  { code: 'GY', name: 'Guyana' },
+  { code: 'HT', name: 'Haiti' },
+  { code: 'HN', name: 'Honduras' },
+  { code: 'HU', name: 'Hungary' },
+  { code: 'IS', name: 'Iceland' },
+  { code: 'IN', name: 'India' },
+  { code: 'ID', name: 'Indonesia' },
+  { code: 'IR', name: 'Iran' },
+  { code: 'IQ', name: 'Iraq' },
+  { code: 'IE', name: 'Ireland' },
+  { code: 'IL', name: 'Israel' },
+  { code: 'IT', name: 'Italy' },
+  { code: 'JM', name: 'Jamaica' },
+  { code: 'JP', name: 'Japan' },
+  { code: 'JO', name: 'Jordan' },
+  { code: 'KZ', name: 'Kazakhstan' },
+  { code: 'KE', name: 'Kenya' },
+  { code: 'KI', name: 'Kiribati' },
+  { code: 'KW', name: 'Kuwait' },
+  { code: 'KG', name: 'Kyrgyzstan' },
+  { code: 'LA', name: 'Laos' },
+  { code: 'LV', name: 'Latvia' },
+  { code: 'LB', name: 'Lebanon' },
+  { code: 'LS', name: 'Lesotho' },
+  { code: 'LR', name: 'Liberia' },
+  { code: 'LY', name: 'Libya' },
+  { code: 'LI', name: 'Liechtenstein' },
+  { code: 'LT', name: 'Lithuania' },
+  { code: 'LU', name: 'Luxembourg' },
+  { code: 'MG', name: 'Madagascar' },
+  { code: 'MW', name: 'Malawi' },
+  { code: 'MY', name: 'Malaysia' },
+  { code: 'MV', name: 'Maldives' },
+  { code: 'ML', name: 'Mali' },
+  { code: 'MT', name: 'Malta' },
+  { code: 'MH', name: 'Marshall Islands' },
+  { code: 'MR', name: 'Mauritania' },
+  { code: 'MU', name: 'Mauritius' },
+  { code: 'MX', name: 'Mexico' },
+  { code: 'FM', name: 'Micronesia' },
+  { code: 'MD', name: 'Moldova' },
+  { code: 'MC', name: 'Monaco' },
+  { code: 'MN', name: 'Mongolia' },
+  { code: 'ME', name: 'Montenegro' },
+  { code: 'MA', name: 'Morocco' },
+  { code: 'MZ', name: 'Mozambique' },
+  { code: 'MM', name: 'Myanmar' },
+  { code: 'NA', name: 'Namibia' },
+  { code: 'NR', name: 'Nauru' },
+  { code: 'NP', name: 'Nepal' },
+  { code: 'NL', name: 'Netherlands' },
+  { code: 'NZ', name: 'New Zealand' },
+  { code: 'NI', name: 'Nicaragua' },
+  { code: 'NE', name: 'Niger' },
+  { code: 'NG', name: 'Nigeria' },
+  { code: 'NO', name: 'Norway' },
+  { code: 'OM', name: 'Oman' },
+  { code: 'PK', name: 'Pakistan' },
+  { code: 'PW', name: 'Palau' },
+  { code: 'PA', name: 'Panama' },
+  { code: 'PG', name: 'Papua New Guinea' },
+  { code: 'PY', name: 'Paraguay' },
+  { code: 'PE', name: 'Peru' },
+  { code: 'PH', name: 'Philippines' },
+  { code: 'PL', name: 'Poland' },
+  { code: 'PT', name: 'Portugal' },
+  { code: 'QA', name: 'Qatar' },
+  { code: 'RO', name: 'Romania' },
+  { code: 'RU', name: 'Russia' },
+  { code: 'RW', name: 'Rwanda' },
+  { code: 'KN', name: 'Saint Kitts and Nevis' },
+  { code: 'LC', name: 'Saint Lucia' },
+  { code: 'VC', name: 'Saint Vincent and the Grenadines' },
+  { code: 'WS', name: 'Samoa' },
+  { code: 'SM', name: 'San Marino' },
+  { code: 'ST', name: 'Sao Tome and Principe' },
+  { code: 'SA', name: 'Saudi Arabia' },
+  { code: 'SN', name: 'Senegal' },
+  { code: 'RS', name: 'Serbia' },
+  { code: 'SC', name: 'Seychelles' },
+  { code: 'SL', name: 'Sierra Leone' },
+  { code: 'SG', name: 'Singapore' },
+  { code: 'SK', name: 'Slovakia' },
+  { code: 'SI', name: 'Slovenia' },
+  { code: 'SB', name: 'Solomon Islands' },
+  { code: 'SO', name: 'Somalia' },
+  { code: 'ZA', name: 'South Africa' },
+  { code: 'SS', name: 'South Sudan' },
+  { code: 'ES', name: 'Spain' },
+  { code: 'LK', name: 'Sri Lanka' },
+  { code: 'SD', name: 'Sudan' },
+  { code: 'SR', name: 'Suriname' },
+  { code: 'SE', name: 'Sweden' },
+  { code: 'CH', name: 'Switzerland' },
+  { code: 'SY', name: 'Syria' },
+  { code: 'TW', name: 'Taiwan' },
+  { code: 'TJ', name: 'Tajikistan' },
+  { code: 'TZ', name: 'Tanzania' },
+  { code: 'TH', name: 'Thailand' },
+  { code: 'TL', name: 'Timor-Leste' },
+  { code: 'TG', name: 'Togo' },
+  { code: 'TO', name: 'Tonga' },
+  { code: 'TT', name: 'Trinidad and Tobago' },
+  { code: 'TN', name: 'Tunisia' },
+  { code: 'TR', name: 'Turkey' },
+  { code: 'TM', name: 'Turkmenistan' },
+  { code: 'TV', name: 'Tuvalu' },
+  { code: 'UG', name: 'Uganda' },
+  { code: 'UA', name: 'Ukraine' },
+  { code: 'AE', name: 'United Arab Emirates' },
+  { code: 'GB', name: 'United Kingdom' },
+  { code: 'US', name: 'United States' },
+  { code: 'UY', name: 'Uruguay' },
+  { code: 'UZ', name: 'Uzbekistan' },
+  { code: 'VU', name: 'Vanuatu' },
+  { code: 'VE', name: 'Venezuela' },
+  { code: 'VN', name: 'Vietnam' },
+  { code: 'YE', name: 'Yemen' },
+  { code: 'ZM', name: 'Zambia' },
+  { code: 'ZW', name: 'Zimbabwe' },
 ];
 
 export default function CheckoutPage() {
@@ -45,13 +212,7 @@ export default function CheckoutPage() {
     return null;
   }
 
-  const selectedCountry = COUNTRIES.find(c => c.code === form.country);
-
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
-
-  const handleCountryChange = (e) => {
-    setForm({ ...form, country: e.target.value, state: '', zip: '' });
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -60,6 +221,7 @@ export default function CheckoutPage() {
     try {
       const { url } = await createCheckout({
         paintingIds: items.map((p) => p.id),
+        versions: items.map((p) => p.selectedVersion || 'original'),
         customerEmail: form.email,
         shipping: {
           name: form.name,
@@ -67,7 +229,7 @@ export default function CheckoutPage() {
           city: form.city,
           state: form.state || 'N/A',
           zip: form.zip || '00000',
-          country: form.country === 'OTHER' ? 'US' : form.country,
+          country: form.country,
           phone: form.phone || undefined,
         },
       });
@@ -80,6 +242,11 @@ export default function CheckoutPage() {
 
   return (
     <main className="checkout-page container fade-up">
+      <Link to="/cart" className="checkout-page__back">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        Back to Cart
+      </Link>
+
       <div>
         <p className="label">Checkout</p>
         <h1 className="checkout-page__title">Shipping Details</h1>
@@ -89,25 +256,22 @@ export default function CheckoutPage() {
         <form className="checkout-form" onSubmit={handleSubmit}>
           <div className="checkout-form__fields">
 
-            {/* Full Name */}
-            <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+            <div className="form-group full-width">
               <label className="form-label">Full Name</label>
               <input className="form-input" type="text" name="name" value={form.name}
                 onChange={handleChange} placeholder="Jane Smith" required />
             </div>
 
-            {/* Email */}
-            <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+            <div className="form-group full-width">
               <label className="form-label">Email</label>
               <input className="form-input" type="email" name="email" value={form.email}
                 onChange={handleChange} placeholder="jane@example.com" required />
             </div>
 
-            {/* Country — always first so form adapts */}
-            <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+            <div className="form-group full-width">
               <label className="form-label">Country</label>
               <select className="form-input form-select" name="country" value={form.country}
-                onChange={handleCountryChange} required>
+                onChange={handleChange} required>
                 <option value="">Select your country…</option>
                 {COUNTRIES.map(c => (
                   <option key={c.code} value={c.code}>{c.name}</option>
@@ -115,16 +279,14 @@ export default function CheckoutPage() {
               </select>
             </div>
 
-            {/* Street Address — shown once country is selected */}
             {form.country && (
-              <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+              <div className="form-group full-width">
                 <label className="form-label">Street Address</label>
                 <input className="form-input" type="text" name="street" value={form.street}
                   onChange={handleChange} placeholder="123 Main Street" required />
               </div>
             )}
 
-            {/* City */}
             {form.country && (
               <div className="form-group">
                 <label className="form-label">City</label>
@@ -133,28 +295,25 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            {/* State/Province — only for countries that use it */}
-            {form.country && selectedCountry?.hasState && (
-              <div className="form-group">
-                <label className="form-label">{selectedCountry.stateName}</label>
-                <input className="form-input" type="text" name="state" value={form.state}
-                  onChange={handleChange} placeholder={selectedCountry.stateName} required />
-              </div>
-            )}
-
-            {/* Postal code — only for countries that use it */}
-            {form.country && selectedCountry?.hasPostal && (
-              <div className="form-group">
-                <label className="form-label">Postal Code</label>
-                <input className="form-input" type="text" name="zip" value={form.zip}
-                  onChange={handleChange} placeholder={selectedCountry.postalFormat} required />
-              </div>
-            )}
-
-            {/* Phone */}
             {form.country && (
-              <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                <label className="form-label">Phone (optional)</label>
+              <div className="form-group">
+                <label className="form-label">State / Province <span className="form-label-optional">(if applicable)</span></label>
+                <input className="form-input" type="text" name="state" value={form.state}
+                  onChange={handleChange} placeholder="State or province" />
+              </div>
+            )}
+
+            {form.country && (
+              <div className="form-group">
+                <label className="form-label">Postal Code <span className="form-label-optional">(if applicable)</span></label>
+                <input className="form-input" type="text" name="zip" value={form.zip}
+                  onChange={handleChange} placeholder="Leave blank if not applicable" />
+              </div>
+            )}
+
+            {form.country && (
+              <div className="form-group full-width">
+                <label className="form-label">Phone <span className="form-label-optional">(optional)</span></label>
                 <input className="form-input" type="tel" name="phone" value={form.phone}
                   onChange={handleChange} placeholder="+1 416 000 0000" />
               </div>
@@ -175,13 +334,15 @@ export default function CheckoutPage() {
 
         <div className="checkout-summary">
           <h2 className="checkout-summary__title">Your Order</h2>
-          {items.map((p) => (
-            <div key={p.id} className="checkout-summary__item">
+          {items.map((p, i) => (
+            <div key={i} className="checkout-summary__item">
               <img src={p.images[0]} alt={p.title} className="checkout-summary__img" />
               <div>
                 <p className="checkout-summary__name">{p.title}</p>
-                <p className="checkout-summary__meta">{p.medium} · {p.dimensions}</p>
-                <p className="checkout-summary__price">${p.price.toLocaleString()}</p>
+                <p className="checkout-summary__meta">
+                  {p.selectedVersion === 'print' ? 'Limited Edition Print' : 'Original Painting'}
+                </p>
+                <p className="checkout-summary__price">${(p.price || 0).toLocaleString()}</p>
               </div>
             </div>
           ))}
