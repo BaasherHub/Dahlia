@@ -37,6 +37,7 @@ export function errorHandler(err, req, res, next) {
     });
   }
 
+  // Catch-all error handler
   res.status(err.status || 500).json({
     error: 'Internal server error',
     ...(process.env.NODE_ENV === 'development' && { message: err.message }),
