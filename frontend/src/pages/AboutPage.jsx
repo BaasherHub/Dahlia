@@ -45,19 +45,13 @@ export default function AboutPage() {
           <section className="about-bio">
             <div className="about-bio__text">
               <p className="label" style={{ marginBottom: 24 }}>Statement</p>
-              <p className="about-bio__para">
-                A refined collection of original oil paintings on premium linen canvas, defined by the 
-                deliberate use of palette knife and confident, expressive brushstrokes. Each work emphasizes 
-                texture, depth, and movement, offering a bold visual presence designed to elevate and enhance 
-                sophisticated interior spaces.
-              </p>
-              <p className="about-bio__para">
+              <p className="about-bio__para about-bio__para--calibri">
                 Born in the vibrant city of Port-Sudan by the Red Sea, and then moved to Khartoum where the 
                 dusty atmosphere influenced the colour palette of my artwork. I'm often intrigued by blending 
                 figures and buildings as they symbolize the simple concept of shelter providing us with a place 
                 for comfort, safety, and belonging.
               </p>
-              <p className="about-bio__para">
+              <p className="about-bio__para about-bio__para--calibri">
                 A concept that has been scattered after the breakout of war in Sudan last April, causing millions 
                 of people to be displaced. Following the outbreak of war in Sudan in April 2023, thousands of 
                 individuals, including myself, were displaced. I spent over six months in Cairo before settling 
@@ -65,7 +59,7 @@ export default function AboutPage() {
                 Sudan; at the group exhibition "Ici Le Soudan" that was commissioned by Institut Français d'Egypte 
                 in response to the large number of people displaced.
               </p>
-              <p className="about-bio__para">
+              <p className="about-bio__para about-bio__para--calibri">
                 In addition to a collaboration with the Moleskine Foundation on the project "The Legendary Power 
                 of Creativity on Paper" in "Detour" — the travelling exhibition showcased at Saatchi Gallery in 
                 London, the Pinacoteca Ambrosiana in Milan and the Italian Pavilion in Osaka, Japan.

@@ -5,7 +5,7 @@
   margin-bottom: 0;
   background: var(--color-surface);
 }
-.gallery-page__title { font-size: clamp(44px, 6vw, 72px); margin: 10px 0 16px; }
+.gallery-page__title { font-size: clamp(44px, 6vw, 72px); margin: 16px 0 0; }
 .gallery-page__sub { color: var(--color-muted); max-width: 640px; font-size: 15px; line-height: 1.7; }
 .gallery-page__filters {
   display: flex; gap: 0;

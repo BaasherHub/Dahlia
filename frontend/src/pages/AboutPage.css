@@ -11,6 +11,7 @@
 
 .about-bio { display: grid; grid-template-columns: 1fr 260px; gap: 72px; align-items: start; }
 .about-bio__para { font-size: 16px; line-height: 1.85; color: var(--color-text); margin-bottom: 20px; opacity: 0.9; }
+.about-bio__para--calibri { font-family: Calibri, 'Gill Sans', 'Trebuchet MS', sans-serif; font-size: 16px; }
 .about-bio__quote {
   font-family: var(--font-display);
   font-size: 20px; font-style: italic;
@@ -32,7 +33,7 @@
 .about-bio__link { font-size: 13px; color: var(--color-accent); transition: opacity 0.2s; }
 .about-bio__link:hover { opacity: 0.7; }
 
-.about-press { border-top: 1px solid var(--color-border); padding-top: 56px; }
+.about-press { border-top: 1px solid var(--color-border); padding-top: 72px; }
 .about-press__list { display: flex; flex-direction: column; }
 .about-press__item {
   display: flex; gap: 24px; align-items: baseline;
@@ -47,7 +48,7 @@
 }
 .about-press__title { font-family: var(--font-display); font-size: 17px; font-weight: 400; }
 
-.about-exhibitions { border-top: 1px solid var(--color-border); padding-top: 56px; }
+.about-exhibitions { border-top: 1px solid var(--color-border); padding-top: 72px; }
 .about-exhibitions__intro { font-size: 15px; color: var(--color-muted); max-width: 600px; margin: 12px 0 36px; line-height: 1.7; }
 .about-exhibitions__list { display: flex; flex-direction: column; }
 .about-ex-row {

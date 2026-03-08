@@ -12,8 +12,9 @@ export default function HomePage() {
   useEffect(() => {
     getHeroPainting().then(p => p && setHeroPainting(p)).catch(() => {});
     getPaintings().then(all => {
-      setOriginals(all.filter(p => p.originalAvailable).slice(0, 3));
-      setPrints(all.filter(p => p.printAvailable).slice(0, 3));
+      // Robust filtering — works with both old DB schema and new
+      setOriginals(all.filter(p => !p.sold && p.originalAvailable !== false && p.category !== 'print').slice(0, 3));
+      setPrints(all.filter(p => p.printAvailable === true).slice(0, 3));
     }).catch(() => {});
   }, []);
 

@@ -60,12 +60,30 @@ const adminHeaders = () => ({
 });
 
 export async function adminVerify() {
-  const res = await fetch(`${BASE}/api/admin/verify`, { headers: adminHeaders() });
-  return res.ok;
+  // Try new endpoint first, fall back to old endpoint for backwards compatibility
+  try {
+    const res = await fetch(`${BASE}/api/admin/verify`, { headers: adminHeaders() });
+    if (res.status !== 404) return res.ok;
+  } catch {}
+  // Fallback: old backend used /api/paintings/all for auth check
+  try {
+    const res = await fetch(`${BASE}/api/paintings/all`, { headers: adminHeaders() });
+    if (res.status !== 404) return res.ok;
+  } catch {}
+  // Fallback 2: try fetching paintings with admin header (works on new backend too)
+  try {
+    const res = await fetch(`${BASE}/api/admin/paintings`, { headers: adminHeaders() });
+    return res.ok;
+  } catch {}
+  return false;
 }
 
 export async function adminGetPaintings() {
-  const res = await fetch(`${BASE}/api/admin/paintings`, { headers: adminHeaders() });
+  // Try new endpoint, fall back to old for backwards compatibility
+  let res = await fetch(`${BASE}/api/admin/paintings`, { headers: adminHeaders() });
+  if (res.status === 404) {
+    res = await fetch(`${BASE}/api/paintings/all`, { headers: adminHeaders() });
+  }
   if (!res.ok) throw new Error('Unauthorized');
   return res.json();
 }
@@ -125,7 +143,10 @@ export async function adminDeleteCollection(id) {
 }
 
 export async function adminGetOrders() {
-  const res = await fetch(`${BASE}/api/admin/orders`, { headers: adminHeaders() });
+  let res = await fetch(`${BASE}/api/admin/orders`, { headers: adminHeaders() });
+  if (res.status === 404) {
+    res = await fetch(`${BASE}/api/orders/all`, { headers: adminHeaders() });
+  }
   if (!res.ok) throw new Error('Unauthorized');
   return res.json();
 }

@@ -18,8 +18,9 @@ export default function GalleryPage() {
       .catch(() => setLoading(false));
   }, []);
 
-  const originals = paintings.filter(p => !p.sold && (p.category === 'original' || p.category === 'both'));
-  const prints = paintings.filter(p => p.printAvailable && (p.category === 'print' || p.category === 'both'));
+  // Robust filtering — works with both old DB (no category/printAvailable) and new schema
+  const originals = paintings.filter(p => !p.sold && (p.originalAvailable !== false) && (p.category !== 'print'));
+  const prints = paintings.filter(p => p.printAvailable === true);
 
   return (
     <main className="gallery-page">
@@ -27,9 +28,6 @@ export default function GalleryPage() {
         <div className="container">
           <p className="label">Portfolio</p>
           <h1 className="gallery-page__title">Artworks</h1>
-          <p className="gallery-page__sub">
-            A refined collection of original oil paintings on premium linen canvas, defined by the deliberate use of palette knife and confident, expressive brushstrokes. Each work emphasizes texture, depth, and movement, offering a bold visual presence designed to elevate and enhance sophisticated interior spaces.
-          </p>
         </div>
       </div>
 
