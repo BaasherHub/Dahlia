@@ -5,7 +5,6 @@ on:
     branches: [main]
 
 jobs:
-  # Railway auto-deploys from GitHub — this workflow just runs checks first
   lint-and-check:
     runs-on: ubuntu-latest
     steps:
@@ -21,12 +20,21 @@ jobs:
             backend/package.json
 
       - name: Install backend deps
-        run: cd backend && npm install
+        run: cd backend && npm ci
 
       - name: Install frontend deps
-        run: cd frontend && npm install
+        run: cd frontend && npm ci
 
-      - name: Build frontend (verify it compiles)
+      - name: Lint backend
+        run: cd backend && npm run lint
+
+      - name: Lint frontend
+        run: cd frontend && npm run lint
+
+      - name: Test backend
+        run: cd backend && npm test
+
+      - name: Build frontend
         run: cd frontend && npm run build
         env:
           VITE_API_URL: "https://placeholder.railway.app"
@@ -34,5 +42,5 @@ jobs:
       - name: Prisma generate (verify schema)
         run: cd backend && npx prisma generate
 
-      - name: Success
-        run: echo "✅ All checks passed — Railway will deploy automatically"
+      - name: ✅ All checks passed
+        run: echo "✅ Linting, testing, and building successful — Railway will deploy automatically"
