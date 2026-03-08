@@ -61,7 +61,7 @@
   width: 36px;
   height: 1px;
   background: var(--color-accent2);
-  margin: 16px 0 24px;
+  margin: 20px 0 32px;
 }
 .hero__quote {
   font-family: var(--font-display);
@@ -143,7 +143,7 @@
 
 /* ── Statement ── */
 .home-statement {
-  padding: 96px 0;
+  padding: 112px 0 96px;
   border-bottom: 1px solid var(--color-border);
 }
 .home-statement__inner {
@@ -152,7 +152,7 @@
   text-align: center;
 }
 .home-statement__inner .label {
-  margin-bottom: 20px;
+  margin-bottom: 28px;
 }
 .home-statement__quote {
   font-family: var(--font-display);
@@ -184,12 +184,12 @@
 .home-statement__link:hover { opacity: 0.7; }
 
 /* ── Sections ── */
-.home-section { padding: 80px 0; }
+.home-section { padding: 96px 0; }
 .home-section--alt {
   background: var(--color-surface);
   border-top: 1px solid var(--color-border);
   border-bottom: 1px solid var(--color-border);
-  padding: 80px 0;
+  padding: 108px 0;
 }
 .home-section__header {
   display: flex;
@@ -198,7 +198,7 @@
   margin-bottom: 48px;
 }
 .home-section__header .label {
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 .home-section__title {
   font-size: clamp(28px, 4vw, 40px);
@@ -226,7 +226,7 @@
 
 /* ── Press ── */
 .home-press {
-  padding: 64px 0;
+  padding: 80px 0;
   border-top: 1px solid var(--color-border);
 }
 .home-press__grid {

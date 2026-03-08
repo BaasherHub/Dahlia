@@ -2,7 +2,7 @@
 .commissions-page__header {
   padding: calc(var(--nav-h) + 60px) 0 60px;
   border-bottom: 1px solid var(--color-border);
-  margin-bottom: 80px;
+  margin-bottom: 96px;
   background: linear-gradient(to bottom, var(--color-surface) 0%, transparent 100%);
 }
 .commissions-page__title {

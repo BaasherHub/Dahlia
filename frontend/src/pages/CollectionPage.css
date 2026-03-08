@@ -4,7 +4,7 @@
   padding: calc(var(--nav-h) + 48px) 0 48px;
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
-  margin-bottom: 56px;
+  margin-bottom: 72px;
 }
 .collection-page__back {
   font-family: var(--font-ui);
