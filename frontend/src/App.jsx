@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import ErrorBoundary from './components/ErrorBoundary';
 import Toast from './components/Toast';
+import Breadcrumbs from './components/Breadcrumbs';
 import useToast from './hooks/useToast';
 
 // Pages
@@ -9,11 +10,13 @@ import HomePage from './pages/HomePage';
 import GalleryPage from './pages/GalleryPage';
 import PaintingPage from './pages/PaintingPage';
 import AboutPage from './pages/AboutPage';
+import BlogPage from './pages/BlogPage';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import OrderSuccessPage from './pages/OrderSuccessPage';
 import CommissionsPage from './pages/CommissionsPage';
 import CollectionPage from './pages/CollectionPage';
+import WishlistPage from './pages/WishlistPage';
 import AdminPage from './pages/AdminPage';
 import NotFoundPage from './pages/NotFoundPage';
 
@@ -62,6 +65,7 @@ function AppContent() {
   return (
     <>
       <Nav />
+      <Breadcrumbs />
       <Toast toasts={toasts} onRemove={removeToast} />
       <main style={{ minHeight: '100vh' }}>
         <Routes>
@@ -69,11 +73,13 @@ function AppContent() {
           <Route path="/gallery" element={<GalleryPage />} />
           <Route path="/paintings/:id" element={<PaintingPage />} />
           <Route path="/about" element={<AboutPage />} />
+          <Route path="/blog" element={<BlogPage />} />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/order-success" element={<OrderSuccessPage />} />
           <Route path="/commissions" element={<CommissionsPage />} />
           <Route path="/collection/:id" element={<CollectionPage />} />
+          <Route path="/wishlist" element={<WishlistPage />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
