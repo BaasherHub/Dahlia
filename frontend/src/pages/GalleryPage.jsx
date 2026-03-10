@@ -1,3 +1,22 @@
+import useSEO from '../hooks/useSEO';
+import { trackPageView } from '../services/analytics';
+import { useEffect } from 'react';
+
+export default function GalleryPage() {
+  // Add SEO
+  useSEO(
+    'Gallery | Dahlia Baasher',
+    'Browse our complete collection of original paintings and limited edition prints',
+    'https://www.dahliabaasher.com/og-gallery.jpg'
+  );
+
+  // Track page view
+  useEffect(() => {
+    trackPageView('Gallery');
+  }, []);
+
+  // ... rest of component
+}
 import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { getPaintings, getCollections } from '../api.js';
