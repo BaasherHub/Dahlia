@@ -154,10 +154,11 @@ export default function PaintingPage() {
                     <button
                       className={`painting-page__version-btn ${version === 'original' ? 'active' : ''}`}
                       onClick={() => setVersion('original')}
+                      aria-pressed={version === 'original'}
                     >
-                      <span className="painting-page__version-label">Original</span>
+                      <div className="painting-page__version-label">Original</div>
                       {painting.originalPrice && (
-                        <span className="painting-page__version-price">${painting.originalPrice}</span>
+                        <div className="painting-page__version-price">${painting.originalPrice.toLocaleString()}</div>
                       )}
                     </button>
                   )}
@@ -165,10 +166,11 @@ export default function PaintingPage() {
                     <button
                       className={`painting-page__version-btn ${version === 'print' ? 'active' : ''}`}
                       onClick={() => setVersion('print')}
+                      aria-pressed={version === 'print'}
                     >
-                      <span className="painting-page__version-label">Print</span>
+                      <div className="painting-page__version-label">Print</div>
                       {painting.printPrice && (
-                        <span className="painting-page__version-price">${painting.printPrice}</span>
+                        <div className="painting-page__version-price">${painting.printPrice.toLocaleString()}</div>
                       )}
                     </button>
                   )}
