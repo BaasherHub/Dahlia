@@ -1,83 +1,259 @@
-.navigation {
+.nav {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: var(--nav-h);
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
+  top: 0; left: 0; right: 0;
   z-index: 100;
+  height: var(--nav-h);
+  transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+  border-bottom: 1px solid transparent;
+  background: rgba(254, 253, 251, 0.95);
   backdrop-filter: blur(10px);
 }
 
-.navigation .container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  height: 100%;
+.nav--scrolled {
+  background: var(--color-bg);
+  border-bottom-color: var(--color-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-.navigation__logo {
-  font-family: var(--font-display);
-  font-size: 18px;
-  font-weight: 400;
-  letter-spacing: -0.01em;
-  color: var(--color-text);
+.nav__inner {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav__logo { 
+  display: flex; 
+  align-items: center;
+  gap: 12px;
+  text-decoration: none; 
+  transition: opacity var(--transition-fast);
+}
+
+.nav__logo:hover {
+  opacity: 0.8;
+}
+
+.nav__logo-icon {
+  width: 32px;
+  height: 32px;
+  color: var(--color-accent);
+  transition: color var(--transition-fast), transform var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.nav__logo:hover .nav__logo-icon {
+  color: var(--color-accent3);
+  transform: rotate(-5deg) scale(1.05);
+}
+
+.nav__logo-name { 
+  font-family: var(--font-display); 
+  font-size: 18px; 
+  font-weight: 400; 
+  color: var(--color-text); 
+  letter-spacing: 0.04em;
+}
+
+.nav__logo-sub { 
+  font-family: var(--font-ui); 
+  font-size: 9px; 
+  letter-spacing: 0.3em; 
+  text-transform: uppercase; 
+  color: var(--color-accent);
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .nav__logo-sub {
+    display: inline;
+  }
+}
+
+.nav__links { 
+  display: flex; 
+  align-items: center; 
+  gap: 40px;
+}
+
+.nav__link {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
   text-decoration: none;
   transition: color var(--transition-fast);
+  position: relative;
+  padding-bottom: 6px;
+  font-weight: 500;
 }
 
-.navigation__logo:hover {
-  color: var(--color-accent);
+.nav__link::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0;
+  width: 0; height: 2px;
+  background: var(--color-accent);
+  transition: width var(--transition-base);
 }
 
-.navigation__menu {
-  display: flex;
-  list-style: none;
-  gap: var(--space-xl);
-  margin: 0;
-  padding: 0;
-}
-
-.navigation__menu a {
-  font-family: var(--font-ui);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+.nav__link:hover, .nav__link.active { 
   color: var(--color-text);
+}
+
+.nav__link:hover::after, .nav__link.active::after { 
+  width: 100%; 
+}
+
+.nav__wishlist,
+.nav__cart { 
+  position: relative; 
+  color: var(--color-text-secondary); 
+  transition: color var(--transition-fast); 
+  display: flex; 
+  align-items: center; 
   text-decoration: none;
-  padding: 6px 0;
-  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: var(--radius);
   transition: all var(--transition-fast);
 }
 
-.navigation__menu a:hover {
+.nav__wishlist:hover,
+.nav__cart:hover { 
   color: var(--color-accent);
-  border-bottom-color: var(--color-accent);
+  background: rgba(168, 153, 104, 0.05);
 }
 
-.navigation__cart {
-  color: var(--color-accent);
-  font-weight: 700;
+.nav__cart-count {
+  position: absolute; 
+  top: -8px; 
+  right: -12px;
+  background: var(--color-accent); 
+  color: #fff;
+  font-size: 9px; 
+  font-family: var(--font-ui);
+  font-weight: 600;
+  width: 18px; 
+  height: 18px; 
+  border-radius: 50%;
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+/* Hamburger */
+.nav__hamburger { 
+  display: none; 
+  flex-direction: column; 
+  gap: 6px; 
+  background: none; 
+  border: none; 
+  cursor: pointer; 
+  padding: 4px; 
+  z-index: 101;
+}
+
+.nav__hamburger span {
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: var(--color-text);
+  transition: all var(--transition-fast);
+  border-radius: 1px;
+}
+
+.nav__hamburger.open span:nth-child(1) {
+  transform: rotate(45deg) translate(8px, 8px);
+}
+
+.nav__hamburger.open span:nth-child(2) {
+  opacity: 0;
+}
+
+.nav__hamburger.open span:nth-child(3) {
+  transform: rotate(-45deg) translate(7px, -7px);
+}
+
+.skip-to-main {
+  position: absolute;
+  top: -9999px;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.skip-to-main:focus {
+  top: var(--nav-h);
+  left: 0;
+  width: auto;
+  height: auto;
+  background: var(--color-accent);
+  color: white;
+  padding: 8px 16px;
+  text-decoration: none;
+  z-index: 1000;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 @media (max-width: 768px) {
-  .navigation__menu {
+  .nav__hamburger {
+    display: flex;
+  }
+  
+  .nav__links {
+    position: fixed;
+    top: var(--nav-h);
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--color-bg);
+    flex-direction: column;
     gap: var(--space-lg);
+    padding: var(--space-2xl) var(--space-lg);
+    border-top: 1px solid var(--color-border);
+    transform: translateX(-100%);
+    transition: transform var(--transition-base);
+    z-index: 99;
+    overflow-y: auto;
+    align-items: flex-start;
   }
 
-  .navigation__menu a {
-    font-size: 11px;
+  .nav__links.open {
+    transform: translateX(0);
+  }
+
+  .nav__link {
+    font-size: 13px;
+    padding-bottom: 8px;
+  }
+
+  .nav__logo-name {
+    font-size: 16px;
+  }
+
+  .nav__inner {
+    gap: var(--space-lg);
   }
 }
 
 @media (max-width: 480px) {
-  .navigation__logo {
-    font-size: 16px;
+  .nav__logo-name {
+    font-size: 14px;
   }
 
-  .navigation__menu {
+  .nav__links {
     gap: var(--space-md);
+    padding: var(--space-lg);
   }
 }
