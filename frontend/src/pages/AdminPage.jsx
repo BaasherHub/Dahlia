@@ -86,8 +86,13 @@ function Dashboard({ onLogout }) {
     setLoading(true);
     try {
       const [p, c, o] = await Promise.all([adminGetPaintings(), adminGetCollections(), adminGetOrders()]);
-      setPaintings(p); setCollections(c); setOrders(o);
-    } catch (e) { console.error(e); }
+      setPaintings(p.data || p); 
+      setCollections(c.data || c); 
+      setOrders(o.data || o);
+    } catch (e) { 
+      console.error(e);
+      showToast('Failed to load data');
+    }
     setLoading(false);
   };
 
@@ -95,58 +100,62 @@ function Dashboard({ onLogout }) {
 
   return (
     <div className="admin-page">
-      {toast && (
-        <div className="admin-toast">
-          {toast}
-          <button onClick={() => setToast('')}>×</button>
+      {toast && <div className="admin-toast">{toast}</div>}
+      
+      <div className="admin-header">
+        <div className="admin-header__content">
+          <h1>Admin Dashboard</h1>
+          <p>Manage your art collection</p>
         </div>
-      )}
-
-      <div className="admin-header container">
-        <div>
-          <p className="label">Admin</p>
-          <h1 className="admin-header__title">
-            Dahlia Baasher<br /><span>Dashboard</span>
-          </h1>
-        </div>
-        <button className="btn btn-ghost" onClick={onLogout}>Log Out</button>
+        <button className="btn btn--secondary" onClick={onLogout}>Logout</button>
       </div>
 
-      <div className="admin-body container">
-        <div className="admin-tabs">
-          <button className={`admin-tab ${tab === 'paintings' ? 'active' : ''}`} onClick={() => setTab('paintings')}>
-            Paintings ({paintings.length})
-          </button>
-          <button className={`admin-tab ${tab === 'collections' ? 'active' : ''}`} onClick={() => setTab('collections')}>
-            Collections ({collections.length})
-          </button>
-          <button className={`admin-tab ${tab === 'orders' ? 'active' : ''}`} onClick={() => setTab('orders')}>
-            Orders ({orders.length})
-          </button>
-          <button className={`admin-tab admin-tab--add ${tab === 'add-painting' ? 'active' : ''}`} onClick={() => setTab('add-painting')}>
-            + Add Painting
-          </button>
-          <button className={`admin-tab admin-tab--add ${tab === 'add-collection' ? 'active' : ''}`} onClick={() => setTab('add-collection')}>
-            + Add Collection
-          </button>
-        </div>
+      <div className="admin-tabs">
+        <button 
+          className={`admin-tab ${tab === 'paintings' ? 'admin-tab--active' : ''}`}
+          onClick={() => setTab('paintings')}
+        >
+          📸 Paintings ({paintings.length})
+        </button>
+        <button 
+          className={`admin-tab ${tab === 'add-painting' ? 'admin-tab--active' : ''}`}
+          onClick={() => setTab('add-painting')}
+        >
+          ➕ Add Painting
+        </button>
+        <button 
+          className={`admin-tab ${tab === 'collections' ? 'admin-tab--active' : ''}`}
+          onClick={() => setTab('collections')}
+        >
+          📚 Collections ({collections.length})
+        </button>
+        <button 
+          className={`admin-tab ${tab === 'orders' ? 'admin-tab--active' : ''}`}
+          onClick={() => setTab('orders')}
+        >
+          📦 Orders ({orders.length})
+        </button>
+      </div>
 
+      <div className="admin-content">
         {loading ? (
-          <div className="admin-loading">Loading…</div>
+          <p className="admin-loading">Loading...</p>
         ) : (
           <>
             {tab === 'paintings' && (
               <PaintingsTab paintings={paintings} collections={collections} onRefresh={loadAll} showToast={showToast} />
             )}
-            {tab === 'collections' && (
-              <CollectionsTab collections={collections} onRefresh={loadAll} showToast={showToast} />
-            )}
-            {tab === 'orders' && <OrdersTab orders={orders} />}
             {tab === 'add-painting' && (
               <AddPaintingTab collections={collections} onRefresh={loadAll} showToast={showToast} onDone={() => setTab('paintings')} />
             )}
+            {tab === 'collections' && (
+              <CollectionsTab collections={collections} onRefresh={loadAll} showToast={showToast} />
+            )}
             {tab === 'add-collection' && (
               <AddCollectionTab onRefresh={loadAll} showToast={showToast} onDone={() => setTab('collections')} />
+            )}
+            {tab === 'orders' && (
+              <OrdersTab orders={orders} />
             )}
           </>
         )}
@@ -158,85 +167,161 @@ function Dashboard({ onLogout }) {
 /* ── Paintings List ── */
 function PaintingsTab({ paintings, collections, onRefresh, showToast }) {
   const [editing, setEditing] = useState(null);
+  const [filter, setFilter] = useState('all');
+  const [search, setSearch] = useState('');
 
   const handleDelete = async (id, title) => {
     if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
-    await adminDeletePainting(id);
-    showToast('Painting deleted');
-    onRefresh();
+    try {
+      await adminDeletePainting(id);
+      showToast('✓ Painting deleted');
+      onRefresh();
+    } catch (e) {
+      showToast('✗ Failed to delete');
+    }
   };
 
   const handleSetHero = async (id) => {
-    await adminUpdatePainting(id, { heroImage: true });
-    showToast('✓ Hero image updated!');
-    onRefresh();
+    try {
+      await adminUpdatePainting(id, { heroImage: true });
+      showToast('✓ Hero image updated!');
+      onRefresh();
+    } catch (e) {
+      showToast('✗ Failed to update');
+    }
   };
 
-  if (editing) return (
-    <EditPaintingForm
-      painting={editing}
-      collections={collections}
-      onSave={async (data) => {
-        await adminUpdatePainting(editing.id, data);
-        showToast(`✓ "${editing.title}" updated!`);
-        setEditing(null);
-        onRefresh();
-      }}
-      onCancel={() => setEditing(null)}
-    />
-  );
+  const handleToggleAvailability = async (painting, type) => {
+    try {
+      const key = type === 'original' ? 'originalAvailable' : 'printAvailable';
+      await adminUpdatePainting(painting.id, {
+        [key]: !painting[key]
+      });
+      showToast(`✓ ${type} availability updated`);
+      onRefresh();
+    } catch (e) {
+      showToast('✗ Failed to update');
+    }
+  };
 
-  if (paintings.length === 0) return (
-    <p className="admin-empty">No paintings yet. Click "+ Add Painting" to get started.</p>
-  );
+  if (editing) {
+    return (
+      <EditPaintingForm
+        painting={editing}
+        collections={collections}
+        onSave={async (data) => {
+          try {
+            await adminUpdatePainting(editing.id, data);
+            showToast(`✓ "${editing.title}" updated!`);
+            setEditing(null);
+            onRefresh();
+          } catch (e) {
+            showToast('✗ Failed to update');
+          }
+        }}
+        onCancel={() => setEditing(null)}
+      />
+    );
+  }
+
+  // Filter paintings
+  let filtered = paintings;
+  if (search) {
+    filtered = filtered.filter(p => p.title.toLowerCase().includes(search.toLowerCase()));
+  }
+  if (filter === 'available') {
+    filtered = filtered.filter(p => p.originalAvailable);
+  } else if (filter === 'sold') {
+    filtered = filtered.filter(p => !p.originalAvailable);
+  }
+
+  if (filtered.length === 0) {
+    return (
+      <div className="admin-empty">
+        <p>No paintings found. <button className="link-btn" onClick={() => {}}>Add one now</button></p>
+      </div>
+    );
+  }
 
   return (
-    <div className="admin-paintings">
-      {paintings.map(p => (
-        <div key={p.id} className="admin-painting-row">
-          {p.images?.[0] && (
-            <img src={p.images[0]} alt={p.title} className="admin-painting-img" />
-          )}
-          <div className="admin-painting-info">
-            <p className="admin-painting-title">{p.title}</p>
-            <p className="admin-painting-meta">{p.medium} · {p.dimensions} · {p.year}</p>
-            <div className="admin-painting-prices">
-              {p.originalPrice != null && (
-                <span className="admin-price-tag">
-                  Original: ${Number(p.originalPrice).toLocaleString()}
-                  {p.originalAvailable ? ' ✓' : ' ✗'}
-                </span>
-              )}
-              {p.printPrice != null && (
-                <span className="admin-price-tag admin-price-tag--print">
-                  Print: ${Number(p.printPrice).toLocaleString()}
-                  {p.printAvailable ? ' ✓' : ' ✗'}
-                </span>
+    <div className="admin-paintings-container">
+      <div className="admin-filters">
+        <input
+          type="text"
+          placeholder="Search paintings..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="admin-search"
+        />
+        <select value={filter} onChange={(e) => setFilter(e.target.value)} className="admin-select">
+          <option value="all">All Paintings</option>
+          <option value="available">Available</option>
+          <option value="sold">Sold</option>
+        </select>
+      </div>
+
+      <div className="admin-paintings-grid">
+        {filtered.map(p => (
+          <div key={p.id} className="admin-painting-card">
+            {p.images?.[0] && (
+              <div className="admin-painting-image">
+                <img src={p.images[0]} alt={p.title} />
+                {p.heroImage && <span className="admin-badge admin-badge--hero">Hero</span>}
+                {!p.originalAvailable && <span className="admin-badge admin-badge--sold">Sold</span>}
+              </div>
+            )}
+            <div className="admin-painting-details">
+              <h3>{p.title}</h3>
+              <p className="admin-meta">{p.medium} • {p.dimensions}</p>
+              
+              <div className="admin-prices">
+                {p.originalPrice != null && (
+                  <div className="admin-price-item">
+                    <span>Original:</span>
+                    <strong>${Number(p.originalPrice).toLocaleString()}</strong>
+                    <button
+                      className={`admin-status ${p.originalAvailable ? 'active' : 'inactive'}`}
+                      onClick={() => handleToggleAvailability(p, 'original')}
+                      title={p.originalAvailable ? 'Click to mark sold' : 'Click to mark available'}
+                    >
+                      {p.originalAvailable ? '✓ Available' : '✗ Sold'}
+                    </button>
+                  </div>
+                )}
+                {p.printPrice != null && (
+                  <div className="admin-price-item">
+                    <span>Print:</span>
+                    <strong>${Number(p.printPrice).toLocaleString()}</strong>
+                    <button
+                      className={`admin-status ${p.printAvailable ? 'active' : 'inactive'}`}
+                      onClick={() => handleToggleAvailability(p, 'print')}
+                    >
+                      {p.printAvailable ? '✓ Available' : '✗ Sold'}
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {p.collection && (
+                <p className="admin-collection">Collection: <strong>{p.collection.name}</strong></p>
               )}
             </div>
-            {p.collection && (
-              <p className="admin-painting-collection">Collection: {p.collection.name}</p>
-            )}
+
+            <div className="admin-actions">
+              <button className="admin-btn" onClick={() => setEditing(p)}>✏️ Edit</button>
+              {!p.heroImage && (
+                <button className="admin-btn" onClick={() => handleSetHero(p.id)}>⭐ Set Hero</button>
+              )}
+              <button className="admin-btn admin-btn--danger" onClick={() => handleDelete(p.id, p.title)}>🗑️ Delete</button>
+            </div>
           </div>
-          <div className="admin-painting-badges">
-            {p.heroImage && <span className="admin-badge admin-badge--hero">Hero</span>}
-            {p.sold && <span className="admin-badge admin-badge--sold">Sold</span>}
-            {p.featured && <span className="admin-badge admin-badge--featured">Featured</span>}
-          </div>
-          <div className="admin-painting-actions">
-            <button className="admin-btn" onClick={() => setEditing(p)}>Edit</button>
-            {!p.heroImage && (
-              <button className="admin-btn" onClick={() => handleSetHero(p.id)}>Set Hero</button>
-            )}
-            <button className="admin-btn admin-btn--danger" onClick={() => handleDelete(p.id, p.title)}>Delete</button>
-          </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
 
-/* ── Edit Form ── */
+/* ── Edit Painting Form ── */
 function EditPaintingForm({ painting, collections, onSave, onCancel }) {
   const [form, setForm] = useState({
     title: painting.title || '',
@@ -246,105 +331,175 @@ function EditPaintingForm({ painting, collections, onSave, onCancel }) {
     printPrice: painting.printPrice ?? '',
     printAvailable: painting.printAvailable === true,
     dimensions: painting.dimensions || '',
-    medium: painting.medium || 'Oil on linen canvas',
+    medium: painting.medium || 'Oil on linen',
     year: painting.year || new Date().getFullYear(),
-    featured: painting.featured || false,
-    sold: painting.sold || false,
+    featured: painting.featured === true,
+    heroImage: painting.heroImage === true,
+    images: (painting.images || []).join('\n'),
     collectionId: painting.collectionId || '',
   });
 
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave({
+      ...form,
+      images: form.images.split('\n').filter(url => url.trim()),
+      originalPrice: form.originalPrice ? parseFloat(form.originalPrice) : null,
+      printPrice: form.printPrice ? parseFloat(form.printPrice) : null,
+      year: parseInt(form.year),
+    });
+  };
 
   return (
-    <div className="admin-form-wrap">
-      <div className="admin-form-header">
-        <h2 className="admin-form-title">Edit: {painting.title}</h2>
-        <button className="admin-btn" onClick={onCancel}>← Back</button>
-      </div>
-      <div className="admin-form">
+    <div className="admin-form-wrapper">
+      <h2>Edit Painting: {painting.title}</h2>
+      <form onSubmit={handleSubmit} className="admin-form">
+        <div className="form-grid">
+          <div className="form-group">
+            <label>Title *</label>
+            <input
+              type="text"
+              required
+              value={form.title}
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Year</label>
+            <input
+              type="number"
+              min="1900"
+              max={new Date().getFullYear()}
+              value={form.year}
+              onChange={(e) => setForm({ ...form, year: e.target.value })}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Medium</label>
+            <input
+              type="text"
+              value={form.medium}
+              onChange={(e) => setForm({ ...form, medium: e.target.value })}
+              placeholder="e.g., Oil on canvas"
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Dimensions</label>
+            <input
+              type="text"
+              value={form.dimensions}
+              onChange={(e) => setForm({ ...form, dimensions: e.target.value })}
+              placeholder="e.g., 80 × 100 cm"
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Original Price ($)</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={form.originalPrice}
+              onChange={(e) => setForm({ ...form, originalPrice: e.target.value })}
+              placeholder="Leave empty if not for sale"
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Print Price ($)</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={form.printPrice}
+              onChange={(e) => setForm({ ...form, printPrice: e.target.value })}
+              placeholder="Leave empty if not for sale"
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Collection</label>
+            <select value={form.collectionId} onChange={(e) => setForm({ ...form, collectionId: e.target.value })}>
+              <option value="">None</option>
+              {(Array.isArray(collections) ? collections : []).map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label>
+              <input
+                type="checkbox"
+                checked={form.originalAvailable}
+                onChange={(e) => setForm({ ...form, originalAvailable: e.target.checked })}
+              />
+              Original Available
+            </label>
+          </div>
+
+          <div className="form-group">
+            <label>
+              <input
+                type="checkbox"
+                checked={form.printAvailable}
+                onChange={(e) => setForm({ ...form, printAvailable: e.target.checked })}
+              />
+              Print Available
+            </label>
+          </div>
+
+          <div className="form-group">
+            <label>
+              <input
+                type="checkbox"
+                checked={form.featured}
+                onChange={(e) => setForm({ ...form, featured: e.target.checked })}
+              />
+              Featured
+            </label>
+          </div>
+
+          <div className="form-group">
+            <label>
+              <input
+                type="checkbox"
+                checked={form.heroImage}
+                onChange={(e) => setForm({ ...form, heroImage: e.target.checked })}
+              />
+              Hero Image
+            </label>
+          </div>
+        </div>
+
         <div className="form-group">
-          <label className="form-label">Title</label>
-          <input className="form-input" value={form.title} onChange={e => set('title', e.target.value)} />
+          <label>Description</label>
+          <textarea
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+            placeholder="Painting description..."
+            rows="4"
+          />
         </div>
+
         <div className="form-group">
-          <label className="form-label">Description</label>
-          <textarea className="form-input" rows={3} value={form.description} onChange={e => set('description', e.target.value)} />
+          <label>Image URLs (one per line)</label>
+          <textarea
+            value={form.images}
+            onChange={(e) => setForm({ ...form, images: e.target.value })}
+            placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.jpg"
+            rows="4"
+          />
         </div>
 
-        <div className="admin-form__section-title">Original Painting</div>
-        <div className="admin-form__row">
-          <div className="form-group">
-            <label className="form-label">Price ($)</label>
-            <input className="form-input" type="number" value={form.originalPrice} onChange={e => set('originalPrice', e.target.value)} />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Availability</label>
-            <select className="form-input form-select" value={String(form.originalAvailable)} onChange={e => set('originalAvailable', e.target.value === 'true')}>
-              <option value="true">Available</option>
-              <option value="false">Not Available / Sold</option>
-            </select>
-          </div>
+        <div className="form-actions">
+          <button type="submit" className="btn">💾 Save Changes</button>
+          <button type="button" className="btn btn--secondary" onClick={onCancel}>Cancel</button>
         </div>
-
-        <div className="admin-form__section-title">Limited Edition Print (optional)</div>
-        <div className="admin-form__row">
-          <div className="form-group">
-            <label className="form-label">Print Price ($)</label>
-            <input className="form-input" type="number" value={form.printPrice} onChange={e => set('printPrice', e.target.value)} placeholder="Leave empty if no print" />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Print Availability</label>
-            <select className="form-input form-select" value={String(form.printAvailable)} onChange={e => set('printAvailable', e.target.value === 'true')}>
-              <option value="false">Not Available</option>
-              <option value="true">Available</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="admin-form__row">
-          <div className="form-group">
-            <label className="form-label">Dimensions</label>
-            <input className="form-input" value={form.dimensions} onChange={e => set('dimensions', e.target.value)} />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Year</label>
-            <input className="form-input" type="number" value={form.year} onChange={e => set('year', e.target.value)} />
-          </div>
-        </div>
-        <div className="admin-form__row">
-          <div className="form-group">
-            <label className="form-label">Medium</label>
-            <input className="form-input" value={form.medium} onChange={e => set('medium', e.target.value)} />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Collection</label>
-            <select className="form-input form-select" value={form.collectionId} onChange={e => set('collectionId', e.target.value)}>
-              <option value="">No Collection</option>
-              {collections.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </div>
-        </div>
-        <div className="admin-form__row">
-          <div className="form-group">
-            <label className="form-label">Featured on Homepage</label>
-            <select className="form-input form-select" value={String(form.featured)} onChange={e => set('featured', e.target.value === 'true')}>
-              <option value="false">No</option>
-              <option value="true">Yes</option>
-            </select>
-          </div>
-          <div className="form-group">
-            <label className="form-label">Mark as Sold</label>
-            <select className="form-input form-select" value={String(form.sold)} onChange={e => set('sold', e.target.value === 'true')}>
-              <option value="false">No</option>
-              <option value="true">Sold</option>
-            </select>
-          </div>
-        </div>
-        <div className="admin-form__actions">
-          <button className="btn" onClick={() => onSave(form)}>Save Changes</button>
-          <button className="btn btn-ghost" onClick={onCancel}>Cancel</button>
-        </div>
-      </div>
+      </form>
     </div>
   );
 }
@@ -352,204 +507,254 @@ function EditPaintingForm({ painting, collections, onSave, onCancel }) {
 /* ── Add Painting ── */
 function AddPaintingTab({ collections, onRefresh, showToast, onDone }) {
   const [form, setForm] = useState({
-    title: '', description: '',
-    originalPrice: '', originalAvailable: true,
-    printPrice: '', printAvailable: false,
-    dimensions: '', medium: 'Oil on linen canvas',
+    title: '',
+    description: '',
+    originalPrice: '',
+    originalAvailable: true,
+    printPrice: '',
+    printAvailable: false,
+    dimensions: '',
+    medium: 'Oil on linen',
     year: new Date().getFullYear(),
-    featured: false, collectionId: '',
-    imageUrl: '', imageFile: null,
+    featured: false,
+    images: '',
+    collectionId: '',
   });
-  const [useFile, setUseFile] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
-  const uploadToCloudinary = async (file) => {
-    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-    const preset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-    if (!cloudName || !preset) {
-      throw new Error('Cloudinary not configured. Please paste an image URL instead, or add VITE_CLOUDINARY_CLOUD_NAME and VITE_CLOUDINARY_UPLOAD_PRESET to your Railway frontend environment variables.');
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const images = form.images.split('\n').filter(url => url.trim());
+    if (images.length === 0) {
+      showToast('✗ Please add at least one image URL');
+      return;
     }
-    const data = new FormData();
-    data.append('file', file);
-    data.append('upload_preset', preset);
-    const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: 'POST', body: data });
-    const json = await res.json();
-    if (!json.secure_url) throw new Error('Upload failed');
-    return json.secure_url;
-  };
 
-  const handleSubmit = async () => {
-    if (!form.title.trim()) { alert('Title is required'); return; }
-    let imageUrl = form.imageUrl.trim();
-    if (useFile && form.imageFile) {
-      setUploading(true);
-      try { imageUrl = await uploadToCloudinary(form.imageFile); }
-      catch (e) { alert(e.message); setUploading(false); return; }
-      setUploading(false);
-    }
-    if (!imageUrl) { alert('Please provide an image URL or upload a file'); return; }
     try {
       await adminCreatePainting({
-        title: form.title, description: form.description,
+        ...form,
+        images,
         originalPrice: form.originalPrice ? parseFloat(form.originalPrice) : null,
-        originalAvailable: form.originalAvailable,
         printPrice: form.printPrice ? parseFloat(form.printPrice) : null,
-        printAvailable: form.printAvailable,
-        images: [imageUrl],
-        dimensions: form.dimensions, medium: form.medium,
-        year: parseInt(form.year), featured: form.featured,
-        collectionId: form.collectionId || null,
+        year: parseInt(form.year),
       });
-      showToast(`✓ "${form.title}" added!`);
+      showToast('✓ Painting added successfully!');
       onRefresh();
       onDone();
-    } catch (e) { alert(e.message); }
+    } catch (e) {
+      showToast('✗ Failed to add painting');
+    }
   };
 
   return (
-    <div className="admin-form-wrap">
-      <h2 className="admin-form-title">Add New Painting</h2>
-      <div className="admin-form">
-        <div className="form-group">
-          <label className="form-label">Title *</label>
-          <input className="form-input" value={form.title} onChange={e => set('title', e.target.value)} placeholder="Painting title" />
-        </div>
-        <div className="form-group">
-          <label className="form-label">Description</label>
-          <textarea className="form-input" rows={3} value={form.description} onChange={e => set('description', e.target.value)} placeholder="About this painting…" />
-        </div>
-
-        <div className="admin-form__section-title">Original Painting</div>
-        <div className="admin-form__row">
+    <div className="admin-form-wrapper">
+      <h2>Add New Painting</h2>
+      <form onSubmit={handleSubmit} className="admin-form">
+        <div className="form-grid">
           <div className="form-group">
-            <label className="form-label">Price ($)</label>
-            <input className="form-input" type="number" value={form.originalPrice} onChange={e => set('originalPrice', e.target.value)} placeholder="e.g. 2000" />
+            <label>Title *</label>
+            <input
+              type="text"
+              required
+              value={form.title}
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
+              placeholder="Painting title"
+            />
           </div>
+
           <div className="form-group">
-            <label className="form-label">Availability</label>
-            <select className="form-input form-select" value={String(form.originalAvailable)} onChange={e => set('originalAvailable', e.target.value === 'true')}>
-              <option value="true">Available</option>
-              <option value="false">Not Available</option>
+            <label>Year</label>
+            <input
+              type="number"
+              min="1900"
+              max={new Date().getFullYear()}
+              value={form.year}
+              onChange={(e) => setForm({ ...form, year: e.target.value })}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Medium</label>
+            <input
+              type="text"
+              value={form.medium}
+              onChange={(e) => setForm({ ...form, medium: e.target.value })}
+              placeholder="e.g., Oil on canvas"
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Dimensions *</label>
+            <input
+              type="text"
+              required
+              value={form.dimensions}
+              onChange={(e) => setForm({ ...form, dimensions: e.target.value })}
+              placeholder="e.g., 80 × 100 cm"
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Original Price ($)</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={form.originalPrice}
+              onChange={(e) => setForm({ ...form, originalPrice: e.target.value })}
+              placeholder="Leave empty if not for sale"
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Print Price ($)</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={form.printPrice}
+              onChange={(e) => setForm({ ...form, printPrice: e.target.value })}
+              placeholder="Leave empty if not for sale"
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Collection</label>
+            <select value={form.collectionId} onChange={(e) => setForm({ ...form, collectionId: e.target.value })}>
+              <option value="">None</option>
+              {(Array.isArray(collections) ? collections : []).map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
             </select>
           </div>
+
+          <div className="form-group">
+            <label>
+              <input
+                type="checkbox"
+                checked={form.originalAvailable}
+                onChange={(e) => setForm({ ...form, originalAvailable: e.target.checked })}
+              />
+              Original Available
+            </label>
+          </div>
+
+          <div className="form-group">
+            <label>
+              <input
+                type="checkbox"
+                checked={form.printAvailable}
+                onChange={(e) => setForm({ ...form, printAvailable: e.target.checked })}
+              />
+              Print Available
+            </label>
+          </div>
+
+          <div className="form-group">
+            <label>
+              <input
+                type="checkbox"
+                checked={form.featured}
+                onChange={(e) => setForm({ ...form, featured: e.target.checked })}
+              />
+              Featured
+            </label>
+          </div>
         </div>
 
-        <div className="admin-form__section-title">Limited Edition Print <span style={{ fontWeight: 300, textTransform: 'none', letterSpacing: 0 }}>(optional)</span></div>
-        <div className="admin-form__row">
-          <div className="form-group">
-            <label className="form-label">Print Price ($)</label>
-            <input className="form-input" type="number" value={form.printPrice} onChange={e => set('printPrice', e.target.value)} placeholder="Leave empty if none" />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Print Availability</label>
-            <select className="form-input form-select" value={String(form.printAvailable)} onChange={e => set('printAvailable', e.target.value === 'true')}>
-              <option value="false">Not Available</option>
-              <option value="true">Available</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="admin-form__row">
-          <div className="form-group">
-            <label className="form-label">Dimensions</label>
-            <input className="form-input" value={form.dimensions} onChange={e => set('dimensions', e.target.value)} placeholder="e.g. 80 x 100 cm" />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Year</label>
-            <input className="form-input" type="number" value={form.year} onChange={e => set('year', e.target.value)} />
-          </div>
-        </div>
-        <div className="admin-form__row">
-          <div className="form-group">
-            <label className="form-label">Medium</label>
-            <input className="form-input" value={form.medium} onChange={e => set('medium', e.target.value)} />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Collection</label>
-            <select className="form-input form-select" value={form.collectionId} onChange={e => set('collectionId', e.target.value)}>
-              <option value="">No Collection</option>
-              {collections.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </div>
-        </div>
         <div className="form-group">
-          <label className="form-label">Featured on Homepage</label>
-          <select className="form-input form-select" value={String(form.featured)} onChange={e => set('featured', e.target.value === 'true')}>
-            <option value="false">No</option>
-            <option value="true">Yes</option>
-          </select>
+          <label>Description</label>
+          <textarea
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+            placeholder="Painting description..."
+            rows="4"
+          />
         </div>
 
-        <div className="admin-form__section-title">Image</div>
-        <div className="admin-upload-toggle">
-          <button type="button" className={`admin-upload-btn ${!useFile ? 'active' : ''}`} onClick={() => setUseFile(false)}>Paste URL</button>
-          <button type="button" className={`admin-upload-btn ${useFile ? 'active' : ''}`} onClick={() => setUseFile(true)}>Upload File</button>
+        <div className="form-group">
+          <label>Image URLs * (one per line)</label>
+          <textarea
+            required
+            value={form.images}
+            onChange={(e) => setForm({ ...form, images: e.target.value })}
+            placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.jpg"
+            rows="4"
+          />
         </div>
-        {!useFile ? (
-          <div className="form-group">
-            <label className="form-label">Image URL</label>
-            <input className="form-input" value={form.imageUrl} onChange={e => set('imageUrl', e.target.value)} placeholder="https://..." />
-          </div>
-        ) : (
-          <div className="form-group">
-            <label className="form-label">Image File</label>
-            <input className="form-input" type="file" accept="image/*" onChange={e => set('imageFile', e.target.files[0])} />
-          </div>
-        )}
 
-        <button type="button" className="btn" style={{ width: '100%', justifyContent: 'center', marginTop: 8 }} onClick={handleSubmit} disabled={uploading}>
-          {uploading ? 'Uploading…' : 'Add Painting'}
-        </button>
-      </div>
+        <div className="form-actions">
+          <button type="submit" className="btn">➕ Add Painting</button>
+          <button type="button" className="btn btn--secondary" onClick={onDone}>Cancel</button>
+        </div>
+      </form>
     </div>
   );
 }
 
-/* ── Collections List ── */
+/* ── Collections ── */
 function CollectionsTab({ collections, onRefresh, showToast }) {
   const [editing, setEditing] = useState(null);
 
   const handleDelete = async (id, name) => {
-    if (!confirm(`Delete collection "${name}"? Paintings will remain.`)) return;
-    await adminDeleteCollection(id);
-    showToast('Collection deleted');
-    onRefresh();
+    if (!confirm(`Delete collection "${name}"?`)) return;
+    try {
+      await adminDeleteCollection(id);
+      showToast('✓ Collection deleted');
+      onRefresh();
+    } catch (e) {
+      showToast('✗ Failed to delete');
+    }
   };
 
-  if (editing) return (
-    <EditCollectionForm
-      collection={editing}
-      onSave={async (data) => {
-        await adminUpdateCollection(editing.id, data);
-        showToast(`✓ "${editing.name}" updated!`);
-        setEditing(null);
-        onRefresh();
-      }}
-      onCancel={() => setEditing(null)}
-    />
-  );
-
-  if (collections.length === 0) return (
-    <p className="admin-empty">No collections yet. Click "+ Add Collection" to get started.</p>
-  );
+  if (editing) {
+    return (
+      <EditCollectionForm
+        collection={editing}
+        onSave={async (data) => {
+          try {
+            await adminUpdateCollection(editing.id, data);
+            showToast('✓ Collection updated');
+            setEditing(null);
+            onRefresh();
+          } catch (e) {
+            showToast('✗ Failed to update');
+          }
+        }}
+        onCancel={() => setEditing(null)}
+      />
+    );
+  }
 
   return (
-    <div className="admin-paintings">
-      {collections.map(c => (
-        <div key={c.id} className="admin-painting-row">
-          {c.coverImage && <img src={c.coverImage} alt={c.name} className="admin-painting-img" />}
-          <div className="admin-painting-info">
-            <p className="admin-painting-title">{c.name}</p>
-            {c.description && <p className="admin-painting-meta">{c.description}</p>}
-            <p className="admin-painting-meta">{c._count?.paintings || 0} paintings</p>
-          </div>
-          <div className="admin-painting-actions">
-            <button className="admin-btn" onClick={() => setEditing(c)}>Edit</button>
-            <button className="admin-btn admin-btn--danger" onClick={() => handleDelete(c.id, c.name)}>Delete</button>
-          </div>
+    <div className="admin-collections">
+      <button className="btn" onClick={() => {}}>➕ Add Collection</button>
+      {collections.length === 0 ? (
+        <p className="admin-empty">No collections yet</p>
+      ) : (
+        <div className="admin-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {collections.map(c => (
+                <tr key={c.id}>
+                  <td>{c.name}</td>
+                  <td>{c.description || '-'}</td>
+                  <td>
+                    <button className="admin-btn" onClick={() => setEditing(c)}>Edit</button>
+                    <button className="admin-btn admin-btn--danger" onClick={() => handleDelete(c.id, c.name)}>Delete</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      ))}
+      )}
     </div>
   );
 }
@@ -558,83 +763,126 @@ function EditCollectionForm({ collection, onSave, onCancel }) {
   const [form, setForm] = useState({
     name: collection.name || '',
     description: collection.description || '',
-    coverImage: collection.coverImage || '',
   });
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave(form);
+  };
+
   return (
-    <div className="admin-form-wrap">
-      <div className="admin-form-header">
-        <h2 className="admin-form-title">Edit: {collection.name}</h2>
-        <button className="admin-btn" onClick={onCancel}>← Back</button>
-      </div>
-      <div className="admin-form">
-        <div className="form-group"><label className="form-label">Name</label><input className="form-input" value={form.name} onChange={e => set('name', e.target.value)} /></div>
-        <div className="form-group"><label className="form-label">Description</label><textarea className="form-input" rows={3} value={form.description} onChange={e => set('description', e.target.value)} /></div>
-        <div className="form-group"><label className="form-label">Cover Image URL</label><input className="form-input" value={form.coverImage} onChange={e => set('coverImage', e.target.value)} placeholder="https://..." /></div>
-        <div className="admin-form__actions">
-          <button className="btn" onClick={() => onSave(form)}>Save Changes</button>
-          <button className="btn btn-ghost" onClick={onCancel}>Cancel</button>
+    <div className="admin-form-wrapper">
+      <h2>Edit Collection</h2>
+      <form onSubmit={handleSubmit} className="admin-form">
+        <div className="form-group">
+          <label>Name</label>
+          <input
+            type="text"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+          />
         </div>
-      </div>
+        <div className="form-group">
+          <label>Description</label>
+          <textarea
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+            rows="3"
+          />
+        </div>
+        <div className="form-actions">
+          <button type="submit" className="btn">Save</button>
+          <button type="button" className="btn btn--secondary" onClick={onCancel}>Cancel</button>
+        </div>
+      </form>
     </div>
   );
 }
 
-/* ── Add Collection ── */
 function AddCollectionTab({ onRefresh, showToast, onDone }) {
-  const [form, setForm] = useState({ name: '', description: '', coverImage: '' });
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
-  const handleSubmit = async () => {
-    if (!form.name.trim()) { alert('Name is required'); return; }
+  const [form, setForm] = useState({
+    name: '',
+    description: '',
+  });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     try {
       await adminCreateCollection(form);
-      showToast(`✓ Collection "${form.name}" created!`);
-      onRefresh(); onDone();
-    } catch (e) { alert(e.message); }
+      showToast('✓ Collection added');
+      onRefresh();
+      onDone();
+    } catch (e) {
+      showToast('✗ Failed to add collection');
+    }
   };
+
   return (
-    <div className="admin-form-wrap">
-      <h2 className="admin-form-title">Add New Collection</h2>
-      <div className="admin-form">
-        <div className="form-group"><label className="form-label">Name *</label><input className="form-input" value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Sudan Series" /></div>
-        <div className="form-group"><label className="form-label">Description</label><textarea className="form-input" rows={3} value={form.description} onChange={e => set('description', e.target.value)} placeholder="About this collection…" /></div>
-        <div className="form-group"><label className="form-label">Cover Image URL</label><input className="form-input" value={form.coverImage} onChange={e => set('coverImage', e.target.value)} placeholder="https://..." /></div>
-        <button type="button" className="btn" style={{ width: '100%', justifyContent: 'center', marginTop: 8 }} onClick={handleSubmit}>Create Collection</button>
-      </div>
+    <div className="admin-form-wrapper">
+      <h2>Add Collection</h2>
+      <form onSubmit={handleSubmit} className="admin-form">
+        <div className="form-group">
+          <label>Name *</label>
+          <input
+            type="text"
+            required
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            placeholder="Collection name"
+          />
+        </div>
+        <div className="form-group">
+          <label>Description</label>
+          <textarea
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+            placeholder="Collection description..."
+            rows="4"
+          />
+        </div>
+        <div className="form-actions">
+          <button type="submit" className="btn">➕ Add Collection</button>
+          <button type="button" className="btn btn--secondary" onClick={onDone}>Cancel</button>
+        </div>
+      </form>
     </div>
   );
 }
 
 /* ── Orders ── */
 function OrdersTab({ orders }) {
-  if (orders.length === 0) return <p className="admin-empty">No orders yet.</p>;
+  if (orders.length === 0) {
+    return <p className="admin-empty">No orders yet</p>;
+  }
+
   return (
     <div className="admin-orders">
-      {orders.map(o => (
-        <div key={o.id} className="admin-order-row">
-          <div className="admin-order-header">
-            <div>
-              <p className="admin-order-id">#{o.id.slice(-8).toUpperCase()}</p>
-              <p className="admin-order-customer">{o.customerName} · {o.customerEmail}</p>
-              <p className="admin-order-date">{new Date(o.createdAt).toLocaleDateString()}</p>
-            </div>
-            <div className="admin-order-right">
-              <span className={`admin-status admin-status--${o.status.toLowerCase()}`}>{o.status}</span>
-              <p className="admin-order-total">${Number(o.total).toLocaleString()}</p>
-            </div>
-          </div>
-          <div className="admin-order-items">
-            {o.items?.map((item, i) => (
-              <div key={i} className="admin-order-item">
-                <span>{item.painting?.title || 'Unknown'}</span>
-                <span className="admin-order-item-version">{item.version}</span>
-                <span>${Number(item.price).toLocaleString()}</span>
-              </div>
+      <div className="admin-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Customer</th>
+              <th>Email</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {orders.map(order => (
+              <tr key={order.id}>
+                <td><code>{order.id.slice(0, 8)}...</code></td>
+                <td>{order.customerName}</td>
+                <td>{order.customerEmail}</td>
+                <td>${Number(order.total).toLocaleString()}</td>
+                <td>{order.trackingCode ? '📦 Shipped' : '⏳ Pending'}</td>
+                <td>{new Date(order.createdAt).toLocaleDateString()}</td>
+              </tr>
             ))}
-          </div>
-          <p className="admin-order-ship">{o.shipName} · {o.shipCity}, {o.shipCountry}</p>
-        </div>
-      ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
