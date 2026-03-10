@@ -100,9 +100,8 @@ const blogPostsData = {
 export default function BlogPostPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const post = blogPostsData[id];
 
-  if (!post) {
+  if (!id || !blogPostsData[id]) {
     return (
       <main className="blog-post-page blog-post-page--not-found">
         <div className="container">
@@ -114,11 +113,27 @@ export default function BlogPostPage() {
     );
   }
 
+  const post = blogPostsData[id];
+
+  const handleNavigateBack = () => {
+    try {
+      navigate(-1);
+    } catch (err) {
+      console.error('Navigation error:', err);
+      navigate('/blog');
+    }
+  };
+
   return (
     <main className="blog-post-page">
       <article className="blog-post">
         <header className="blog-post__header">
-          <img src={post.image} alt={post.title} className="blog-post__image" decoding="async" />
+          <img 
+            src={post.image} 
+            alt={post.title} 
+            className="blog-post__image" 
+            decoding="async"
+          />
           <div className="blog-post__info">
             <div className="blog-post__meta">
               <span className="blog-post__category">{post.category}</span>
@@ -151,7 +166,7 @@ export default function BlogPostPage() {
               ← Back to Blog
             </Link>
             <button 
-              onClick={() => navigate(-1)}
+              onClick={handleNavigateBack}
               className="blog-post__nav-btn"
             >
               ← Previous Page
