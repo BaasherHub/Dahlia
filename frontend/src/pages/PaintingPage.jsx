@@ -1,3 +1,30 @@
+import useSEO from '../hooks/useSEO';
+import LazyImage from '../components/LazyImage';
+import { trackPageView, trackViewItem } from '../services/analytics';
+import { useEffect } from 'react';
+
+export default function PaintingPage() {
+  const { id } = useParams();
+  // ... other state
+
+  // Add SEO when painting loads
+  useEffect(() => {
+    if (painting) {
+      useSEO(
+        `${painting.title} | Dahlia Baasher`,
+        `${painting.title} - ${painting.medium}, ${painting.dimensions}. Painting by Sudanese artist Dahlia Baasher.`,
+        painting.images?.[0]
+      );
+
+      trackPageView('Painting');
+      trackViewItem(painting);
+    }
+  }, [painting]);
+
+  // ... replace regular img tags with LazyImage:
+  // OLD: <img src={...} />
+  // NEW: <LazyImage src={...} />
+}
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getPainting } from '../api.js';
