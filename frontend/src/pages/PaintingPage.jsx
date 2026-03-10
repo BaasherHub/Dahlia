@@ -2,26 +2,64 @@ import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getPainting } from '../api.js';
 import { useCart } from '../context/CartContext.jsx';
+import ImageWithFallback from '../components/ImageWithFallback.jsx';
 import './PaintingPage.css';
 
 export default function PaintingPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [painting, setPainting] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [activeImg, setActiveImg] = useState(0);
   const [version, setVersion] = useState('original');
   const [added, setAdded] = useState(false);
   const { addItem } = useCart();
 
   useEffect(() => {
-    getPainting(id).then(p => { setPainting(p); }).catch(() => {});
+    const loadPainting = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await getPainting(id);
+        if (!data) {
+          setError('Artwork not found');
+          return;
+        }
+        setPainting(data);
+      } catch (err) {
+        console.error('Failed to load painting:', err);
+        setError('Failed to load artwork. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPainting();
   }, [id]);
 
-  if (!painting) {
+  if (loading) {
     return (
       <div className="painting-page">
         <div className="container">
-          <div className="painting-page__loading">Loading...</div>
+          <div className="painting-page__loading">
+            <div className="spinner" />
+            <p>Loading artwork...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !painting) {
+    return (
+      <div className="painting-page">
+        <div className="container">
+          <div className="painting-page__error">
+            <h2>{error || 'Artwork Not Found'}</h2>
+            <p>The artwork you're looking for couldn't be loaded.</p>
+            <Link to="/gallery" className="btn">Back to Gallery</Link>
+          </div>
         </div>
       </div>
     );
@@ -55,11 +93,22 @@ export default function PaintingPage() {
           {/* IMAGES */}
           <div className="painting-page__imgs">
             <div className="painting-page__main-img-wrap">
-              <img 
-                src={painting.images?.[activeImg]} 
-                alt={painting.title} 
-                className="painting-page__main-img" 
-              />
+              {painting.images?.[activeImg] ? (
+                <ImageWithFallback
+                  src={painting.images[activeImg]}
+                  alt={painting.title}
+                  className="painting-page__main-img"
+                />
+              ) : (
+                <div className="painting-page__img-placeholder">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <path d="M21 15l-5-5L5 21"/>
+                  </svg>
+                  <p>Image not available</p>
+                </div>
+              )}
             </div>
             
             {painting.images?.length > 1 && (
@@ -71,7 +120,7 @@ export default function PaintingPage() {
                     onClick={() => setActiveImg(i)}
                     aria-label={`View image ${i + 1}`}
                   >
-                    <img src={img} alt="" />
+                    <ImageWithFallback src={img} alt="" />
                   </button>
                 ))}
               </div>
@@ -162,7 +211,7 @@ export default function PaintingPage() {
                 className={`btn btn--large ${added ? 'btn--success' : ''}`}
                 onClick={handleAddToCart}
               >
-                {added ? 'Added to Cart' : 'Add to Cart'}
+                {added ? '✓ Added to Cart' : 'Add to Cart'}
               </button>
             ) : (
               <button className="btn btn--large" disabled>
