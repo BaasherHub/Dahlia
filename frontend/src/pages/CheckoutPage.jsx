@@ -235,15 +235,22 @@ export default function CheckoutPage() {
       });
       window.location.href = url;
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Failed to process checkout. Please try again.');
       setLoading(false);
     }
   };
 
+  const subtotal = items.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0);
+  const tax = subtotal * 0.08;
+  const shipping = subtotal > 0 ? (subtotal > 500 ? 0 : 25) : 0;
+  const checkoutTotal = subtotal + tax + shipping;
+
   return (
     <main className="checkout-page container fade-up">
       <Link to="/cart" className="checkout-page__back">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <path d="M19 12H5M12 5l-7 7 7 7"/>
+        </svg>
         Back to Cart
       </Link>
 
@@ -257,21 +264,40 @@ export default function CheckoutPage() {
           <div className="checkout-form__fields">
 
             <div className="form-group full-width">
-              <label className="form-label">Full Name</label>
-              <input className="form-input" type="text" name="name" value={form.name}
-                onChange={handleChange} placeholder="Jane Smith" required />
+              <label className="form-label">Full Name *</label>
+              <input 
+                className="form-input" 
+                type="text" 
+                name="name" 
+                value={form.name}
+                onChange={handleChange} 
+                placeholder="Jane Smith" 
+                required 
+              />
             </div>
 
             <div className="form-group full-width">
-              <label className="form-label">Email</label>
-              <input className="form-input" type="email" name="email" value={form.email}
-                onChange={handleChange} placeholder="jane@example.com" required />
+              <label className="form-label">Email *</label>
+              <input 
+                className="form-input" 
+                type="email" 
+                name="email" 
+                value={form.email}
+                onChange={handleChange} 
+                placeholder="jane@example.com" 
+                required 
+              />
             </div>
 
             <div className="form-group full-width">
-              <label className="form-label">Country</label>
-              <select className="form-input form-select" name="country" value={form.country}
-                onChange={handleChange} required>
+              <label className="form-label">Country *</label>
+              <select 
+                className="form-input form-select" 
+                name="country" 
+                value={form.country}
+                onChange={handleChange} 
+                required
+              >
                 <option value="">Select your country…</option>
                 {COUNTRIES.map(c => (
                   <option key={c.code} value={c.code}>{c.name}</option>
@@ -281,41 +307,73 @@ export default function CheckoutPage() {
 
             {form.country && (
               <div className="form-group full-width">
-                <label className="form-label">Street Address</label>
-                <input className="form-input" type="text" name="street" value={form.street}
-                  onChange={handleChange} placeholder="123 Main Street" required />
+                <label className="form-label">Street Address *</label>
+                <input 
+                  className="form-input" 
+                  type="text" 
+                  name="street" 
+                  value={form.street}
+                  onChange={handleChange} 
+                  placeholder="123 Main Street" 
+                  required 
+                />
               </div>
             )}
 
             {form.country && (
               <div className="form-group">
-                <label className="form-label">City</label>
-                <input className="form-input" type="text" name="city" value={form.city}
-                  onChange={handleChange} placeholder="City" required />
+                <label className="form-label">City *</label>
+                <input 
+                  className="form-input" 
+                  type="text" 
+                  name="city" 
+                  value={form.city}
+                  onChange={handleChange} 
+                  placeholder="City" 
+                  required 
+                />
               </div>
             )}
 
             {form.country && (
               <div className="form-group">
                 <label className="form-label">State / Province <span className="form-label-optional">(if applicable)</span></label>
-                <input className="form-input" type="text" name="state" value={form.state}
-                  onChange={handleChange} placeholder="State or province" />
+                <input 
+                  className="form-input" 
+                  type="text" 
+                  name="state" 
+                  value={form.state}
+                  onChange={handleChange} 
+                  placeholder="State or province" 
+                />
               </div>
             )}
 
             {form.country && (
               <div className="form-group">
                 <label className="form-label">Postal Code <span className="form-label-optional">(if applicable)</span></label>
-                <input className="form-input" type="text" name="zip" value={form.zip}
-                  onChange={handleChange} placeholder="Leave blank if not applicable" />
+                <input 
+                  className="form-input" 
+                  type="text" 
+                  name="zip" 
+                  value={form.zip}
+                  onChange={handleChange} 
+                  placeholder="Leave blank if not applicable" 
+                />
               </div>
             )}
 
             {form.country && (
               <div className="form-group full-width">
                 <label className="form-label">Phone <span className="form-label-optional">(optional)</span></label>
-                <input className="form-input" type="tel" name="phone" value={form.phone}
-                  onChange={handleChange} placeholder="+1 416 000 0000" />
+                <input 
+                  className="form-input" 
+                  type="tel" 
+                  name="phone" 
+                  value={form.phone}
+                  onChange={handleChange} 
+                  placeholder="+1 416 000 0000" 
+                />
               </div>
             )}
 
@@ -323,8 +381,12 @@ export default function CheckoutPage() {
 
           {error && <p className="checkout-form__error">{error}</p>}
 
-          <button type="submit" className="btn checkout-form__submit" disabled={loading || !form.country}>
-            {loading ? 'Redirecting to payment…' : `Pay $${total.toLocaleString()} with Stripe →`}
+          <button 
+            type="submit" 
+            className="btn btn--large checkout-form__submit" 
+            disabled={loading || !form.country}
+          >
+            {loading ? 'Redirecting to payment…' : `Pay $${checkoutTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} with Stripe →`}
           </button>
 
           <p className="checkout-form__note">
@@ -334,21 +396,46 @@ export default function CheckoutPage() {
 
         <div className="checkout-summary">
           <h2 className="checkout-summary__title">Your Order</h2>
+          
           {items.map((p, i) => (
             <div key={i} className="checkout-summary__item">
-              <img src={p.images[0]} alt={p.title} className="checkout-summary__img" />
+              <img 
+                src={p.images?.[0] || p.image} 
+                alt={p.title} 
+                className="checkout-summary__img" 
+              />
               <div>
                 <p className="checkout-summary__name">{p.title}</p>
                 <p className="checkout-summary__meta">
                   {p.selectedVersion === 'print' ? 'Limited Edition Print' : 'Original Painting'}
                 </p>
-                <p className="checkout-summary__price">${(p.price || 0).toLocaleString()}</p>
+                <p className="checkout-summary__price">
+                  ${(p.price || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
               </div>
             </div>
           ))}
+
+          <div className="checkout-summary__divider"></div>
+
+          <div className="checkout-summary__lines">
+            <div className="checkout-summary__line">
+              <span>Subtotal</span>
+              <span>${subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+            <div className="checkout-summary__line">
+              <span>Tax (8%)</span>
+              <span>${tax.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+            <div className="checkout-summary__line">
+              <span>Shipping</span>
+              <span>{shipping === 0 ? 'Free' : `$${shipping.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
+            </div>
+          </div>
+
           <div className="checkout-summary__total">
             <span>Total</span>
-            <span>${total.toLocaleString()}</span>
+            <span>${checkoutTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
         </div>
       </div>
