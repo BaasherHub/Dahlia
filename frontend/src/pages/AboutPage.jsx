@@ -1,111 +1,590 @@
-import './AboutPage.css';
+import { useState, useEffect } from 'react';
+import './AdminPage.css';
 
-const EXHIBITIONS = [
-  { year: '2025', name: 'Detour at the Italy Pavilion EXPO Osaka', location: 'Osaka, Japan' },
-  { year: '2025', name: 'Black Art Fair', location: 'Nia Art Center, Toronto, Canada' },
-  { year: '2024', name: 'Detour at the Pinacoteca Ambrosiana', location: 'Milan, Italy' },
-  { year: '2024', name: 'The Other Art Fair by Saatchi Art', location: 'Barker Hangar, Los Angeles, USA' },
-  { year: '2024', name: 'Houston Art Fair', location: 'Matthew Reeves Gallery, Texas, USA' },
-  { year: '2023', name: 'Detour at Saatchi Art Gallery', location: 'London, UK' },
-  { year: '2023', name: 'Ici Le Soudan', location: 'Institut Français d\'Egypte, Cairo, Egypt' },
-  { year: '2023', name: 'Sudan Heritage', location: 'Lamasat Art Gallery, Cairo, Egypt' },
-  { year: '2022', name: 'Pink Flame', location: 'Village Market, Nairobi, Kenya' },
-  { year: '2021', name: 'Solo Exhibition — A Place Named Embrace', location: 'Savanna Innovation Lab, Khartoum, Sudan' },
-  { year: '2021', name: 'Fragrance of Sudan', location: 'Karim Francis Gallery, Cairo, Egypt' },
-  { year: '2020', name: 'Art in Isolation', location: 'Middle East Art Institute, Washington DC, USA' },
-  { year: '2020', name: 'L\'effet Papillon', location: 'French Cultural Institute, Khartoum, Sudan' },
-  { year: '2020', name: 'Sudan Contemporary Art', location: 'Khartoum International Community School, Sudan' },
-  { year: '2019', name: 'Blanc et Noir', location: 'French Cultural Institute, Khartoum, Sudan' },
-  { year: '2019', name: 'Group Exhibition Conversations', location: 'French Cultural Center, Khartoum, Sudan' },
-  { year: '2018', name: 'Group Exhibition Women in Art', location: 'Al-Gunied Cultural Center, Khartoum, Sudan' },
-];
+const ADMIN_PASSWORD = 'dahlia2026';
 
-const PRESS = [
-  { outlet: 'LOTA', title: 'Artist Dahlia Baasher — A canvas of revolution and resilience capturing stories of Sudan' },
-  { outlet: 'The New York Times', title: 'Sudan War Strikes a Blow to the Country\'s Emerging Art Scene' },
-  { outlet: 'AD Middle East', title: 'Meet 7 Sudanese Artists Who Are Giving Voice to Sudan\'s Civil War' },
-  { outlet: 'The Muse Multi Studio', title: 'A Place Named Embrace' },
-];
+export default function AdminPage() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState('paintings');
+  
+  // Paintings state
+  const [paintings, setPaintings] = useState([]);
+  const [commissions, setCommissions] = useState([]);
+  const [newsletter, setNewsletter] = useState([]);
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    title: '',
+    year: '',
+    medium: '',
+    dimensions: '',
+    price: '',
+    originalPrice: '',
+    printPrice: '',
+    description: '',
+    image: '',
+    category: 'original',
+    originalAvailable: true,
+    printAvailable: false,
+  });
+  
+  const [editingId, setEditingId] = useState(null);
+  const [formError, setFormError] = useState('');
+  const [formSuccess, setFormSuccess] = useState('');
 
-export default function AboutPage() {
-  return (
-    <main className="about-page">
-      {/* HEADER */}
-      <div className="about-page__header">
-        <div className="container">
-          <p className="label">The Artist</p>
-          <h1 className="about-page__title">Dahlia Baasher</h1>
-          <p className="about-page__location">Sudanese Artist · Toronto, Canada</p>
-        </div>
-      </div>
+  useEffect(() => {
+    const auth = localStorage.getItem('admin_auth');
+    if (auth === 'true') {
+      setIsAuthenticated(true);
+      loadData();
+    }
+  }, []);
 
-      <div className="container">
-        {/* BIO */}
-        <section className="about-bio">
-          <div className="about-bio__content">
-            <p className="about-bio__para">
-              Dahlia Baasher is a contemporary painter based in Toronto, working primarily with oil on premium linen canvas. Her practice is rooted in the exploration of human connection and emotional nuance, rendered through confident, expressive brushwork.
-            </p>
-            <p className="about-bio__para">
-              Each work begins with intention and evolves through a careful dialogue between concept and medium. Employing the palette knife as a primary tool, Dahlia builds surfaces of depth and movement, creating pieces that reward both immediate and sustained attention.
-            </p>
-            <p className="about-bio__para">
-              Her paintings are held in private collections internationally and have been exhibited across North America, Europe, Africa, and Asia. Dahlia holds a degree in Fine Arts from Khartoum University and continues to develop her practice through constant experimentation with form, color, and material.
-            </p>
+  const loadData = () => {
+    const paintingsData = JSON.parse(localStorage.getItem('paintings') || '[]');
+    const commissionsData = JSON.parse(localStorage.getItem('commissions') || '[]');
+    const newsletterData = JSON.parse(localStorage.getItem('newsletter_subscribers') || '[]');
 
-            <blockquote className="about-bio__quote">
-              "The intricacy of human nature is rooted in our need for emotional connection and social interaction, which is deceptively simple."
-            </blockquote>
-          </div>
+    setPaintings(paintingsData);
+    setCommissions(commissionsData);
+    setNewsletter(newsletterData);
+  };
 
-          <div className="about-bio__aside">
-            <div className="about-bio__fact">
-              <span className="label">Location</span>
-              <p>Toronto, Canada</p>
-            </div>
-            <div className="about-bio__fact">
-              <span className="label">Medium</span>
-              <p>Oil on Linen Canvas</p>
-            </div>
-            <div className="about-bio__fact">
-              <span className="label">Education</span>
-              <p>Fine Arts Degree, Khartoum University</p>
-            </div>
-            <div className="about-bio__fact">
-              <span className="label">Follow</span>
-              <a href="#" className="about-bio__link">Instagram</a>
-            </div>
-          </div>
-        </section>
+  const handleLogin = (e) => {
+    e.preventDefault();
+    setError('');
 
-        {/* EXHIBITIONS */}
-        <section className="about-exhibitions">
-          <h2 className="about-section-title">Exhibitions</h2>
-          <div className="exhibitions-list">
-            {EXHIBITIONS.map((ex, i) => (
-              <div key={i} className="exhibition-item">
-                <span className="exhibition-year">{ex.year}</span>
-                <div className="exhibition-content">
-                  <p className="exhibition-name">{ex.name}</p>
-                  <p className="exhibition-location">{ex.location}</p>
+    if (password === ADMIN_PASSWORD) {
+      localStorage.setItem('admin_auth', 'true');
+      setIsAuthenticated(true);
+      setPassword('');
+      loadData();
+    } else {
+      setError('Invalid password. Please try again.');
+      setPassword('');
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('admin_auth');
+    setIsAuthenticated(false);
+    setPassword('');
+  };
+
+  // Painting Management Functions
+  const handleFormChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const validatePaintingForm = () => {
+    if (!formData.title.trim()) {
+      setFormError('Title is required');
+      return false;
+    }
+    if (!formData.price && !formData.originalPrice && !formData.printPrice) {
+      setFormError('At least one price is required');
+      return false;
+    }
+    setFormError('');
+    return true;
+  };
+
+  const handleSavePainting = (e) => {
+    e.preventDefault();
+    
+    if (!validatePaintingForm()) {
+      return;
+    }
+
+    let updated = [...paintings];
+
+    if (editingId) {
+      // Update existing
+      updated = updated.map(p => 
+        p.id === editingId ? { ...formData, id: editingId } : p
+      );
+      setFormSuccess('Painting updated successfully!');
+    } else {
+      // Add new
+      const newPainting = {
+        ...formData,
+        id: Date.now()
+      };
+      updated.push(newPainting);
+      setFormSuccess('Painting added successfully!');
+    }
+
+    setPaintings(updated);
+    localStorage.setItem('paintings', JSON.stringify(updated));
+    
+    // Reset form
+    setFormData({
+      title: '',
+      year: '',
+      medium: '',
+      dimensions: '',
+      price: '',
+      originalPrice: '',
+      printPrice: '',
+      description: '',
+      image: '',
+      category: 'original',
+      originalAvailable: true,
+      printAvailable: false,
+    });
+    setEditingId(null);
+
+    setTimeout(() => setFormSuccess(''), 3000);
+  };
+
+  const handleEditPainting = (painting) => {
+    setFormData(painting);
+    setEditingId(painting.id);
+    setActiveTab('paintings');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDeletePainting = (id) => {
+    if (window.confirm('Delete this painting?')) {
+      const updated = paintings.filter(p => p.id !== id);
+      setPaintings(updated);
+      localStorage.setItem('paintings', JSON.stringify(updated));
+      setFormSuccess('Painting deleted!');
+      setTimeout(() => setFormSuccess(''), 3000);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setFormData({
+      title: '',
+      year: '',
+      medium: '',
+      dimensions: '',
+      price: '',
+      originalPrice: '',
+      printPrice: '',
+      description: '',
+      image: '',
+      category: 'original',
+      originalAvailable: true,
+      printAvailable: false,
+    });
+  };
+
+  const deleteCommission = (id) => {
+    if (window.confirm('Delete this commission inquiry?')) {
+      const updated = commissions.filter(c => c.id !== id);
+      setCommissions(updated);
+      localStorage.setItem('commissions', JSON.stringify(updated));
+    }
+  };
+
+  const deleteNewsletter = (email) => {
+    if (window.confirm(`Remove ${email} from newsletter?`)) {
+      const updated = newsletter.filter(e => e !== email);
+      setNewsletter(updated);
+      localStorage.setItem('newsletter_subscribers', JSON.stringify(updated));
+    }
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <main className="admin-page">
+        <div className="admin-container">
+          <div className="admin-login">
+            <div className="admin-login__card">
+              <div className="admin-login__header">
+                <h1>Admin Dashboard</h1>
+                <p>Enter your password to continue</p>
+              </div>
+
+              <form className="admin-login__form" onSubmit={handleLogin}>
+                <div className="form-group">
+                  <label htmlFor="password">Password</label>
+                  <input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter admin password"
+                    autoFocus
+                  />
                 </div>
-              </div>
-            ))}
-          </div>
-        </section>
 
-        {/* PRESS */}
-        <section className="about-press">
-          <h2 className="about-section-title">Press & Publications</h2>
-          <div className="press-list">
-            {PRESS.map((item, i) => (
-              <div key={i} className="press-item">
-                <span className="press-outlet">{item.outlet}</span>
-                <p className="press-title">{item.title}</p>
-              </div>
-            ))}
+                {error && <div className="admin-error">{error}</div>}
+
+                <button type="submit" className="btn btn--large">
+                  Sign In
+                </button>
+              </form>
+
+              <p className="admin-login__hint">
+                Demo password: dahlia2026
+              </p>
+            </div>
           </div>
-        </section>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="admin-page">
+      <div className="admin-container">
+        <div className="admin-header">
+          <div>
+            <h1>Admin Dashboard</h1>
+            <p>Manage your gallery, paintings, inquiries and subscribers</p>
+          </div>
+          <button className="btn btn--secondary" onClick={handleLogout}>
+            Sign Out
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div className="admin-tabs">
+          <button
+            className={`admin-tab ${activeTab === 'paintings' ? 'active' : ''}`}
+            onClick={() => setActiveTab('paintings')}
+          >
+            Paintings ({paintings.length})
+          </button>
+          <button
+            className={`admin-tab ${activeTab === 'commissions' ? 'active' : ''}`}
+            onClick={() => setActiveTab('commissions')}
+          >
+            Commissions ({commissions.length})
+          </button>
+          <button
+            className={`admin-tab ${activeTab === 'newsletter' ? 'active' : ''}`}
+            onClick={() => setActiveTab('newsletter')}
+          >
+            Newsletter ({newsletter.length})
+          </button>
+        </div>
+
+        {/* PAINTINGS TAB */}
+        {activeTab === 'paintings' && (
+          <>
+            {/* Form Section */}
+            <section className="admin-section">
+              <h2>{editingId ? 'Edit Painting' : 'Add New Painting'}</h2>
+
+              {formError && <div className="admin-error">{formError}</div>}
+              {formSuccess && <div className="admin-success">{formSuccess}</div>}
+
+              <form className="admin-form" onSubmit={handleSavePainting}>
+                <div className="admin-form__row">
+                  <div className="form-group">
+                    <label htmlFor="title">Title *</label>
+                    <input
+                      id="title"
+                      name="title"
+                      value={formData.title}
+                      onChange={handleFormChange}
+                      placeholder="e.g., Golden Hour"
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="year">Year</label>
+                    <input
+                      id="year"
+                      name="year"
+                      value={formData.year}
+                      onChange={handleFormChange}
+                      placeholder="e.g., 2024"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="medium">Medium</label>
+                    <input
+                      id="medium"
+                      name="medium"
+                      value={formData.medium}
+                      onChange={handleFormChange}
+                      placeholder="e.g., Oil on canvas"
+                    />
+                  </div>
+                </div>
+
+                <div className="admin-form__row">
+                  <div className="form-group">
+                    <label htmlFor="dimensions">Dimensions</label>
+                    <input
+                      id="dimensions"
+                      name="dimensions"
+                      value={formData.dimensions}
+                      onChange={handleFormChange}
+                      placeholder="e.g., 24 x 36 inches"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="category">Category</label>
+                    <select
+                      id="category"
+                      name="category"
+                      value={formData.category}
+                      onChange={handleFormChange}
+                    >
+                      <option value="original">Original</option>
+                      <option value="print">Print</option>
+                      <option value="both">Both</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="admin-form__row">
+                  <div className="form-group">
+                    <label htmlFor="originalPrice">Original Price ($)</label>
+                    <input
+                      id="originalPrice"
+                      name="originalPrice"
+                      type="number"
+                      value={formData.originalPrice}
+                      onChange={handleFormChange}
+                      placeholder="e.g., 5000"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="printPrice">Print Price ($)</label>
+                    <input
+                      id="printPrice"
+                      name="printPrice"
+                      type="number"
+                      value={formData.printPrice}
+                      onChange={handleFormChange}
+                      placeholder="e.g., 150"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="price">Price ($) - General</label>
+                    <input
+                      id="price"
+                      name="price"
+                      type="number"
+                      value={formData.price}
+                      onChange={handleFormChange}
+                      placeholder="e.g., 3000"
+                    />
+                  </div>
+                </div>
+
+                <div className="admin-form__row">
+                  <div className="form-group">
+                    <label htmlFor="description">Description</label>
+                    <textarea
+                      id="description"
+                      name="description"
+                      value={formData.description}
+                      onChange={handleFormChange}
+                      placeholder="Painting description..."
+                      rows="4"
+                    />
+                  </div>
+                </div>
+
+                <div className="admin-form__row">
+                  <div className="form-group">
+                    <label htmlFor="image">Image URL</label>
+                    <input
+                      id="image"
+                      name="image"
+                      value={formData.image}
+                      onChange={handleFormChange}
+                      placeholder="https://..."
+                    />
+                  </div>
+                </div>
+
+                <div className="admin-form__row">
+                  <div className="form-group">
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        name="originalAvailable"
+                        checked={formData.originalAvailable}
+                        onChange={handleFormChange}
+                      />
+                      Original Available
+                    </label>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        name="printAvailable"
+                        checked={formData.printAvailable}
+                        onChange={handleFormChange}
+                      />
+                      Print Available
+                    </label>
+                  </div>
+                </div>
+
+                <div className="admin-form__actions">
+                  <button type="submit" className="btn btn--large">
+                    {editingId ? 'Update Painting' : 'Add Painting'}
+                  </button>
+                  {editingId && (
+                    <button
+                      type="button"
+                      className="btn btn--ghost"
+                      onClick={handleCancelEdit}
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              </form>
+            </section>
+
+            {/* Paintings List */}
+            <section className="admin-section">
+              <h2>All Paintings ({paintings.length})</h2>
+
+              {paintings.length === 0 ? (
+                <div className="admin-empty">No paintings yet</div>
+              ) : (
+                <div className="admin-paintings-grid">
+                  {paintings.map(painting => (
+                    <div key={painting.id} className="admin-painting-card">
+                      {painting.image && (
+                        <img src={painting.image} alt={painting.title} />
+                      )}
+                      <div className="admin-painting-card__content">
+                        <h3>{painting.title}</h3>
+                        <p className="admin-painting-card__meta">
+                          {painting.year} • {painting.medium}
+                        </p>
+                        <p className="admin-painting-card__meta">
+                          {painting.dimensions}
+                        </p>
+                        <div className="admin-painting-card__prices">
+                          {painting.originalPrice && (
+                            <p>Original: ${painting.originalPrice}</p>
+                          )}
+                          {painting.printPrice && (
+                            <p>Print: ${painting.printPrice}</p>
+                          )}
+                        </div>
+                        <div className="admin-painting-card__actions">
+                          <button
+                            className="admin-btn admin-btn--edit"
+                            onClick={() => handleEditPainting(painting)}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            className="admin-btn admin-btn--delete"
+                            onClick={() => handleDeletePainting(painting.id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          </>
+        )}
+
+        {/* COMMISSIONS TAB */}
+        {activeTab === 'commissions' && (
+          <section className="admin-section">
+            <h2>Commission Inquiries</h2>
+
+            {commissions.length === 0 ? (
+              <div className="admin-empty">No commission inquiries yet</div>
+            ) : (
+              <div className="admin-table">
+                <div className="admin-table__header">
+                  <div>Name</div>
+                  <div>Email</div>
+                  <div>Budget</div>
+                  <div>Date</div>
+                  <div></div>
+                </div>
+
+                {commissions.map(commission => (
+                  <div key={commission.id} className="admin-table__row">
+                    <div className="admin-table__cell"><strong>{commission.name}</strong></div>
+                    <div className="admin-table__cell">
+                      <a href={`mailto:${commission.email}`}>{commission.email}</a>
+                    </div>
+                    <div className="admin-table__cell">{commission.budget}</div>
+                    <div className="admin-table__cell">
+                      {new Date(commission.date).toLocaleDateString()}
+                    </div>
+                    <div className="admin-table__cell admin-table__cell--actions">
+                      <button
+                        className="admin-table__btn-details"
+                        onClick={() => alert(`Vision: ${commission.vision}\nSize: ${commission.size}`)}
+                      >
+                        View
+                      </button>
+                      <button
+                        className="admin-table__btn-delete"
+                        onClick={() => deleteCommission(commission.id)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* NEWSLETTER TAB */}
+        {activeTab === 'newsletter' && (
+          <section className="admin-section">
+            <h2>Newsletter Subscribers</h2>
+
+            {newsletter.length === 0 ? (
+              <div className="admin-empty">No newsletter subscribers yet</div>
+            ) : (
+              <div className="admin-table">
+                <div className="admin-table__header">
+                  <div>Email Address</div>
+                  <div></div>
+                </div>
+
+                {newsletter.map((email, idx) => (
+                  <div key={idx} className="admin-table__row">
+                    <div className="admin-table__cell">
+                      <a href={`mailto:${email}`}>{email}</a>
+                    </div>
+                    <div className="admin-table__cell admin-table__cell--actions">
+                      <button
+                        className="admin-table__btn-delete"
+                        onClick={() => deleteNewsletter(email)}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
       </div>
     </main>
   );
