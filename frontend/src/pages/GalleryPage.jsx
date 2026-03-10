@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { getPaintings, getCollections } from '../api.js';
 import PaintingCard from '../components/PaintingCard.jsx';
+import GalleryFilters from '../components/GalleryFilters.jsx';
 import './GalleryPage.css';
 
 function CollectionsView({ collections }) {
@@ -15,7 +16,7 @@ function CollectionsView({ collections }) {
         >
           <div className="collection-card__img">
             {collection.paintings?.[0]?.images?.[0] && (
-              <img src={collection.paintings[0].images[0]} alt={collection.name} />
+              <img src={collection.paintings[0].images[0]} alt={collection.name} loading="lazy" />
             )}
           </div>
           <h3 className="collection-card__name">{collection.name}</h3>
@@ -35,6 +36,12 @@ export default function GalleryPage() {
   const [error, setError] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const type = searchParams.get('type') || 'all';
+
+  const [filters, setFilters] = useState({
+    medium: null,
+    year: null,
+    priceRange: null,
+  });
 
   useEffect(() => {
     setLoading(true);
@@ -65,6 +72,32 @@ export default function GalleryPage() {
     !p.sold && (p.originalAvailable !== false) && (p.category !== 'print')
   );
   const prints = paintings.filter(p => p.printAvailable === true);
+
+  let displayPaintings = [];
+  if (type === 'original') {
+    displayPaintings = originals;
+  } else if (type === 'print') {
+    displayPaintings = prints;
+  } else {
+    displayPaintings = paintings;
+  }
+
+  // Apply additional filters
+  if (filters.medium) {
+    displayPaintings = displayPaintings.filter(p => p.medium === filters.medium);
+  }
+  if (filters.year) {
+    displayPaintings = displayPaintings.filter(p => p.year === filters.year);
+  }
+  if (filters.priceRange) {
+    displayPaintings = displayPaintings.filter(p => {
+      const price = p.price || 0;
+      if (filters.priceRange === 'under-1000') return price < 1000;
+      if (filters.priceRange === '1000-5000') return price >= 1000 && price <= 5000;
+      if (filters.priceRange === 'above-5000') return price > 5000;
+      return true;
+    });
+  }
 
   return (
     <main className="gallery-page">
@@ -97,54 +130,46 @@ export default function GalleryPage() {
         {error && (
           <div className="gallery-error">
             <p>{error}</p>
-            <button className="btn" onClick={() => window.location.reload()}>
-              Retry
-            </button>
           </div>
         )}
 
         {loading ? (
-          <div className="gallery-grid">
-            {[1, 2, 3, 4, 5, 6].map(i => (
-              <div key={i} className="painting-skeleton" />
-            ))}
+          <div className="gallery-page--loading">
+            <div className="spinner" />
+            <p>Loading gallery...</p>
           </div>
         ) : type === 'collections' ? (
-          <CollectionsView collections={collections} />
+          collections.length > 0 ? (
+            <CollectionsView collections={collections} />
+          ) : (
+            <p style={{ textAlign: 'center' }}>No collections available.</p>
+          )
         ) : (
-          <>
-            {(type === 'all' || type === 'original') && originals.length > 0 && (
-              <div className="gallery-section">
-                {type === 'all' && (
-                  <h2 className="gallery-section__title">Original Paintings</h2>
-                )}
+          <div className="gallery-page__layout">
+            <aside className="gallery-page__filters-sidebar">
+              <GalleryFilters 
+                filters={filters}
+                onFilterChange={setFilters}
+                availableMediums={['Oil', 'Acrylic', 'Watercolor', 'Mixed Media']}
+                availableYears={['2024', '2023', '2022', '2021', '2020']}
+              />
+            </aside>
+
+            <div className="gallery-page__content">
+              {displayPaintings.length > 0 ? (
                 <div className="gallery-grid">
-                  {originals.map(p => (
-                    <PaintingCard key={p.id} painting={p} />
+                  {displayPaintings.map(painting => (
+                    <PaintingCard key={painting.id} painting={painting} />
                   ))}
                 </div>
-              </div>
-            )}
-
-            {(type === 'all' || type === 'print') && prints.length > 0 && (
-              <div className="gallery-section">
-                {type === 'all' && (
-                  <h2 className="gallery-section__title">Limited Edition Prints</h2>
-                )}
-                <div className="gallery-grid">
-                  {prints.map(p => (
-                    <PaintingCard key={p.id} painting={p} />
-                  ))}
+              ) : (
+                <div style={{ textAlign: 'center', padding: '60px 0' }}>
+                  <h3>No artworks found</h3>
+                  <p>Try adjusting your filters</p>
                 </div>
-              </div>
-            )}
-
-            {type !== 'collections' && originals.length === 0 && prints.length === 0 && !loading && (
-              <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-                <p style={{ fontSize: '16px', color: '#4a4540' }}>No artworks found.</p>
-              </div>
-            )}
-          </>
+              )}
+            </div>
+          </div>
         )}
       </div>
     </main>
