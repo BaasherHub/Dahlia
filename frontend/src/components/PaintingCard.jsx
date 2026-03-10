@@ -24,7 +24,7 @@ export default function PaintingCard({ painting }) {
     }
   };
 
-  // ✅ Scroll to top when clicking
+  // Scroll to top when clicking
   const handleClick = () => {
     window.scrollTo({
       top: 0,
@@ -33,7 +33,7 @@ export default function PaintingCard({ painting }) {
     });
   };
 
-  // ✅ Safe price formatting
+  // Safe price formatting
   const formatPrice = (price) => {
     if (!price && price !== 0) return '';
     return `$${Number(price).toLocaleString()}`;
@@ -50,7 +50,7 @@ export default function PaintingCard({ painting }) {
           src={painting.image} 
           alt={painting.title} 
           className="painting-card__img" 
-          loading="lazy" 
+          decoding="async"
         />
         <button
           className={`painting-card__wishlist ${isInWishlist ? 'active' : ''}`}
