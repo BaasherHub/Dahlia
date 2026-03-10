@@ -1,11 +1,10 @@
+import { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import ErrorBoundary from './components/ErrorBoundary';
 import Toast from './components/Toast';
 import useToast from './hooks/useToast';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Navigation from './components/Navigation';
-import Footer from './components/Footer';
 
-// Import all pages
+// Pages
 import HomePage from './pages/HomePage';
 import GalleryPage from './pages/GalleryPage';
 import PaintingPage from './pages/PaintingPage';
@@ -17,14 +16,69 @@ import CommissionsPage from './pages/CommissionsPage';
 import CollectionPage from './pages/CollectionPage';
 import AdminPage from './pages/AdminPage';
 
-function App() {
+// Components - with safe imports
+let Navigation = null;
+let Footer = null;
+
+// Try to import Navigation, fallback if not found
+try {
+  Navigation = require('./components/Navigation').default || (() => null);
+} catch (e) {
+  console.warn('Navigation component not found:', e.message);
+  Navigation = () => null;
+}
+
+// Try to import Footer, fallback if not found
+try {
+  Footer = require('./components/Footer').default || (() => null);
+} catch (e) {
+  console.warn('Footer component not found:', e.message);
+  Footer = () => null;
+}
+
+function AppContent() {
   const { toasts, addToast, removeToast } = useToast();
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    setIsReady(true);
+  }, []);
+
+  if (!isReady) {
+    return (
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100vh',
+        backgroundColor: '#fefdfb'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            border: '3px solid #e8e3db',
+            borderRadius: '50%',
+            borderTopColor: '#a89968',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 16px'
+          }} />
+          <p style={{ color: '#4a4540', fontFamily: "'DM Sans', sans-serif" }}>Loading...</p>
+        </div>
+        <style>{`
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
+      </div>
+    );
+  }
 
   return (
-    <ErrorBoundary>
-      <Router>
-        <Navigation />
-        <Toast toasts={toasts} onRemove={removeToast} />
+    <Router>
+      {Navigation && <Navigation />}
+      <Toast toasts={toasts} onRemove={removeToast} />
+      <main style={{ minHeight: '100vh' }}>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/gallery" element={<GalleryPage />} />
@@ -37,8 +91,16 @@ function App() {
           <Route path="/collection/:id" element={<CollectionPage />} />
           <Route path="/admin" element={<AdminPage />} />
         </Routes>
-        <Footer />
-      </Router>
+      </main>
+      {Footer && <Footer />}
+    </Router>
+  );
+}
+
+function App() {
+  return (
+    <ErrorBoundary>
+      <AppContent />
     </ErrorBoundary>
   );
 }
