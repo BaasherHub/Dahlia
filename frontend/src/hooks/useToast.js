@@ -4,22 +4,31 @@ export default function useToast() {
   const [toasts, setToasts] = useState([]);
 
   const addToast = useCallback((message, type = 'info', duration = 3000) => {
-    const id = Date.now();
-    const toast = { id, message, type };
+    try {
+      const id = Date.now() + Math.random();
+      const toast = { id, message, type };
 
-    setToasts(prev => [...prev, toast]);
+      setToasts(prev => [...prev, toast]);
 
-    if (duration > 0) {
-      setTimeout(() => {
-        setToasts(prev => prev.filter(t => t.id !== id));
-      }, duration);
+      if (duration > 0) {
+        setTimeout(() => {
+          setToasts(prev => prev.filter(t => t.id !== id));
+        }, duration);
+      }
+
+      return id;
+    } catch (error) {
+      console.error('Error in addToast:', error);
+      return null;
     }
-
-    return id;
   }, []);
 
   const removeToast = useCallback((id) => {
-    setToasts(prev => prev.filter(t => t.id !== id));
+    try {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    } catch (error) {
+      console.error('Error in removeToast:', error);
+    }
   }, []);
 
   return { toasts, addToast, removeToast };
