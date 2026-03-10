@@ -54,51 +54,65 @@ export default function CartPage() {
             </div>
 
             <div className="cart-items__list">
-              {items.map(item => (
-                <div key={item.id} className="cart-item">
-                  <div className="cart-item__img">
-                    <img src={item.image} alt={item.title} />
-                  </div>
+              {items.map(item => {
+                const imageUrl = item.image || item.images?.[0];
+                
+                return (
+                  <div key={item.id} className="cart-item">
+                    <div className="cart-item__img">
+                      {imageUrl ? (
+                        <img src={imageUrl} alt={item.title} />
+                      ) : (
+                        <div className="cart-item__img-placeholder">
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                            <polyline points="21 15 16 10 5 21"/>
+                          </svg>
+                        </div>
+                      )}
+                    </div>
 
-                  <div className="cart-item__details">
-                    <h3 className="cart-item__title">{item.title}</h3>
-                    <p className="cart-item__meta">
-                      {item.year} • {item.medium}
-                    </p>
-                    <p className="cart-item__version">
-                      {item.selectedVersion === 'print' ? 'Limited Edition Print' : 'Original'}
-                    </p>
-                  </div>
+                    <div className="cart-item__details">
+                      <h3 className="cart-item__title">{item.title}</h3>
+                      <p className="cart-item__meta">
+                        {item.year} • {item.medium}
+                      </p>
+                      <p className="cart-item__version">
+                        {item.selectedVersion === 'print' ? 'Limited Edition Print' : 'Original'}
+                      </p>
+                    </div>
 
-                  <div className="cart-item__quantity">
-                    <label htmlFor={`qty-${item.id}`}>Qty:</label>
-                    <input
-                      id={`qty-${item.id}`}
-                      type="number"
-                      min="1"
-                      value={item.quantity || 1}
-                      onChange={(e) => updateQuantity(item.id, parseInt(e.target.value))}
-                    />
-                  </div>
+                    <div className="cart-item__quantity">
+                      <label htmlFor={`qty-${item.id}`}>Qty:</label>
+                      <input
+                        id={`qty-${item.id}`}
+                        type="number"
+                        min="1"
+                        value={item.quantity || 1}
+                        onChange={(e) => updateQuantity(item.id, parseInt(e.target.value))}
+                      />
+                    </div>
 
-                  <div className="cart-item__price">
-                    ${(item.price * (item.quantity || 1)).toLocaleString()}
-                  </div>
+                    <div className="cart-item__price">
+                      ${(item.price * (item.quantity || 1)).toLocaleString()}
+                    </div>
 
-                  <button
-                    className="cart-item__remove"
-                    onClick={() => removeItem(item.id)}
-                    title="Remove from cart"
-                  >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polyline points="3 6 5 6 21 6"></polyline>
-                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                      <line x1="10" y1="11" x2="10" y2="17"></line>
-                      <line x1="14" y1="11" x2="14" y2="17"></line>
-                    </svg>
-                  </button>
-                </div>
-              ))}
+                    <button
+                      className="cart-item__remove"
+                      onClick={() => removeItem(item.id)}
+                      title="Remove from cart"
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                      </svg>
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
