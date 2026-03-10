@@ -68,6 +68,8 @@
   line-height: 1.08;
   margin-bottom: var(--space-md);
   letter-spacing: -0.025em;
+  word-spacing: 0.2em;
+  text-rendering: optimizeLegibility;
 }
 
 .hero__subtitle {
@@ -144,6 +146,7 @@
   font-weight: 400;
   margin-bottom: var(--space-3xl);
   letter-spacing: -0.01em;
+  color: var(--color-text);
 }
 
 .artist-statement__text {
@@ -157,6 +160,19 @@
   font-size: 16px;
   line-height: 1.9;
   color: var(--color-text);
+}
+
+.artist-statement__quote {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-style: italic;
+  line-height: 1.6;
+  color: var(--color-accent);
+  border-left: 2px solid var(--color-accent);
+  padding-left: var(--space-lg);
+  margin: var(--space-2xl) 0 0 0;
+  border: none;
+  padding: 0;
 }
 
 .artist-statement__link {
@@ -243,7 +259,7 @@
   grid-template-columns: repeat(3, 1fr);
 }
 
-/* ────────────────────────────────────────────────────────────
+/* ──────��─────────────────────────────────────────────────────
    COLLECTION HIGHLIGHTS
    ──────────────────────────────────────────────────────────── */
 .collection-highlights {
