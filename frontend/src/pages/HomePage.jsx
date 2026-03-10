@@ -36,7 +36,12 @@ export default function HomePage() {
       <section className="hero">
         {heroPainting?.images?.[0] ? (
           <div className="hero__painting">
-            <img src={heroPainting.images[0]} alt={heroPainting.title} className="hero__painting-img" loading="lazy" />
+            <img 
+              src={heroPainting.images[0]} 
+              alt={heroPainting.title} 
+              className="hero__painting-img" 
+              decoding="async"
+            />
             <div className="hero__overlay" />
           </div>
         ) : (
