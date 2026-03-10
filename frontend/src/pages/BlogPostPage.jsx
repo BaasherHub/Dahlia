@@ -9,7 +9,7 @@ const blogPostsData = {
     date: '2024-03-10',
     category: 'Technique',
     readTime: '5 min read',
-    image: 'https://via.placeholder.com/1200x400?text=Color+Theory',
+    image: 'https://images.unsplash.com/photo-1578926078328-123456789?w=1200&h=400&fit=crop',
     content: `
       <p>Color theory is the foundation of every great painting. Understanding how colors interact, complement, and contrast with each other is essential for creating work that resonates emotionally with viewers.</p>
       
@@ -30,7 +30,7 @@ const blogPostsData = {
     date: '2024-03-05',
     category: 'Process',
     readTime: '8 min read',
-    image: 'https://via.placeholder.com/1200x400?text=Commission+Process',
+    image: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=1200&h=400&fit=crop',
     content: `
       <p>Large-scale commissions require careful planning and execution. This post walks you through my process from initial concept to final installation.</p>
       
@@ -54,7 +54,7 @@ const blogPostsData = {
     date: '2024-02-28',
     category: 'Collecting',
     readTime: '6 min read',
-    image: 'https://via.placeholder.com/1200x400?text=Collecting+Art',
+    image: 'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=1200&h=400&fit=crop',
     content: `
       <p>Starting an art collection can feel overwhelming, but with a few key principles, you can build a meaningful collection that brings joy for years.</p>
       
@@ -78,7 +78,7 @@ const blogPostsData = {
     date: '2024-02-20',
     category: 'Inspiration',
     readTime: '7 min read',
-    image: 'https://via.placeholder.com/1200x400?text=Studio+Inspirations',
+    image: 'https://images.unsplash.com/photo-1579783902614-e3fb5141b0cb?w=1200&h=400&fit=crop',
     content: `
       <p>Creativity doesn't exist in a vacuum. I'm constantly inspired by other artists, books, films, and life experiences.</p>
       
