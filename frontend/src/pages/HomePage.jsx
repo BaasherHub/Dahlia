@@ -1,3 +1,22 @@
+import useSEO from '../hooks/useSEO';
+import { trackPageView } from '../services/analytics';
+import { useEffect } from 'react';
+
+export default function HomePage() {
+  // Add SEO
+  useSEO(
+    'Contemporary Oil Paintings by Dahlia Baasher',
+    'Explore refined oil paintings on premium linen canvas by Sudanese artist Dahlia Baasher. Original artworks and limited edition prints.',
+    'https://www.dahliabaasher.com/og-hero.jpg'
+  );
+
+  // Track page view
+  useEffect(() => {
+    trackPageView('Home');
+  }, []);
+
+  // ... rest of component
+}
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getPainting } from '../api.js';
