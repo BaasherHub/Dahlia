@@ -29,23 +29,6 @@ export const artistSchema = {
   ]
 };
 
-export const organizationSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'Organization',
-  'name': 'Dahlia Baasher Studio',
-  'url': 'https://dahliabaasher.com',
-  'logo': 'https://dahliabaasher.com/logo.jpg',
-  'description': 'Contemporary art gallery and studio',
-  'address': {
-    '@type': 'PostalAddress',
-    'addressCountry': 'US'
-  },
-  'contactPoint': {
-    '@type': 'ContactPoint',
-    'contactType': 'Customer Service'
-  }
-};
-
 export const gallerySchema = {
   '@context': 'https://schema.org',
   '@type': 'CollectionPage',
