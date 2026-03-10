@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { useCart } from '../context/CartContext.jsx';
-import { useTheme } from '../context/ThemeContext.jsx';
 import './Nav.css';
 
 export default function Nav() {
   const { items } = useCart();
-  const { theme, toggle } = useTheme();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -88,15 +86,6 @@ export default function Nav() {
             </svg>
             {items.length > 0 && <span className="nav__cart-count">{items.length}</span>}
           </Link>
-
-          <button
-            className="nav__theme-btn"
-            onClick={toggle}
-            aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-            title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-          >
-            {theme === 'light' ? '🌙' : '☀️'}
-          </button>
         </nav>
       </div>
     </header>
