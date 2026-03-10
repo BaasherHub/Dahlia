@@ -17,7 +17,6 @@ export default function GalleryPage() {
     setError(null);
     Promise.all([getPaintings(), getCollections()])
       .then(([paintingsData, collectionsData]) => {
-        // Handle both paginated and direct responses
         const pData = paintingsData.data || paintingsData;
         const cData = collectionsData.data || collectionsData;
         setPaintings(Array.isArray(pData) ? pData : []);
@@ -31,7 +30,6 @@ export default function GalleryPage() {
       });
   }, []);
 
-  // Robust filtering — works with both old DB and new schema
   const originals = paintings.filter(p => 
     !p.sold && (p.originalAvailable !== false) && (p.category !== 'print')
   );
@@ -96,6 +94,7 @@ export default function GalleryPage() {
                 </div>
               </div>
             )}
+
             {(type === 'all' || type === 'print') && prints.length > 0 && (
               <div className="gallery-section">
                 {type === 'all' && (
@@ -108,10 +107,11 @@ export default function GalleryPage() {
                 </div>
               </div>
             )}
-            {originals.length === 0 && prints.length === 0 && (
+
+            {((type === 'original' && originals.length === 0) || 
+              (type === 'print' && prints.length === 0)) && (
               <div className="gallery-empty">
-                <p>No works available at this time.</p>
-                <Link to="/" className="btn">← Back to Home</Link>
+                <p>No artworks available in this category.</p>
               </div>
             )}
           </>
@@ -122,29 +122,17 @@ export default function GalleryPage() {
 }
 
 function CollectionsView({ collections }) {
-  if (collections.length === 0) {
-    return (
-      <div className="gallery-empty">
-        <p>No collections yet.</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="gallery-grid">
+    <div className="collections-grid">
       {collections.map(c => (
-        <Link
-          key={c.id}
-          to={`/collections/${c.id}`}
-          className="collection-card"
-        >
-          {c.coverImage && (
-            <img src={c.coverImage} alt={c.name} className="collection-card__image" />
+        <Link key={c.id} to={`/collection/${c.id}`} className="collection-card">
+          {c.paintings?.[0]?.images?.[0] && (
+            <div className="collection-card__image">
+              <img src={c.paintings[0].images[0]} alt={c.name} />
+            </div>
           )}
-          <div className="collection-card__content">
-            <h3>{c.name}</h3>
-            {c.description && <p>{c.description}</p>}
-          </div>
+          <h3 className="collection-card__name">{c.name}</h3>
+          <p className="collection-card__count">{c.paintings?.length || 0} works</p>
         </Link>
       ))}
     </div>
