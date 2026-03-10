@@ -1,14 +1,12 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { getPainting } from '../api.js';
 import { useCart } from '../context/CartContext.jsx';
-import ImageWithFallback from '../components/ImageWithFallback.jsx';
 import ImageZoom from '../components/ImageZoom.jsx';
 import './PaintingPage.css';
 
 export default function PaintingPage() {
   const { id } = useParams();
-  const navigate = useNavigate();
   const [painting, setPainting] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -18,6 +16,12 @@ export default function PaintingPage() {
   const { addItem } = useCart();
 
   useEffect(() => {
+    if (!id) {
+      setError('Invalid artwork ID');
+      setLoading(false);
+      return;
+    }
+
     const loadPainting = async () => {
       try {
         setLoading(true);
@@ -25,13 +29,14 @@ export default function PaintingPage() {
         const data = await getPainting(id);
         if (!data) {
           setError('Artwork not found');
+          setLoading(false);
           return;
         }
         setPainting(data);
+        setLoading(false);
       } catch (err) {
         console.error('Failed to load painting:', err);
-        setError('Failed to load artwork. Please try again.');
-      } finally {
+        setError(err.message || 'Failed to load artwork. Please try again.');
         setLoading(false);
       }
     };
@@ -77,16 +82,31 @@ export default function PaintingPage() {
   // Safe price formatting
   const formatPrice = (price) => {
     if (!price && price !== 0) return '';
-    return `$${Number(price).toLocaleString()}`;
+    try {
+      return `$${Number(price).toLocaleString()}`;
+    } catch {
+      return '';
+    }
   };
 
   const handleAddToCart = () => {
-    addItem({ ...painting, selectedVersion: version, price: currentPrice });
+    if (!currentPrice) {
+      alert('Price not available');
+      return;
+    }
+    addItem({ 
+      ...painting, 
+      selectedVersion: version, 
+      price: currentPrice 
+    });
     setAdded(true);
     setTimeout(() => setAdded(false), 3000);
   };
 
-  const images = painting.images || [painting.image];
+  const images = painting.images && Array.isArray(painting.images) 
+    ? painting.images 
+    : (painting.image ? [painting.image] : []);
+  
   const mainImage = images[activeImg] || images[0];
 
   return (
@@ -106,7 +126,7 @@ export default function PaintingPage() {
               {mainImage ? (
                 <ImageZoom 
                   src={mainImage} 
-                  alt={painting.title}
+                  alt={painting.title || 'Artwork'}
                   className="painting-page__main-img"
                 />
               ) : (
@@ -130,7 +150,11 @@ export default function PaintingPage() {
                     onClick={() => setActiveImg(idx)}
                     aria-label={`View image ${idx + 1}`}
                   >
-                    <ImageWithFallback src={img} alt={`${painting.title} view ${idx + 1}`} />
+                    <img 
+                      src={img} 
+                      alt={`${painting.title || 'Artwork'} view ${idx + 1}`}
+                      decoding="async"
+                    />
                   </button>
                 ))}
               </div>
@@ -139,7 +163,7 @@ export default function PaintingPage() {
 
           {/* DETAILS */}
           <div className="painting-page__details">
-            <h1 className="painting-page__title">{painting.title}</h1>
+            <h1 className="painting-page__title">{painting.title || 'Untitled'}</h1>
 
             <div className="painting-page__meta">
               {painting.year && <div><strong>Year:</strong> {painting.year}</div>}
@@ -188,7 +212,11 @@ export default function PaintingPage() {
             <div className="painting-page__cta">
               {currentAvailable ? (
                 <>
-                  <button className="btn btn--large" onClick={handleAddToCart}>
+                  <button 
+                    className="btn btn--large" 
+                    onClick={handleAddToCart}
+                    disabled={added}
+                  >
                     {added ? '✓ Added to Cart' : 'Add to Cart'}
                   </button>
                   <Link to="/cart" className="btn btn--ghost">
