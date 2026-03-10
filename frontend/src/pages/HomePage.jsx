@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getPaintings, getHeroPainting } from '../api.js';
 import PaintingCard from '../components/PaintingCard.jsx';
+import Testimonials from '../components/Testimonials.jsx';
+import NewsletterSignup from '../components/NewsletterSignup.jsx';
 import './HomePage.css';
 
 export default function HomePage() {
@@ -34,7 +36,7 @@ export default function HomePage() {
       <section className="hero">
         {heroPainting?.images?.[0] ? (
           <div className="hero__painting">
-            <img src={heroPainting.images[0]} alt={heroPainting.title} className="hero__painting-img" />
+            <img src={heroPainting.images[0]} alt={heroPainting.title} className="hero__painting-img" loading="lazy" />
             <div className="hero__overlay" />
           </div>
         ) : (
@@ -77,59 +79,57 @@ export default function HomePage() {
                 <h2 className="section-title">Featured Works</h2>
                 <p className="section-subtitle">Original Paintings</p>
               </div>
-              <Link to="/gallery" className="section-link">
+              <Link to="/gallery" className="btn btn--ghost">
                 View All
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M5 12h14M12 5l7 7-7 7"/>
-                </svg>
               </Link>
             </div>
-            <div className="gallery-grid gallery-grid--3">
-              {originals.map(p => (
-                <PaintingCard key={p.id} painting={p} />
+            <div className="gallery-grid">
+              {originals.map(painting => (
+                <PaintingCard key={painting.id} painting={painting} />
               ))}
             </div>
           </div>
         </section>
       )}
 
-      {/* ── LIMITED PRINTS ── */}
+      {/* ── PRINTS SECTION ── */}
       {!loading && prints.length > 0 && (
-        <section className="collection-highlights">
+        <section className="featured-works" style={{ background: 'var(--color-surface)' }}>
           <div className="container">
             <div className="section-header">
               <div>
                 <h2 className="section-title">Limited Edition Prints</h2>
-                <p className="section-subtitle">Exclusive Reproductions</p>
+                <p className="section-subtitle">High-Quality Reproductions</p>
               </div>
-              <Link to="/gallery?type=print" className="section-link">
+              <Link to="/gallery?type=print" className="btn btn--ghost">
                 View All Prints
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M5 12h14M12 5l7 7-7 7"/>
-                </svg>
               </Link>
             </div>
-            <div className="gallery-grid gallery-grid--3">
-              {prints.map(p => (
-                <PaintingCard key={p.id} painting={p} />
+            <div className="gallery-grid">
+              {prints.map(printing => (
+                <PaintingCard key={printing.id} painting={printing} />
               ))}
             </div>
           </div>
         </section>
       )}
 
+      {/* ── TESTIMONIALS SECTION ── */}
+      <Testimonials />
+
+      {/* ── NEWSLETTER SIGNUP ── */}
+      <NewsletterSignup />
+
       {/* ── CTA SECTION ── */}
       <section className="cta-section">
         <div className="container">
-          <div className="cta-content">
-            <h2 className="cta-title">Custom Commissions</h2>
-            <p className="cta-text">
-              Looking for something unique? Dahlia Baasher creates custom paintings tailored to your vision and space.
-            </p>
-            <Link to="/commissions" className="btn">
-              Learn About Commissions
-            </Link>
-          </div>
+          <h2 className="cta-section__title">Ready to Commission?</h2>
+          <p className="cta-section__desc">
+            I work with collectors and designers worldwide to create bespoke artwork tailored to your vision and space.
+          </p>
+          <Link to="/commissions" className="btn btn--large">
+            Start a Commission
+          </Link>
         </div>
       </section>
     </main>
