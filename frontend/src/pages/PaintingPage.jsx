@@ -74,7 +74,7 @@ export default function PaintingPage() {
   const currentPrice = version === 'print' ? painting.printPrice : painting.originalPrice || painting.price;
   const currentAvailable = version === 'print' ? printAvailable : originalAvailable;
 
-  // ✅ Safe price formatting
+  // Safe price formatting
   const formatPrice = (price) => {
     if (!price && price !== 0) return '';
     return `$${Number(price).toLocaleString()}`;
