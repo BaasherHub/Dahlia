@@ -1,20 +1,38 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 
-const CartContext = createContext(null);
+const CartContext = createContext();
 
 export function CartProvider({ children }) {
   const [items, setItems] = useState([]);
 
-  const addItem = (painting) => {
-    setItems((prev) =>
-      prev.find((p) => p.id === painting.id && p.selectedVersion === painting.selectedVersion)
-        ? prev : [...prev, painting]
-    );
+  useEffect(() => {
+    const saved = localStorage.getItem('cart');
+    if (saved) {
+      try {
+        setItems(JSON.parse(saved));
+      } catch (err) {
+        console.error('Failed to load cart:', err);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('cart', JSON.stringify(items));
+  }, [items]);
+
+  const addItem = (item) => {
+    setItems(prev => [...prev, item]);
   };
 
-  const removeItem = (index) => setItems((prev) => prev.filter((_, i) => i !== index));
-  const clear = () => setItems([]);
-  const total = items.reduce((sum, p) => sum + (p.price || 0), 0);
+  const removeItem = (index) => {
+    setItems(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const clear = () => {
+    setItems([]);
+  };
+
+  const total = items.reduce((sum, item) => sum + (item.price || 0), 0);
 
   return (
     <CartContext.Provider value={{ items, addItem, removeItem, clear, total }}>
@@ -23,4 +41,10 @@ export function CartProvider({ children }) {
   );
 }
 
-export const useCart = () => useContext(CartContext);
+export function useCart() {
+  const context = useContext(CartContext);
+  if (!context) {
+    return { items: [], addItem: () => {}, removeItem: () => {}, clear: () => {}, total: 0 };
+  }
+  return context;
+}
