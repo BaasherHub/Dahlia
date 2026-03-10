@@ -118,7 +118,7 @@ export default function BlogPostPage() {
     <main className="blog-post-page">
       <article className="blog-post">
         <header className="blog-post__header">
-          <img src={post.image} alt={post.title} className="blog-post__image" loading="lazy" />
+          <img src={post.image} alt={post.title} className="blog-post__image" decoding="async" />
           <div className="blog-post__info">
             <div className="blog-post__meta">
               <span className="blog-post__category">{post.category}</span>
