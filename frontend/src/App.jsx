@@ -1,10 +1,25 @@
 import { useState, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import ErrorBoundary from './components/ErrorBoundary';
 import Toast from './components/Toast';
 import Breadcrumbs from './components/Breadcrumbs';
 import SEOSchema, { artistSchema, gallerySchema } from './components/SEOSchema';
 import useToast from './hooks/useToast';
+
+// ✅ Scroll to top on route change
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'instant'
+    });
+  }, [pathname]);
+
+  return null;
+}
 
 // Pages
 import HomePage from './pages/HomePage';
@@ -66,6 +81,7 @@ function AppContent() {
 
   return (
     <>
+      <ScrollToTop />
       <SEOSchema type="artist" data={artistSchema} />
       <SEOSchema type="gallery" data={gallerySchema} />
       <Nav />
