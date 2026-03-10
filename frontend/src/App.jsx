@@ -17,23 +17,9 @@ import CollectionPage from './pages/CollectionPage';
 import AdminPage from './pages/AdminPage';
 import NotFoundPage from './pages/NotFoundPage';
 
-// Components - with safe imports
-let Navigation = null;
-let Footer = null;
-
-try {
-  Navigation = require('./components/Navigation').default || (() => null);
-} catch (e) {
-  console.warn('Navigation component not found:', e.message);
-  Navigation = () => null;
-}
-
-try {
-  Footer = require('./components/Footer').default || (() => null);
-} catch (e) {
-  console.warn('Footer component not found:', e.message);
-  Footer = () => null;
-}
+// Components
+import Nav from './components/Nav';
+import Footer from './components/Footer';
 
 function AppContent() {
   const { toasts, removeToast } = useToast();
@@ -75,7 +61,7 @@ function AppContent() {
 
   return (
     <Router>
-      {Navigation && <Navigation />}
+      <Nav />
       <Toast toasts={toasts} onRemove={removeToast} />
       <main style={{ minHeight: '100vh' }}>
         <Routes>
@@ -92,7 +78,7 @@ function AppContent() {
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
-      {Footer && <Footer />}
+      <Footer />
     </Router>
   );
 }
