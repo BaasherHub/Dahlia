@@ -1,27 +1,32 @@
-import useSEO from '../hooks/useSEO';
-import { trackPageView } from '../services/analytics';
-import { useEffect } from 'react';
-
-export default function GalleryPage() {
-  // Add SEO
-  useSEO(
-    'Gallery | Dahlia Baasher',
-    'Browse our complete collection of original paintings and limited edition prints',
-    'https://www.dahliabaasher.com/og-gallery.jpg'
-  );
-
-  // Track page view
-  useEffect(() => {
-    trackPageView('Gallery');
-  }, []);
-
-  // ... rest of component
-}
 import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { getPaintings, getCollections } from '../api.js';
 import PaintingCard from '../components/PaintingCard.jsx';
 import './GalleryPage.css';
+
+function CollectionsView({ collections }) {
+  return (
+    <div className="gallery-grid gallery-grid--3">
+      {collections.map(collection => (
+        <Link 
+          key={collection.id} 
+          to={`/collection/${collection.id}`}
+          className="collection-card"
+        >
+          <div className="collection-card__img">
+            {collection.paintings?.[0]?.images?.[0] && (
+              <img src={collection.paintings[0].images[0]} alt={collection.name} />
+            )}
+          </div>
+          <h3 className="collection-card__name">{collection.name}</h3>
+          <p className="collection-card__count">
+            {collection.paintings?.length || 0} Painting{collection.paintings?.length !== 1 ? 's' : ''}
+          </p>
+        </Link>
+      ))}
+    </div>
+  );
+}
 
 export default function GalleryPage() {
   const [paintings, setPaintings] = useState([]);
@@ -34,17 +39,24 @@ export default function GalleryPage() {
   useEffect(() => {
     setLoading(true);
     setError(null);
+    
     Promise.all([getPaintings(), getCollections()])
       .then(([paintingsData, collectionsData]) => {
-        const pData = paintingsData.data || paintingsData;
-        const cData = collectionsData.data || collectionsData;
-        setPaintings(Array.isArray(pData) ? pData : []);
-        setCollections(Array.isArray(cData) ? cData : []);
+        try {
+          const pData = paintingsData.data || paintingsData;
+          const cData = collectionsData.data || collectionsData;
+          setPaintings(Array.isArray(pData) ? pData : []);
+          setCollections(Array.isArray(cData) ? cData : []);
+        } catch (e) {
+          console.error('Error processing data:', e);
+          setPaintings([]);
+          setCollections([]);
+        }
         setLoading(false);
       })
       .catch((err) => {
         console.error('Failed to load data:', err);
-        setError('Failed to load artworks');
+        setError('Failed to load artworks. Please try again.');
         setLoading(false);
       });
   }, []);
@@ -121,39 +133,20 @@ export default function GalleryPage() {
                 )}
                 <div className="gallery-grid">
                   {prints.map(p => (
-                    <PaintingCard key={p.id} painting={p} type="print" />
+                    <PaintingCard key={p.id} painting={p} />
                   ))}
                 </div>
               </div>
             )}
 
-            {((type === 'original' && originals.length === 0) || 
-              (type === 'print' && prints.length === 0)) && (
-              <div className="gallery-empty">
-                <p>No artworks available in this category.</p>
+            {type !== 'collections' && originals.length === 0 && prints.length === 0 && !loading && (
+              <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+                <p style={{ fontSize: '16px', color: '#4a4540' }}>No artworks found.</p>
               </div>
             )}
           </>
         )}
       </div>
     </main>
-  );
-}
-
-function CollectionsView({ collections }) {
-  return (
-    <div className="collections-grid">
-      {collections.map(c => (
-        <Link key={c.id} to={`/collection/${c.id}`} className="collection-card">
-          {c.paintings?.[0]?.images?.[0] && (
-            <div className="collection-card__image">
-              <img src={c.paintings[0].images[0]} alt={c.name} />
-            </div>
-          )}
-          <h3 className="collection-card__name">{c.name}</h3>
-          <p className="collection-card__count">{c.paintings?.length || 0} works</p>
-        </Link>
-      ))}
-    </div>
   );
 }
