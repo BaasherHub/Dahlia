@@ -115,7 +115,7 @@ main {
 
 /* ════════════════════════════════════════════════════════════════
    TYPOGRAPHY - HIERARCHY & BEST PRACTICES
-   ════════════════════════════════════════════════════════════════ */
+   ══════════════════════════════════════════════════════��═════════ */
 
 h1 {
   font-family: var(--font-display);
@@ -206,7 +206,7 @@ em {
 }
 
 /* ════════════════════════════════════════════════════════════════
-   LINKS - WCAG AA Compliant with Proper Underline Spacing
+   LINKS - WCAG AA Compliant - NO UNDERLINES on summaries
    ════════════════════════════════════════════════════════════════ */
 
 a {
@@ -215,14 +215,11 @@ a {
   transition: all var(--transition-fast);
   outline-offset: 2px;
   word-break: break-word;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 3px;
 }
 
 a:hover {
   color: var(--color-accent3);
-  text-decoration: underline;
-  text-decoration-thickness: 1.5px;
+  text-decoration: none;
 }
 
 a:focus-visible {
@@ -233,6 +230,21 @@ a:focus-visible {
 
 a:active {
   opacity: 0.8;
+}
+
+/* Remove underlines in checkout and cart summaries */
+.checkout-summary a,
+.checkout-summary__item a,
+.cart-summary a,
+.cart-summary__line a {
+  text-decoration: none !important;
+  color: var(--color-accent);
+}
+
+.checkout-summary a:hover,
+.cart-summary a:hover {
+  color: var(--color-accent3);
+  text-decoration: none;
 }
 
 /* ════════════════════════════════════════════════════════════════
