@@ -33,6 +33,12 @@ export default function PaintingCard({ painting }) {
     });
   };
 
+  // ✅ Safe price formatting
+  const formatPrice = (price) => {
+    if (!price && price !== 0) return '';
+    return `$${Number(price).toLocaleString()}`;
+  };
+
   return (
     <Link 
       to={`/paintings/${painting.id}`} 
@@ -67,7 +73,7 @@ export default function PaintingCard({ painting }) {
           {painting.medium && <span>{painting.medium}</span>}
           {painting.available && <span className="painting-card__available">Available</span>}
         </div>
-        {painting.price && <div className="painting-card__price">${painting.price.toLocaleString()}</div>}
+        {painting.price && <div className="painting-card__price">{formatPrice(painting.price)}</div>}
       </div>
     </Link>
   );
