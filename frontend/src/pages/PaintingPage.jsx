@@ -74,6 +74,12 @@ export default function PaintingPage() {
   const currentPrice = version === 'print' ? painting.printPrice : painting.originalPrice || painting.price;
   const currentAvailable = version === 'print' ? printAvailable : originalAvailable;
 
+  // ✅ Safe price formatting
+  const formatPrice = (price) => {
+    if (!price && price !== 0) return '';
+    return `$${Number(price).toLocaleString()}`;
+  };
+
   const handleAddToCart = () => {
     addItem({ ...painting, selectedVersion: version, price: currentPrice });
     setAdded(true);
@@ -158,7 +164,7 @@ export default function PaintingPage() {
                     >
                       <div className="painting-page__version-label">Original</div>
                       {painting.originalPrice && (
-                        <div className="painting-page__version-price">${painting.originalPrice.toLocaleString()}</div>
+                        <div className="painting-page__version-price">{formatPrice(painting.originalPrice)}</div>
                       )}
                     </button>
                   )}
@@ -170,7 +176,7 @@ export default function PaintingPage() {
                     >
                       <div className="painting-page__version-label">Print</div>
                       {painting.printPrice && (
-                        <div className="painting-page__version-price">${painting.printPrice.toLocaleString()}</div>
+                        <div className="painting-page__version-price">{formatPrice(painting.printPrice)}</div>
                       )}
                     </button>
                   )}
