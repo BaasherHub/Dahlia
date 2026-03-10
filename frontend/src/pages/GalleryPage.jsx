@@ -16,7 +16,12 @@ function CollectionsView({ collections }) {
         >
           <div className="collection-card__img">
             {collection.paintings?.[0]?.images?.[0] && (
-              <img src={collection.paintings[0].images[0]} alt={collection.name} decoding="async" />
+              <img 
+                src={collection.paintings[0].images[0]} 
+                alt={collection.name} 
+                decoding="async"
+                loading="lazy"
+              />
             )}
           </div>
           <h3 className="collection-card__name">{collection.name}</h3>
@@ -68,7 +73,7 @@ export default function GalleryPage() {
       });
   }, []);
 
-  // ✅ Scroll to top when filters change
+  // Scroll to top when filters change
   useEffect(() => {
     window.scrollTo({
       top: 0,
