@@ -1,5 +1,9 @@
+/* ══════════════════════════════════════════════════════════════
+   PAINTING PAGE - ARTWORK DETAIL
+   ══════════════════════════════════════════════════════════════ */
+
 .painting-page {
-  padding: calc(var(--nav-h) + var(--space-2xl)) 0 var(--space-4xl);
+  padding: calc(var(--nav-h) + var(--space-2xl)) 0 var(--space-5xl);
   min-height: calc(100vh - var(--nav-h));
 }
 
@@ -9,35 +13,35 @@
   gap: var(--space-sm);
   font-family: var(--font-ui);
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: var(--color-muted);
+  color: var(--color-text-secondary);
   text-decoration: none;
-  margin-bottom: var(--space-2xl);
-  transition: color var(--transition-fast);
+  margin-bottom: var(--space-3xl);
+  transition: all var(--transition-fast);
+  padding: 6px 0;
 }
 
 .painting-page__back:hover {
   color: var(--color-accent);
-}
-
-.painting-page__back:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+  padding-left: 4px;
 }
 
 .painting-page__grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--space-3xl);
+  gap: var(--space-4xl);
   align-items: start;
 }
 
+/* ────────────────────────────────────────────────────────────
+   IMAGES
+   ──────────────────────────────────────────────────────────── */
 .painting-page__imgs {
   display: flex;
   flex-direction: column;
-  gap: var(--space-lg);
+  gap: var(--space-xl);
 }
 
 .painting-page__main-img-wrap {
@@ -63,29 +67,41 @@
 }
 
 .painting-page__thumb {
+  position: relative;
   width: 100px;
   height: 130px;
-  object-fit: cover;
+  padding: 0;
+  background: none;
   border: 2px solid transparent;
   border-radius: var(--radius);
   cursor: pointer;
   transition: all var(--transition-fast);
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.painting-page__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .painting-page__thumb:hover {
   border-color: var(--color-muted);
-  opacity: 0.9;
 }
 
 .painting-page__thumb.active {
   border-color: var(--color-accent);
 }
 
+/* ────────────────────────────────────────────────────────────
+   INFO
+   ──────────────────────────────────────────────────────────── */
 .painting-page__info {
   display: flex;
   flex-direction: column;
-  gap: var(--space-lg);
+  gap: var(--space-xl);
 }
 
 .painting-page__label {
@@ -93,34 +109,33 @@
 }
 
 .painting-page__title {
-  font-size: clamp(28px, 4vw, 48px);
+  font-family: var(--font-display);
+  font-size: clamp(32px, 4vw, 48px);
   font-weight: 400;
   line-height: 1.2;
   margin: 0;
+  letter-spacing: -0.01em;
 }
 
 .painting-page__year {
   font-family: var(--font-ui);
   font-size: 12px;
   letter-spacing: 0.1em;
-  color: var(--color-muted);
+  color: var(--color-text-secondary);
   margin: 0;
+  text-transform: uppercase;
 }
 
-.painting-page__description {
-  font-size: 16px;
-  line-height: 1.8;
-  color: var(--color-text);
-  margin: 0;
-}
-
+/* ────────────────────────────────────────────────────────────
+   SPECS
+   ──────────────────────────────────────────────────────────── */
 .painting-page__specs {
-  padding: var(--space-lg);
+  padding: var(--space-xl);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   background: var(--color-surface);
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: var(--space-lg);
 }
 
@@ -130,49 +145,75 @@
   gap: var(--space-xs);
 }
 
-.painting-page__spec-label {
-  font-family: var(--font-ui);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--color-muted);
+.painting-page__spec .label {
+  margin-bottom: 0;
 }
 
-.painting-page__spec-value {
-  font-family: var(--font-display);
+.painting-page__spec p {
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ────────────────────────────────────────────────────────────
+   DESCRIPTION
+   ──────────────────���───────────────────────────────────────── */
+.painting-page__description {
+  padding: var(--space-lg) 0;
+}
+
+.painting-page__description p {
   font-size: 16px;
-  font-weight: 400;
+  line-height: 1.85;
   color: var(--color-text);
 }
 
+/* ────────────────────────────────────────────────────────────
+   DIVIDER
+   ──────────────────────────────────────────────────────────── */
+.painting-page__divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: var(--space-md) 0;
+}
+
+/* ────────────────────────────────────────────────────────────
+   VERSION SELECTOR
+   ──────────────────────────────────────────────────────────── */
 .painting-page__versions {
   display: flex;
   gap: var(--space-md);
-  border-bottom: 1px solid var(--color-border);
-  padding-bottom: var(--space-lg);
+  flex-direction: column;
 }
 
 .version-btn {
-  flex: 1;
-  padding: var(--space-md);
-  background: transparent;
-  border: 2px solid var(--color-border);
+  padding: var(--space-lg);
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-surface3);
   border-radius: var(--radius);
-  font-family: var(--font-ui);
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--color-muted);
   cursor: pointer;
   transition: all var(--transition-fast);
-  min-height: var(--touch-target);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-body);
+}
+
+.version-btn span {
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.version-btn .version-price {
+  font-family: var(--font-display);
+  font-size: 18px;
+  color: var(--color-accent);
+  font-weight: 400;
 }
 
 .version-btn:hover {
   border-color: var(--color-accent);
-  color: var(--color-accent);
+  background: var(--color-bg);
 }
 
 .version-btn.active {
@@ -181,74 +222,166 @@
   color: #fff;
 }
 
-.painting-page__price {
+.version-btn.active span,
+.version-btn.active .version-price {
+  color: #fff;
+}
+
+/* ────────────────────────────────────────────────────────────
+   PRICING & AVAILABILITY
+   ──────────────────────────────────────────────────────────── */
+.painting-page__pricing {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-lg);
+  padding: var(--space-lg) 0;
+}
+
+.painting-page__price .label,
+.painting-page__availability .label {
+  margin-bottom: 0;
+}
+
+.price-value {
   font-family: var(--font-display);
   font-size: 32px;
-  font-weight: 500;
-  color: var(--color-accent);
-  margin: var(--space-lg) 0 0;
+  font-weight: 400;
+  color: var(--color-text);
+  margin: var(--space-xs) 0 0 0;
 }
 
-.painting-page__cta {
+.available {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-success);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.available svg {
+  color: var(--color-success);
+}
+
+.sold-out {
+  display: inline-block;
+  color: var(--color-error);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.painting-page__availability {
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
+  gap: var(--space-xs);
 }
 
-.painting-page__add-btn {
+/* ────────────────────────────────────────────────────────────
+   CTA BUTTONS
+   ──────────────────────────────────────────────────────────── */
+.btn--large {
   width: 100%;
+  padding: 16px 32px;
   justify-content: center;
-}
-
-.painting-page__add-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.painting-page__toast {
-  position: fixed;
-  bottom: var(--space-lg);
-  right: var(--space-lg);
-  padding: var(--space-md) var(--space-lg);
-  background: var(--color-success);
-  color: #fff;
-  border-radius: var(--radius);
   font-size: 14px;
-  animation: slideIn 0.3s ease;
-  z-index: 1000;
+  min-height: 52px;
 }
 
+.btn--ghost {
+  background: transparent;
+  color: var(--color-text);
+  border: 1.5px solid var(--color-border);
+}
+
+.btn--ghost:hover {
+  background: var(--color-surface);
+  border-color: var(--color-accent);
+  color: var(--color-text);
+}
+
+.btn--success {
+  background: var(--color-success);
+  border-color: var(--color-success);
+}
+
+.btn--success:hover {
+  background: #38734f;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn:disabled:hover {
+  background: var(--color-accent);
+  transform: none;
+}
+
+/* ────────────────────────────────────────────────────────────
+   LOADING
+   ──────────────────────────────────────────────────────────── */
 .painting-page__loading {
+  padding: var(--space-5xl) 0;
   text-align: center;
-  padding: var(--space-4xl) 0;
-  color: var(--color-muted);
+  color: var(--color-text-secondary);
 }
 
+/* ────────────────────────────────────────────────────────────
+   RESPONSIVE
+   ──────────────────────────────────────────────────────────── */
 @media (max-width: 1024px) {
   .painting-page__grid {
-    grid-template-columns: 1fr;
+    gap: var(--space-3xl);
   }
 }
 
 @media (max-width: 768px) {
+  .painting-page__grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-2xl);
+  }
+
+  .painting-page__pricing {
+    grid-template-columns: 1fr;
+  }
+
+  .painting-page__title {
+    font-size: clamp(28px, 5vw, 40px);
+  }
+
+  .price-value {
+    font-size: 28px;
+  }
+
+  .btn--large {
+    padding: 14px 24px;
+    min-height: 48px;
+  }
+}
+
+@media (max-width: 480px) {
   .painting-page {
-    padding: calc(var(--nav-h) + var(--space-lg)) 0 var(--space-2xl);
+    padding: calc(var(--nav-h) + var(--space-lg)) 0 var(--space-3xl);
   }
 
   .painting-page__specs {
     grid-template-columns: 1fr;
   }
 
-  .painting-page__title {
-    font-size: clamp(24px, 3.5vw, 32px);
-  }
-
-  .painting-page__thumbs {
+  .painting-page__versions {
     gap: var(--space-sm);
   }
 
-  .painting-page__thumb {
-    width: 80px;
-    height: 110px;
+  .version-btn {
+    padding: var(--space-md);
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-xs);
+  }
+
+  .btn--large {
+    width: 100%;
   }
 }
