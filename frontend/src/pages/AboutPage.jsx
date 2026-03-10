@@ -30,6 +30,7 @@ const PRESS = [
 export default function AboutPage() {
   return (
     <main className="about-page">
+      {/* HEADER */}
       <div className="about-page__header">
         <div className="container">
           <p className="label">The Artist</p>
@@ -39,94 +40,72 @@ export default function AboutPage() {
       </div>
 
       <div className="container">
-        <div className="about-page__body">
-
-          {/* Bio */}
-          <section className="about-bio">
-            <div className="about-bio__text">
-              <p className="label" style={{ marginBottom: 24 }}>Statement</p>
-              <p className="about-bio__para about-bio__para--calibri">
-                Born in the vibrant city of Port-Sudan by the Red Sea, and then moved to Khartoum where the 
-                dusty atmosphere influenced the colour palette of my artwork. I'm often intrigued by blending 
-                figures and buildings as they symbolize the simple concept of shelter providing us with a place 
-                for comfort, safety, and belonging.
-              </p>
-              <p className="about-bio__para about-bio__para--calibri">
-                A concept that has been scattered after the breakout of war in Sudan last April, causing millions 
-                of people to be displaced. Following the outbreak of war in Sudan in April 2023, thousands of 
-                individuals, including myself, were displaced. I spent over six months in Cairo before settling 
-                in Canada. During this period, I got involved in raising awareness about the ongoing conflict in 
-                Sudan; at the group exhibition "Ici Le Soudan" that was commissioned by Institut Français d'Egypte 
-                in response to the large number of people displaced.
-              </p>
-              <p className="about-bio__para about-bio__para--calibri">
-                In addition to a collaboration with the Moleskine Foundation on the project "The Legendary Power 
-                of Creativity on Paper" in "Detour" — the travelling exhibition showcased at Saatchi Gallery in 
-                London, the Pinacoteca Ambrosiana in Milan and the Italian Pavilion in Osaka, Japan.
-              </p>
-              <blockquote className="about-bio__quote">
-                "Painting allows me to hold space for stories that are often silenced—faces lost in protest, 
-                the quiet dignity of survival, the ongoing fight for justice."
-              </blockquote>
-            </div>
-            <div className="about-bio__aside">
-              <div className="about-bio__fact">
-                <p className="label">Based in</p>
-                <p>Toronto, Ontario, Canada</p>
-              </div>
-              <div className="about-bio__fact">
-                <p className="label">Medium</p>
-                <p>Oil on canvas & linen</p>
-              </div>
-              <div className="about-bio__fact">
-                <p className="label">Technique</p>
-                <p>Palette knife & expressive brushwork</p>
-              </div>
-              <div className="about-bio__fact">
-                <p className="label">Active Since</p>
-                <p>2018</p>
-              </div>
-              <div className="about-bio__fact">
-                <p className="label">Saatchi Art</p>
-                <a href="https://www.saatchiart.com/en-ca/dahliabaasher" target="_blank" rel="noopener noreferrer" className="about-bio__link">View Profile →</a>
-              </div>
-            </div>
-          </section>
-
-          {/* Press */}
-          <section className="about-press">
-            <p className="label" style={{ marginBottom: 32 }}>Press & Features</p>
-            <div className="about-press__list">
-              {PRESS.map((p, i) => (
-                <div key={i} className="about-press__item">
-                  <span className="about-press__outlet">{p.outlet}</span>
-                  <p className="about-press__title">{p.title}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Exhibitions */}
-          <section className="about-exhibitions">
-            <p className="label" style={{ marginBottom: 8 }}>Exhibition History</p>
-            <p className="about-exhibitions__intro">
-              My work has been featured in numerous exhibitions earning recognition for its unique 
-              ability to evoke emotional responses and inspire introspection.
+        {/* BIO */}
+        <section className="about-bio">
+          <div className="about-bio__content">
+            <p className="about-bio__para">
+              Dahlia Baasher is a contemporary painter based in Toronto, working primarily with oil on premium linen canvas. Her practice is rooted in the exploration of human connection and emotional nuance, rendered through confident, expressive brushwork.
             </p>
-            <div className="about-exhibitions__list">
-              {EXHIBITIONS.map((ex, i) => (
-                <div key={i} className="about-ex-row">
-                  <span className="about-ex-year">{ex.year}</span>
-                  <div>
-                    <p className="about-ex-name">{ex.name}</p>
-                    <p className="about-ex-loc">{ex.location}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
+            <p className="about-bio__para">
+              Each work begins with intention and evolves through a careful dialogue between concept and medium. Employing the palette knife as a primary tool, Dahlia builds surfaces of depth and movement, creating pieces that reward both immediate and sustained attention.
+            </p>
+            <p className="about-bio__para">
+              Her paintings are held in private collections internationally and have been exhibited across North America, Europe, Africa, and Asia. Dahlia holds a degree in Fine Arts from Khartoum University and continues to develop her practice through constant experimentation with form, color, and material.
+            </p>
 
-        </div>
+            <blockquote className="about-bio__quote">
+              "The intricacy of human nature is rooted in our need for emotional connection and social interaction, which is deceptively simple."
+            </blockquote>
+          </div>
+
+          <div className="about-bio__aside">
+            <div className="about-bio__fact">
+              <span className="label">Location</span>
+              <p>Toronto, Canada</p>
+            </div>
+            <div className="about-bio__fact">
+              <span className="label">Medium</span>
+              <p>Oil on Linen Canvas</p>
+            </div>
+            <div className="about-bio__fact">
+              <span className="label">Education</span>
+              <p>Fine Arts Degree, Khartoum University</p>
+            </div>
+            <div className="about-bio__fact">
+              <span className="label">Follow</span>
+              <a href="#" className="about-bio__link">Instagram</a>
+            </div>
+          </div>
+        </section>
+
+        {/* EXHIBITIONS */}
+        <section className="about-exhibitions">
+          <h2 className="about-section-title">Exhibitions</h2>
+          <div className="exhibitions-list">
+            {EXHIBITIONS.map((ex, i) => (
+              <div key={i} className="exhibition-item">
+                <span className="exhibition-year">{ex.year}</span>
+                <div className="exhibition-content">
+                  <p className="exhibition-name">{ex.name}</p>
+                  <p className="exhibition-location">{ex.location}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* PRESS */}
+        <section className="about-press">
+          <h2 className="about-section-title">Press & Publications</h2>
+          <div className="press-list">
+            {PRESS.map((item, i) => (
+              <div key={i} className="press-item">
+                <span className="press-outlet">{item.outlet}</span>
+                <p className="press-title">{item.title}</p>
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
     </main>
   );
