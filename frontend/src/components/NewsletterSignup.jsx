@@ -3,7 +3,7 @@ import './NewsletterSignup.css';
 
 export default function NewsletterSignup() {
   const [email, setEmail] = useState('');
-  const [status, setStatus] = useState(null); // 'loading', 'success', 'error'
+  const [status, setStatus] = useState(null);
   const [message, setMessage] = useState('');
 
   const handleSubmit = async (e) => {
@@ -11,7 +11,6 @@ export default function NewsletterSignup() {
     setStatus('loading');
 
     try {
-      // Store locally for now (integrate with backend email service later)
       const subscribers = JSON.parse(localStorage.getItem('newsletter_subscribers') || '[]');
       
       if (subscribers.includes(email)) {
@@ -27,7 +26,10 @@ export default function NewsletterSignup() {
       setStatus('success');
       setMessage('Thank you for subscribing! Check your email for updates.');
       setEmail('');
-      setTimeout(() => setStatus(null), 5000);
+      setTimeout(() => {
+        setStatus(null);
+        setMessage('');
+      }, 5000);
     } catch (err) {
       setStatus('error');
       setMessage('Something went wrong. Please try again.');
