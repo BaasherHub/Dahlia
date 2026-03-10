@@ -291,10 +291,41 @@
   }
 
   .painting-page__thumbs {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
   }
 
   .painting-page__title {
     font-size: clamp(24px, 5vw, 32px);
+  }
+}
+
+@media (max-width: 480px) {
+  .painting-page {
+    padding: calc(var(--nav-h) + var(--space-md)) 0 var(--space-2xl);
+  }
+
+  .painting-page__thumbs {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .painting-page__title {
+    font-size: clamp(20px, 4vw, 28px);
+  }
+
+  .painting-page__meta {
+    padding: var(--space-lg);
+  }
+
+  .painting-page__version-label {
+    font-size: 11px;
+  }
+
+  .painting-page__version-price {
+    font-size: 20px;
+  }
+
+  .painting-page__description {
+    font-size: 14px;
   }
 }
