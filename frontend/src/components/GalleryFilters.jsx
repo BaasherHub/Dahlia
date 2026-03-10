@@ -1,16 +1,20 @@
 import './GalleryFilters.css';
 
 export default function GalleryFilters({ filters, onFilterChange, availableMediums, availableYears }) {
+  const hasActiveFilters = filters.medium || filters.year || filters.priceRange;
+
   return (
     <div className="gallery-filters">
       <div className="gallery-filters__header">
         <h3 className="gallery-filters__title">Filter Artworks</h3>
-        <button
-          className="gallery-filters__reset"
-          onClick={() => onFilterChange({ medium: null, year: null, priceRange: null })}
-        >
-          Clear All
-        </button>
+        {hasActiveFilters && (
+          <button
+            className="gallery-filters__reset"
+            onClick={() => onFilterChange({ medium: null, year: null, priceRange: null })}
+          >
+            Clear All
+          </button>
+        )}
       </div>
 
       {/* Medium Filter */}
@@ -23,7 +27,7 @@ export default function GalleryFilters({ filters, onFilterChange, availableMediu
           >
             All
           </button>
-          {availableMediums.map(medium => (
+          {availableMediums && availableMediums.map(medium => (
             <button
               key={medium}
               className={`gallery-filters__option ${filters.medium === medium ? 'active' : ''}`}
@@ -44,7 +48,7 @@ export default function GalleryFilters({ filters, onFilterChange, availableMediu
           onChange={(e) => onFilterChange({ ...filters, year: e.target.value || null })}
         >
           <option value="">All Years</option>
-          {availableYears.map(year => (
+          {availableYears && availableYears.map(year => (
             <option key={year} value={year}>
               {year}
             </option>
