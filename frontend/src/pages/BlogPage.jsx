@@ -82,35 +82,42 @@ export default function BlogPage() {
         </div>
 
         {/* Blog Grid */}
-        <div className="blog-grid">
-          {filteredPosts.map(post => (
-            <article key={post.id} className="blog-card">
-              <div className="blog-card__img-wrap">
-                <img src={post.image} alt={post.title} className="blog-card__img" loading="lazy" />
-              </div>
-              <div className="blog-card__content">
-                <div className="blog-card__meta">
-                  <span className="blog-card__category">{post.category}</span>
-                  <span className="blog-card__read-time">{post.readTime}</span>
+        {filteredPosts.length > 0 ? (
+          <div className="blog-grid">
+            {filteredPosts.map(post => (
+              <article key={post.id} className="blog-card">
+                <div className="blog-card__img-wrap">
+                  <img src={post.image} alt={post.title} className="blog-card__img" loading="lazy" />
                 </div>
-                <h3 className="blog-card__title">{post.title}</h3>
-                <p className="blog-card__excerpt">{post.excerpt}</p>
-                <div className="blog-card__footer">
-                  <time className="blog-card__date">
-                    {new Date(post.date).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    })}
-                  </time>
-                  <Link to={`/blog/${post.id}`} className="blog-card__link">
-                    Read More →
-                  </Link>
+                <div className="blog-card__content">
+                  <div className="blog-card__meta">
+                    <span className="blog-card__category">{post.category}</span>
+                    <span className="blog-card__read-time">{post.readTime}</span>
+                  </div>
+                  <h3 className="blog-card__title">{post.title}</h3>
+                  <p className="blog-card__excerpt">{post.excerpt}</p>
+                  <div className="blog-card__footer">
+                    <time className="blog-card__date">
+                      {new Date(post.date).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })}
+                    </time>
+                    <Link to={`/blog/${post.id}`} className="blog-card__link">
+                      Read More →
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            </article>
-          ))}
-        </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '60px 0' }}>
+            <h3>No blog posts found</h3>
+            <p>Try selecting a different category</p>
+          </div>
+        )}
       </div>
     </main>
   );
