@@ -14,7 +14,7 @@ export default function CartPage() {
       {items.length === 0 ? (
         <div className="cart-page__empty">
           <p className="cart-page__empty-title">Your cart is empty</p>
-          <Link to="/artworks" className="btn">Browse Artworks</Link>
+          <Link to="/gallery" className="btn">Browse Artworks</Link>
         </div>
       ) : (
         <div className="cart-page__grid">
@@ -58,7 +58,7 @@ export default function CartPage() {
               Proceed to Checkout
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </button>
-            <Link to="/artworks" className="cart-summary__continue">← Continue browsing</Link>
+            <Link to="/gallery" className="cart-summary__continue">← Continue browsing</Link>
           </div>
         </div>
       )}
