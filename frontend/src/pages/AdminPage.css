@@ -485,4 +485,20 @@
   .admin-form__actions {
     flex-direction: column;
   }
+
+  .admin-form input,
+  .admin-form textarea,
+  .admin-form select {
+    font-size: 16px;
+  }
+
+  .admin-tab {
+    padding: 10px 12px;
+    font-size: 10px;
+    min-height: 40px;
+  }
+
+  .btn {
+    width: 100%;
+  }
 }
