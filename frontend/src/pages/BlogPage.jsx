@@ -87,7 +87,7 @@ export default function BlogPage() {
             {filteredPosts.map(post => (
               <article key={post.id} className="blog-card">
                 <div className="blog-card__img-wrap">
-                  <img src={post.image} alt={post.title} className="blog-card__img" loading="lazy" />
+                  <img src={post.image} alt={post.title} className="blog-card__img" decoding="async" />
                 </div>
                 <div className="blog-card__content">
                   <div className="blog-card__meta">
