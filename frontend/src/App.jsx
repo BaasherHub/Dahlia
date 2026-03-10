@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import ErrorBoundary from './components/ErrorBoundary';
 import Toast from './components/Toast';
 import useToast from './hooks/useToast';
@@ -60,7 +60,7 @@ function AppContent() {
   }
 
   return (
-    <Router>
+    <>
       <Nav />
       <Toast toasts={toasts} onRemove={removeToast} />
       <main style={{ minHeight: '100vh' }}>
@@ -79,7 +79,7 @@ function AppContent() {
         </Routes>
       </main>
       <Footer />
-    </Router>
+    </>
   );
 }
 
