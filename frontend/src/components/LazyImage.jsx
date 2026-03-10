@@ -40,22 +40,25 @@ export default function LazyImage({ src, alt, className, ...props }) {
     setIsLoading(false);
   };
 
+  const handleImageError = () => {
+    setIsLoading(false);
+  };
+
   return (
-    <>
-      <img
-        ref={setImageRef}
-        src={imageSrc}
-        alt={alt}
-        className={className}
-        loading="lazy"
-        decoding="async"
-        onLoad={handleImageLoad}
-        {...props}
-        style={{
-          opacity: isLoading ? 0.5 : 1,
-          transition: 'opacity 0.3s ease',
-        }}
-      />
-    </>
+    <img
+      ref={setImageRef}
+      src={imageSrc}
+      alt={alt}
+      className={className}
+      loading="lazy"
+      decoding="async"
+      onLoad={handleImageLoad}
+      onError={handleImageError}
+      {...props}
+      style={{
+        opacity: isLoading ? 0.5 : 1,
+        transition: 'opacity 0.3s ease',
+      }}
+    />
   );
 }
