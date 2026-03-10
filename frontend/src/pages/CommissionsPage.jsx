@@ -4,11 +4,8 @@ import './CommissionsPage.css';
 export default function CommissionsPage() {
   const [form, setForm] = useState({ name: '', email: '', description: '', size: '', budget: '' });
   const [submitted, setSubmitted] = useState(false);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setSubmitted(true);
-  };
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const steps = [
     { 
@@ -32,6 +29,19 @@ export default function CommissionsPage() {
       desc: 'Your painting is carefully packaged and shipped directly, fully insured.' 
     },
   ];
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    // Simulate email sending - in production, connect to your backend
+    setTimeout(() => {
+      setSubmitted(true);
+      setLoading(false);
+      console.log('Commission inquiry submitted:', form);
+    }, 1000);
+  };
 
   return (
     <main className="commissions-page">
@@ -70,37 +80,108 @@ export default function CommissionsPage() {
                 <p className="label" style={{ marginBottom: 16 }}>Inquiry Received</p>
                 <h2>Thank you</h2>
                 <p>We will be in touch within 3 business days to discuss your commission.</p>
+                <button 
+                  className="btn" 
+                  onClick={() => {
+                    setSubmitted(false);
+                    setForm({ name: '', email: '', description: '', size: '', budget: '' });
+                  }}
+                  style={{ marginTop: 16 }}
+                >
+                  Send Another Inquiry
+                </button>
               </div>
             ) : (
               <form className="commissions-form" onSubmit={handleSubmit}>
                 <p className="label" style={{ marginBottom: 32 }}>Commission Inquiry</p>
+                
+                {error && (
+                  <div style={{ 
+                    padding: '12px',
+                    backgroundColor: '#f3ede5',
+                    border: '1px solid #d4a574',
+                    borderRadius: '8px',
+                    marginBottom: '16px',
+                    color: '#8b3a3a'
+                  }}>
+                    {error}
+                  </div>
+                )}
+
                 <div className="form-group">
-                  <label className="form-label">Your Name</label>
-                  <input className="form-input" type="text" value={form.name}
-                    onChange={e => setForm({...form, name: e.target.value})} required placeholder="Jane Smith" />
+                  <label className="form-label">Your Name *</label>
+                  <input 
+                    className="form-input" 
+                    type="text" 
+                    value={form.name}
+                    onChange={e => setForm({...form, name: e.target.value})} 
+                    required 
+                    placeholder="Jane Smith" 
+                    disabled={loading}
+                  />
                 </div>
+
                 <div className="form-group">
-                  <label className="form-label">Email</label>
-                  <input className="form-input" type="email" value={form.email}
-                    onChange={e => setForm({...form, email: e.target.value})} required placeholder="jane@example.com" />
+                  <label className="form-label">Email *</label>
+                  <input 
+                    className="form-input" 
+                    type="email" 
+                    value={form.email}
+                    onChange={e => setForm({...form, email: e.target.value})} 
+                    required 
+                    placeholder="jane@example.com"
+                    disabled={loading}
+                  />
                 </div>
+
                 <div className="form-group">
-                  <label className="form-label">Vision & Description</label>
-                  <textarea className="form-input" rows="4" value={form.description}
-                    onChange={e => setForm({...form, description: e.target.value})} required placeholder="Tell us about your vision..." />
+                  <label className="form-label">Describe Your Vision *</label>
+                  <textarea 
+                    className="form-input" 
+                    value={form.description}
+                    onChange={e => setForm({...form, description: e.target.value})} 
+                    required 
+                    placeholder="Tell us about your ideas, themes, and inspiration..." 
+                    rows="5"
+                    disabled={loading}
+                  />
                 </div>
+
                 <div className="form-group">
                   <label className="form-label">Approximate Size</label>
-                  <input className="form-input" type="text" value={form.size}
-                    onChange={e => setForm({...form, size: e.target.value})} placeholder="e.g., 36 x 48 inches" />
+                  <input 
+                    className="form-input" 
+                    type="text" 
+                    value={form.size}
+                    onChange={e => setForm({...form, size: e.target.value})} 
+                    placeholder="e.g., 24x36 inches"
+                    disabled={loading}
+                  />
                 </div>
+
                 <div className="form-group">
-                  <label className="form-label">Budget Range</label>
-                  <input className="form-input" type="text" value={form.budget}
-                    onChange={e => setForm({...form, budget: e.target.value})} placeholder="e.g., $1000 - $2000" />
+                  <label className="form-label">Budget Range (USD)</label>
+                  <select 
+                    className="form-input" 
+                    value={form.budget}
+                    onChange={e => setForm({...form, budget: e.target.value})}
+                    disabled={loading}
+                  >
+                    <option value="">Select a budget range</option>
+                    <option value="800-1500">$800 - $1,500</option>
+                    <option value="1500-3000">$1,500 - $3,000</option>
+                    <option value="3000-5000">$3,000 - $5,000</option>
+                    <option value="5000+">$5,000+</option>
+                  </select>
                 </div>
-                <button type="submit" className="btn" style={{ width: '100%', justifyContent: 'center' }}>
-                  Submit Inquiry
+
+                <button 
+                  className="btn" 
+                  style={{ width: '100%', justifyContent: 'center' }}
+                  disabled={loading}
+                  type="submit"
+                >
+                  {loading ? 'Sending...' : 'Send Inquiry'}
                 </button>
               </form>
             )}
