@@ -12,16 +12,14 @@ export default function HomePage() {
   useEffect(() => {
     getHeroPainting().then(p => p && setHeroPainting(p)).catch(() => {});
     getPaintings().then(all => {
-      // Robust filtering — works with both old DB schema and new
-      setOriginals(all.filter(p => !p.sold && p.originalAvailable !== false && p.category !== 'print').slice(0, 3));
+      setOriginals(all.filter(p => !p.sold && p.originalAvailable !== false && p.category !== 'print').slice(0, 6));
       setPrints(all.filter(p => p.printAvailable === true).slice(0, 3));
     }).catch(() => {});
   }, []);
 
   return (
     <main className="home">
-
-      {/* ── Hero ── */}
+      {/* ── HERO SECTION ── */}
       <section className="hero">
         {heroPainting?.images?.[0] ? (
           <div className="hero__painting">
@@ -34,74 +32,128 @@ export default function HomePage() {
 
         <div className="hero__content container">
           <div className="hero__text">
-            <p className="label hero__eyebrow">Dahlia Baasher</p>
-            <div className="hero__divider" />
-            <blockquote className="hero__quote">
-              "The intricacy of human nature is rooted in our need for emotional connection and social interaction, which is deceptively simple"
-            </blockquote>
+            <h1 className="hero__title">Dahlia Baasher</h1>
+            <p className="hero__subtitle">Contemporary Oil Paintings</p>
+            <p className="hero__description">
+              Refined works on premium linen canvas, defined by deliberate palette knife technique and expressive brushwork.
+            </p>
             <div className="hero__actions">
-              <Link to="/gallery" className="btn">View Works</Link>
-              <Link to="/about" className="btn btn-outline-white">About the Artist</Link>
+              <Link to="/gallery" className="btn">
+                Explore Collection
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </Link>
             </div>
           </div>
-
-          {heroPainting && (
-            <div className="hero__painting-caption">
-              <p className="hero__painting-title">{heroPainting.title}</p>
-              <p className="hero__painting-meta">{heroPainting.medium} · {heroPainting.dimensions}</p>
-            </div>
-          )}
         </div>
 
         <div className="hero__scroll-hint">
-          <span>Scroll</span>
-          <div className="hero__scroll-line" />
+          <span>Scroll to explore</span>
+          <svg width="16" height="24" viewBox="0 0 16 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <rect x="4" y="2" width="8" height="14" rx="4"/>
+            <path d="M8 18v4"/>
+          </svg>
         </div>
       </section>
 
-      {/* ── Statement ── */}
-      <section className="home-statement container">
-        <div className="home-statement__inner">
-          <p className="label">Artist Statement</p>
-          <blockquote className="home-statement__quote">
-            "A refined collection of original oil paintings on premium linen canvas, defined by the deliberate use of palette knife and confident, expressive brushstrokes."
-          </blockquote>
-          <p className="home-statement__attr">— Dahlia Baasher, Toronto</p>
-          <Link to="/about" className="home-statement__link">Read full statement →</Link>
+      {/* ── ARTIST STATEMENT ── */}
+      <section className="artist-statement">
+        <div className="container">
+          <div className="artist-statement__content">
+            <h2 className="artist-statement__title">The Artist</h2>
+            <div className="artist-statement__text">
+              <p>
+                Dahlia Baasher is a contemporary painter based in Toronto, working primarily with oil on premium linen canvas. Her practice is rooted in the exploration of human connection and emotional nuance, rendered through confident, expressive brushwork.
+              </p>
+              <p>
+                Each work begins with intention and evolves through a careful dialogue between concept and medium. Employing the palette knife as a primary tool, Dahlia builds surfaces of depth and movement, creating pieces that reward both immediate and sustained attention.
+              </p>
+            </div>
+            <Link to="/about" className="artist-statement__link">
+              View full biography
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </Link>
+          </div>
         </div>
       </section>
 
-      {/* ── Original Paintings ── */}
+      {/* ── FEATURED WORKS ── */}
       {originals.length > 0 && (
-        <section className="home-section container">
-          <div className="home-section__header">
-            <div>
-              <p className="label">New Works</p>
-              <h2 className="home-section__title">Original Paintings</h2>
+        <section className="featured-works">
+          <div className="container">
+            <div className="section-header">
+              <h2 className="section-title">Featured Works</h2>
+              <Link to="/gallery" className="section-link">
+                View all
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </Link>
             </div>
-            <Link to="/gallery?type=original" className="home-section__cta">View all originals →</Link>
-          </div>
-          <div className="home-grid">
-            {originals.map(p => <PaintingCard key={p.id} painting={p} />)}
+
+            <div className="gallery-grid gallery-grid--3">
+              {originals.slice(0, 6).map(p => (
+                <PaintingCard key={p.id} painting={p} />
+              ))}
+            </div>
           </div>
         </section>
       )}
 
-      {/* ── Limited Edition Prints ── */}
+      {/* ── COLLECTION HIGHLIGHTS ── */}
       {prints.length > 0 && (
-        <section className="home-section container">
-          <div className="home-section__header">
-            <div>
-              <p className="label">Affordable Art</p>
-              <h2 className="home-section__title">Limited Edition Prints</h2>
+        <section className="collection-highlights">
+          <div className="container">
+            <div className="section-header">
+              <h2 className="section-title">Limited Editions</h2>
+              <p className="section-subtitle">Archival giclée prints on museum-quality paper</p>
             </div>
-            <Link to="/gallery?type=print" className="home-section__cta">View all prints →</Link>
-          </div>
-          <div className="home-grid">
-            {prints.map(p => <PaintingCard key={p.id} painting={p} type="print" />)}
+
+            <div className="gallery-grid gallery-grid--3">
+              {prints.map(p => (
+                <PaintingCard key={p.id} painting={p} type="print" />
+              ))}
+            </div>
           </div>
         </section>
       )}
+
+      {/* ── CTA SECTION ── */}
+      <section className="cta-section">
+        <div className="container">
+          <div className="cta-content">
+            <h2 className="cta-title">Commissions Available</h2>
+            <p className="cta-text">
+              Custom works created specifically for your collection. Starting at $800 USD.
+            </p>
+            <Link to="/commissions" className="btn btn--outline">
+              Inquire About a Commission
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── NEWSLETTER ── */}
+      <section className="newsletter">
+        <div className="container">
+          <div className="newsletter-content">
+            <h2 className="newsletter-title">Stay Connected</h2>
+            <p className="newsletter-subtitle">Receive updates on new works and exhibitions</p>
+            <form className="newsletter-form" onSubmit={(e) => e.preventDefault()}>
+              <input 
+                type="email" 
+                placeholder="Enter your email" 
+                className="newsletter-input"
+                required
+              />
+              <button type="submit" className="btn newsletter-btn">Subscribe</button>
+            </form>
+          </div>
+        </div>
+      </section>
     </main>
   );
 }
