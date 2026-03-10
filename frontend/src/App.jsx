@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import ErrorBoundary from './components/ErrorBoundary';
 import Toast from './components/Toast';
 import Breadcrumbs from './components/Breadcrumbs';
+import SEOSchema, { artistSchema, gallerySchema } from './components/SEOSchema';
 import useToast from './hooks/useToast';
 
 // Pages
@@ -11,6 +12,7 @@ import GalleryPage from './pages/GalleryPage';
 import PaintingPage from './pages/PaintingPage';
 import AboutPage from './pages/AboutPage';
 import BlogPage from './pages/BlogPage';
+import BlogPostPage from './pages/BlogPostPage';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import OrderSuccessPage from './pages/OrderSuccessPage';
@@ -64,16 +66,19 @@ function AppContent() {
 
   return (
     <>
+      <SEOSchema type="artist" data={artistSchema} />
+      <SEOSchema type="gallery" data={gallerySchema} />
       <Nav />
       <Breadcrumbs />
       <Toast toasts={toasts} onRemove={removeToast} />
-      <main style={{ minHeight: '100vh' }}>
+      <main style={{ minHeight: '100vh' }} id="main-content">
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/gallery" element={<GalleryPage />} />
           <Route path="/paintings/:id" element={<PaintingPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/blog" element={<BlogPage />} />
+          <Route path="/blog/:id" element={<BlogPostPage />} />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/order-success" element={<OrderSuccessPage />} />
