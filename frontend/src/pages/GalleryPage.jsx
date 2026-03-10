@@ -16,7 +16,7 @@ function CollectionsView({ collections }) {
         >
           <div className="collection-card__img">
             {collection.paintings?.[0]?.images?.[0] && (
-              <img src={collection.paintings[0].images[0]} alt={collection.name} loading="lazy" />
+              <img src={collection.paintings[0].images[0]} alt={collection.name} decoding="async" />
             )}
           </div>
           <h3 className="collection-card__name">{collection.name}</h3>
