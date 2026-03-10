@@ -32,6 +32,7 @@
   text-decoration: none;
   transition: color 0.2s ease;
   padding: 4px 8px;
+  border-radius: 2px;
 }
 
 .breadcrumbs__link:hover {
@@ -42,12 +43,12 @@
 .breadcrumbs__link:focus-visible {
   outline: 2px solid #a89968;
   outline-offset: 2px;
-  border-radius: 2px;
 }
 
 .breadcrumbs__separator {
   color: #4a4540;
   opacity: 0.4;
+  font-size: 12px;
 }
 
 .breadcrumbs__current {
@@ -74,6 +75,10 @@
   .breadcrumbs__current {
     padding: 4px 6px;
   }
+
+  .breadcrumbs__separator {
+    font-size: 11px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -93,5 +98,9 @@
   .breadcrumbs__link,
   .breadcrumbs__current {
     padding: 2px 4px;
+  }
+
+  .breadcrumbs__separator {
+    font-size: 10px;
   }
 }
