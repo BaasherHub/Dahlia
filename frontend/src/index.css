@@ -206,7 +206,7 @@ em {
 }
 
 /* ════════════════════════════════════════════════════════════════
-   LINKS - WCAG AA Compliant
+   LINKS - WCAG AA Compliant with Proper Underline Spacing
    ════════════════════════════════════════════════════════════════ */
 
 a {
@@ -215,11 +215,14 @@ a {
   transition: all var(--transition-fast);
   outline-offset: 2px;
   word-break: break-word;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
 }
 
 a:hover {
   color: var(--color-accent3);
   text-decoration: underline;
+  text-decoration-thickness: 1.5px;
 }
 
 a:focus-visible {
