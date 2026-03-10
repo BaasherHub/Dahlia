@@ -1,66 +1,97 @@
 .breadcrumbs {
-  padding: var(--space-lg) 0;
-  margin-top: calc(var(--nav-h) + var(--space-lg));
-  border-bottom: 1px solid var(--color-border);
+  padding: 24px 0;
   background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  margin-top: var(--nav-h);
+}
+
+.breadcrumbs__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
 }
 
 .breadcrumbs__list {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-sm);
+  gap: 12px;
   list-style: none;
   margin: 0;
   padding: 0;
+  font-size: 13px;
 }
 
 .breadcrumbs__item {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
+  gap: 12px;
 }
 
 .breadcrumbs__link {
-  font-family: var(--font-ui);
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--color-text-secondary);
+  color: #a89968;
   text-decoration: none;
-  transition: color var(--transition-fast);
-  font-weight: 500;
+  transition: color 0.2s ease;
+  padding: 4px 8px;
 }
 
 .breadcrumbs__link:hover {
-  color: var(--color-accent);
+  color: #8b7355;
+  text-decoration: underline;
+}
+
+.breadcrumbs__link:focus-visible {
+  outline: 2px solid #a89968;
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 .breadcrumbs__separator {
-  color: var(--color-muted);
-  margin: 0 2px;
+  color: #4a4540;
+  opacity: 0.4;
 }
 
 .breadcrumbs__current {
-  font-family: var(--font-ui);
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--color-text);
-  font-weight: 600;
+  color: #4a4540;
+  font-weight: 500;
+  padding: 4px 8px;
 }
 
 @media (max-width: 768px) {
   .breadcrumbs {
-    padding: var(--space-md) 0;
+    padding: 16px 0;
+  }
+
+  .breadcrumbs__inner {
+    padding: 0 16px;
   }
 
   .breadcrumbs__list {
-    gap: 4px;
+    font-size: 12px;
+    gap: 8px;
   }
 
   .breadcrumbs__link,
   .breadcrumbs__current {
+    padding: 4px 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .breadcrumbs {
+    padding: 12px 0;
+  }
+
+  .breadcrumbs__inner {
+    padding: 0 12px;
+  }
+
+  .breadcrumbs__list {
     font-size: 11px;
+    gap: 6px;
+  }
+
+  .breadcrumbs__link,
+  .breadcrumbs__current {
+    padding: 2px 4px;
   }
 }
