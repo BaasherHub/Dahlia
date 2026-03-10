@@ -1,159 +1,462 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { getPaintings, getHeroPainting } from '../api.js';
-import PaintingCard from '../components/PaintingCard.jsx';
-import './HomePage.css';
+/* ══════════════════════════════════════════════════════════════
+   HOME PAGE - LUXURY ARTIST PORTFOLIO
+   ══════════════════════════════════════════════════════════════ */
 
-export default function HomePage() {
-  const [heroPainting, setHeroPainting] = useState(null);
-  const [originals, setOriginals] = useState([]);
-  const [prints, setPrints] = useState([]);
+/* ────────────────────────────────────────────────────────────
+   HERO SECTION
+   ──────────────────────────────────────────────────────────── */
+.hero {
+  position: relative;
+  height: 100vh;
+  min-height: 600px;
+  max-height: 900px;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
 
-  useEffect(() => {
-    getHeroPainting().then(p => p && setHeroPainting(p)).catch(() => {});
-    getPaintings().then(all => {
-      setOriginals(all.filter(p => !p.sold && p.originalAvailable !== false && p.category !== 'print').slice(0, 6));
-      setPrints(all.filter(p => p.printAvailable === true).slice(0, 3));
-    }).catch(() => {});
-  }, []);
+.hero__painting {
+  position: absolute;
+  inset: 0;
+}
 
-  return (
-    <main className="home">
-      {/* ── HERO SECTION ── */}
-      <section className="hero">
-        {heroPainting?.images?.[0] ? (
-          <div className="hero__painting">
-            <img src={heroPainting.images[0]} alt={heroPainting.title} className="hero__painting-img" />
-            <div className="hero__overlay" />
-          </div>
-        ) : (
-          <div className="hero__bg-fallback" />
-        )}
+.hero__painting-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
 
-        <div className="hero__content container">
-          <div className="hero__text">
-            <h1 className="hero__title">Dahlia Baasher</h1>
-            <p className="hero__subtitle">Contemporary Oil Paintings</p>
-            <p className="hero__description">
-              Refined works on premium linen canvas, defined by deliberate palette knife technique and expressive brushwork.
-            </p>
-            <div className="hero__actions">
-              <Link to="/gallery" className="btn">
-                Explore Collection
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M5 12h14M12 5l7 7-7 7"/>
-                </svg>
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        <div className="hero__scroll-hint">
-          <span>Scroll to explore</span>
-          <svg width="16" height="24" viewBox="0 0 16 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <rect x="4" y="2" width="8" height="14" rx="4"/>
-            <path d="M8 18v4"/>
-          </svg>
-        </div>
-      </section>
-
-      {/* ── ARTIST STATEMENT ── */}
-      <section className="artist-statement">
-        <div className="container">
-          <div className="artist-statement__content">
-            <h2 className="artist-statement__title">The Artist</h2>
-            <div className="artist-statement__text">
-              <p>
-                Dahlia Baasher is a contemporary painter based in Toronto, working primarily with oil on premium linen canvas. Her practice is rooted in the exploration of human connection and emotional nuance, rendered through confident, expressive brushwork.
-              </p>
-              <p>
-                Each work begins with intention and evolves through a careful dialogue between concept and medium. Employing the palette knife as a primary tool, Dahlia builds surfaces of depth and movement, creating pieces that reward both immediate and sustained attention.
-              </p>
-            </div>
-            <Link to="/about" className="artist-statement__link">
-              View full biography
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M5 12h14M12 5l7 7-7 7"/>
-              </svg>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ── FEATURED WORKS ── */}
-      {originals.length > 0 && (
-        <section className="featured-works">
-          <div className="container">
-            <div className="section-header">
-              <h2 className="section-title">Featured Works</h2>
-              <Link to="/gallery" className="section-link">
-                View all
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M5 12h14M12 5l7 7-7 7"/>
-                </svg>
-              </Link>
-            </div>
-
-            <div className="gallery-grid gallery-grid--3">
-              {originals.slice(0, 6).map(p => (
-                <PaintingCard key={p.id} painting={p} />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ── LIMITED EDITIONS ── */}
-      {prints.length > 0 && (
-        <section className="collection-highlights">
-          <div className="container">
-            <div className="section-header">
-              <h2 className="section-title">Limited Editions</h2>
-              <p className="section-subtitle">Archival giclée prints on museum-quality paper</p>
-            </div>
-
-            <div className="gallery-grid gallery-grid--3">
-              {prints.map(p => (
-                <PaintingCard key={p.id} painting={p} type="print" />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ── CTA SECTION ── */}
-      <section className="cta-section">
-        <div className="container">
-          <div className="cta-content">
-            <h2 className="cta-title">Commissions Available</h2>
-            <p className="cta-text">
-              Custom works created specifically for your collection. Starting at $800 USD.
-            </p>
-            <Link to="/commissions" className="btn btn--outline">
-              Inquire About a Commission
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ── NEWSLETTER ── */}
-      <section className="newsletter">
-        <div className="container">
-          <div className="newsletter-content">
-            <h2 className="newsletter-title">Stay Connected</h2>
-            <p className="newsletter-subtitle">Receive updates on new works and exhibitions</p>
-            <form className="newsletter-form" onSubmit={(e) => e.preventDefault()}>
-              <input 
-                type="email" 
-                placeholder="Enter your email" 
-                className="newsletter-input"
-                required
-              />
-              <button type="submit" className="btn newsletter-btn">Subscribe</button>
-            </form>
-          </div>
-        </div>
-      </section>
-    </main>
+.hero__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(15, 13, 10, 0.7) 0%,
+    rgba(15, 13, 10, 0.5) 35%,
+    rgba(15, 13, 10, 0.2) 70%,
+    transparent 100%
   );
+}
+
+.hero__bg-fallback {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--color-surface2) 0%, var(--color-surface) 100%);
+}
+
+.hero__content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  padding: 0 var(--space-lg) 100px var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.hero__text {
+  max-width: 700px;
+  color: #fff;
+}
+
+.hero__title {
+  font-family: var(--font-display);
+  font-size: clamp(48px, 7vw, 88px);
+  font-weight: 400;
+  line-height: 1.08;
+  margin-bottom: var(--space-md);
+  letter-spacing: -0.025em;
+  word-spacing: 0.2em;
+  text-rendering: optimizeLegibility;
+}
+
+.hero__subtitle {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.75);
+  margin-bottom: var(--space-xl);
+}
+
+.hero__description {
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.75;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: var(--space-2xl);
+  max-width: 560px;
+}
+
+.hero__actions {
+  display: flex;
+  gap: var(--space-lg);
+  align-items: center;
+}
+
+.hero__scroll-hint {
+  position: absolute;
+  bottom: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  z-index: 3;
+}
+
+.hero__scroll-hint span {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.hero__scroll-hint svg {
+  color: rgba(255, 255, 255, 0.55);
+  animation: scroll-bounce 2s ease-in-out infinite;
+}
+
+@keyframes scroll-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(10px); }
+}
+
+/* ────────────────────────────────────────────────────────────
+   ARTIST STATEMENT
+   ──────────────────────────────────────────────────────────── */
+.artist-statement {
+  padding: 120px var(--space-lg);
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.artist-statement__content {
+  max-width: 720px;
+}
+
+.artist-statement__title {
+  font-family: var(--font-display);
+  font-size: clamp(36px, 5vw, 56px);
+  font-weight: 400;
+  margin-bottom: var(--space-3xl);
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+}
+
+.artist-statement__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+  margin-bottom: var(--space-3xl);
+}
+
+.artist-statement__text p {
+  font-size: 16px;
+  line-height: 1.9;
+  color: var(--color-text);
+}
+
+.artist-statement__quote {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-style: italic;
+  line-height: 1.6;
+  color: var(--color-accent);
+  border-left: 2px solid var(--color-accent);
+  padding-left: var(--space-lg);
+  margin: var(--space-2xl) 0 0 0;
+  border: none;
+  padding: 0;
+}
+
+.artist-statement__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  text-decoration: none;
+  padding: 6px 0;
+  border-bottom: 1px solid transparent;
+  transition: all var(--transition-fast);
+}
+
+.artist-statement__link:hover {
+  border-bottom-color: var(--color-accent);
+  padding-left: 4px;
+}
+
+/* ────────────────────────────────────────────────────────────
+   FEATURED WORKS SECTION
+   ──────────────────────────────────────────────────────────── */
+.featured-works {
+  padding: 120px var(--space-lg);
+  background: var(--color-surface);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: var(--space-4xl);
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: clamp(36px, 5vw, 56px);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.section-subtitle {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-top: var(--space-md);
+}
+
+.section-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  text-decoration: none;
+  padding: 6px 0;
+  border-bottom: 1px solid transparent;
+  transition: all var(--transition-fast);
+}
+
+.section-link:hover {
+  border-bottom-color: var(--color-accent);
+  padding-right: 4px;
+}
+
+/* Gallery Grid */
+.gallery-grid {
+  display: grid;
+  gap: var(--space-2xl);
+}
+
+.gallery-grid--3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+/* ──────��─────────────────────────────────────────────────────
+   COLLECTION HIGHLIGHTS
+   ──────────────────────────────────────────────────────────── */
+.collection-highlights {
+  padding: 120px var(--space-lg);
+  background: var(--color-bg);
+  border-top: 1px solid var(--color-border);
+}
+
+/* ────────────────────────────────────────────────────────────
+   CTA SECTION
+   ──────────────────────────────────────────────────────────── */
+.cta-section {
+  padding: 120px var(--space-lg);
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+}
+
+.cta-content {
+  max-width: 720px;
+  text-align: center;
+}
+
+.cta-title {
+  font-family: var(--font-display);
+  font-size: clamp(36px, 5vw, 56px);
+  font-weight: 400;
+  margin-bottom: var(--space-lg);
+  letter-spacing: -0.01em;
+}
+
+.cta-text {
+  font-size: 16px;
+  line-height: 1.75;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-2xl);
+}
+
+.btn--outline {
+  background: transparent;
+  color: var(--color-text);
+  border: 1.5px solid var(--color-text);
+}
+
+.btn--outline:hover {
+  background: var(--color-text);
+  color: #fff;
+}
+
+/* ────────────────────────────────────────────────────────────
+   NEWSLETTER
+   ──────────────────────────────────────────────────────────── */
+.newsletter {
+  padding: 120px var(--space-lg);
+  background: var(--color-text);
+  color: #fff;
+}
+
+.newsletter-content {
+  max-width: 720px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.newsletter-title {
+  font-family: var(--font-display);
+  font-size: clamp(36px, 5vw, 56px);
+  font-weight: 400;
+  margin-bottom: var(--space-md);
+  letter-spacing: -0.01em;
+}
+
+.newsletter-subtitle {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.75);
+  margin-bottom: var(--space-2xl);
+}
+
+.newsletter-form {
+  display: flex;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 8px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.newsletter-input {
+  flex: 1;
+  padding: 13px 20px;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 14px;
+}
+
+.newsletter-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.newsletter-input:focus {
+  outline: none;
+}
+
+.newsletter-btn {
+  background: #fff;
+  color: var(--color-text);
+  border: none;
+  font-weight: 600;
+  padding: 13px 28px;
+  font-size: 13px;
+  min-height: auto;
+  white-space: nowrap;
+}
+
+.newsletter-btn:hover {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+/* ────────────────────────────────────────────────────────────
+   RESPONSIVE
+   ──────────────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .gallery-grid--3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .artist-statement,
+  .featured-works,
+  .collection-highlights,
+  .cta-section,
+  .newsletter {
+    padding: 80px var(--space-lg);
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-lg);
+    margin-bottom: var(--space-3xl);
+  }
+}
+
+@media (max-width: 768px) {
+  .hero {
+    min-height: 500px;
+    max-height: 600px;
+  }
+
+  .hero__title {
+    font-size: clamp(36px, 6vw, 56px);
+  }
+
+  .hero__description {
+    font-size: 15px;
+  }
+
+  .gallery-grid--3 {
+    grid-template-columns: 1fr;
+    gap: var(--space-xl);
+  }
+
+  .newsletter-form {
+    flex-direction: column;
+  }
+
+  .artist-statement,
+  .featured-works,
+  .collection-highlights,
+  .cta-section,
+  .newsletter {
+    padding: 60px var(--space-lg);
+  }
+
+  .hero__content {
+    padding: 0 var(--space-lg) 60px var(--space-lg);
+  }
+}
+
+@media (max-width: 480px) {
+  .hero__scroll-hint {
+    display: none;
+  }
+
+  .hero__actions {
+    width: 100%;
+  }
+
+  .hero__actions .btn {
+    flex: 1;
+  }
+
+  .section-header {
+    margin-bottom: var(--space-2xl);
+  }
+
+  .newsletter-form {
+    flex-direction: column;
+  }
 }
