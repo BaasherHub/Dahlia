@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getPainting } from '../api.js';
 import { useCart } from '../context/CartContext.jsx';
 import ImageWithFallback from '../components/ImageWithFallback.jsx';
+import ImageZoom from '../components/ImageZoom.jsx';
 import './PaintingPage.css';
 
 export default function PaintingPage() {
@@ -79,6 +80,9 @@ export default function PaintingPage() {
     setTimeout(() => setAdded(false), 3000);
   };
 
+  const images = painting.images || [painting.image];
+  const mainImage = images[activeImg] || images[0];
+
   return (
     <main className="painting-page">
       <div className="container">
@@ -93,138 +97,110 @@ export default function PaintingPage() {
           {/* IMAGES */}
           <div className="painting-page__imgs">
             <div className="painting-page__main-img-wrap">
-              {painting.images?.[activeImg] ? (
-                <ImageWithFallback
-                  src={painting.images[activeImg]}
+              {mainImage ? (
+                <ImageZoom 
+                  src={mainImage} 
                   alt={painting.title}
                   className="painting-page__main-img"
                 />
               ) : (
                 <div className="painting-page__img-placeholder">
-                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
-                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                     <circle cx="8.5" cy="8.5" r="1.5"/>
-                    <path d="M21 15l-5-5L5 21"/>
+                    <polyline points="21 15 16 10 5 21"/>
                   </svg>
-                  <p>Image not available</p>
+                  <p>No image available</p>
                 </div>
               )}
             </div>
-            
-            {painting.images?.length > 1 && (
+
+            {images.length > 1 && (
               <div className="painting-page__thumbs">
-                {painting.images.map((img, i) => (
+                {images.map((img, idx) => (
                   <button
-                    key={i}
-                    className={`painting-page__thumb ${activeImg === i ? 'active' : ''}`}
-                    onClick={() => setActiveImg(i)}
-                    aria-label={`View image ${i + 1}`}
+                    key={idx}
+                    className={`painting-page__thumb ${idx === activeImg ? 'active' : ''}`}
+                    onClick={() => setActiveImg(idx)}
+                    aria-label={`View image ${idx + 1}`}
                   >
-                    <ImageWithFallback src={img} alt="" />
+                    <ImageWithFallback src={img} alt={`${painting.title} view ${idx + 1}`} />
                   </button>
                 ))}
               </div>
             )}
           </div>
 
-          {/* INFO */}
-          <div className="painting-page__info">
-            <p className="label painting-page__label">{painting.medium}</p>
+          {/* DETAILS */}
+          <div className="painting-page__details">
             <h1 className="painting-page__title">{painting.title}</h1>
-            {painting.year && <p className="painting-page__year">{painting.year}</p>}
 
-            {/* SPECS */}
-            <div className="painting-page__specs">
-              <div className="painting-page__spec">
-                <span className="label">Dimensions</span>
-                <p>{painting.dimensions}</p>
+            <div className="painting-page__meta">
+              {painting.year && <div><strong>Year:</strong> {painting.year}</div>}
+              {painting.medium && <div><strong>Medium:</strong> {painting.medium}</div>}
+              {painting.dimensions && <div><strong>Dimensions:</strong> {painting.dimensions}</div>}
+            </div>
+
+            {painting.description && (
+              <p className="painting-page__description">{painting.description}</p>
+            )}
+
+            {/* VERSION SELECTION */}
+            {(hasOriginal || hasPrint) && (
+              <div className="painting-page__versions">
+                <label className="label">Select Version</label>
+                <div className="painting-page__version-buttons">
+                  {hasOriginal && (
+                    <button
+                      className={`painting-page__version-btn ${version === 'original' ? 'active' : ''}`}
+                      onClick={() => setVersion('original')}
+                    >
+                      <span className="painting-page__version-label">Original</span>
+                      {painting.originalPrice && (
+                        <span className="painting-page__version-price">${painting.originalPrice}</span>
+                      )}
+                    </button>
+                  )}
+                  {hasPrint && (
+                    <button
+                      className={`painting-page__version-btn ${version === 'print' ? 'active' : ''}`}
+                      onClick={() => setVersion('print')}
+                    >
+                      <span className="painting-page__version-label">Print</span>
+                      {painting.printPrice && (
+                        <span className="painting-page__version-price">${painting.printPrice}</span>
+                      )}
+                    </button>
+                  )}
+                </div>
               </div>
-              <div className="painting-page__spec">
-                <span className="label">Medium</span>
-                <p>{painting.medium}</p>
-              </div>
-              {painting.year && (
-                <div className="painting-page__spec">
-                  <span className="label">Year</span>
-                  <p>{painting.year}</p>
+            )}
+
+            {/* AVAILABILITY & CTA */}
+            <div className="painting-page__cta">
+              {currentAvailable ? (
+                <>
+                  <button className="btn btn--large" onClick={handleAddToCart}>
+                    {added ? '✓ Added to Cart' : 'Add to Cart'}
+                  </button>
+                  <Link to="/cart" className="btn btn--ghost">
+                    View Cart
+                  </Link>
+                </>
+              ) : (
+                <div className="painting-page__unavailable">
+                  <p>This version is currently unavailable</p>
+                  <Link to="/gallery" className="btn btn--ghost">
+                    Browse Other Works
+                  </Link>
                 </div>
               )}
             </div>
 
-            {/* DESCRIPTION */}
-            {painting.description && (
-              <div className="painting-page__description">
-                <p>{painting.description}</p>
-              </div>
-            )}
-
-            {/* DIVIDER */}
-            <div className="painting-page__divider"></div>
-
-            {/* VERSION SELECTOR */}
-            {(hasOriginal || hasPrint) && (
-              <div className="painting-page__versions">
-                {hasOriginal && (
-                  <button
-                    className={`version-btn ${version === 'original' ? 'active' : ''}`}
-                    onClick={() => setVersion('original')}
-                  >
-                    <span>Original Painting</span>
-                    <span className="version-price">${painting.originalPrice || painting.price}</span>
-                  </button>
-                )}
-                {hasPrint && (
-                  <button
-                    className={`version-btn ${version === 'print' ? 'active' : ''}`}
-                    onClick={() => setVersion('print')}
-                  >
-                    <span>Limited Edition Print</span>
-                    <span className="version-price">${painting.printPrice}</span>
-                  </button>
-                )}
-              </div>
-            )}
-
-            {/* PRICE & AVAILABILITY */}
-            <div className="painting-page__pricing">
-              <div className="painting-page__price">
-                <span className="label">Price</span>
-                <p className="price-value">${currentPrice?.toLocaleString()}</p>
-              </div>
-              <div className="painting-page__availability">
-                {currentAvailable ? (
-                  <span className="available">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M20.33 3.67a1 1 0 0 0-1.41 0L9 13.59l-3.29-3.29a1 1 0 1 0-1.41 1.41l4 4a1 1 0 0 0 1.41 0l11-11a1 1 0 0 0 0-1.41z"/>
-                    </svg>
-                    Available
-                  </span>
-                ) : (
-                  <span className="sold-out">Sold Out</span>
-                )}
-              </div>
+            {/* CONTACT INFO */}
+            <div className="painting-page__contact">
+              <p><strong>Questions?</strong> <Link to="/commissions">Contact for inquiries</Link></p>
             </div>
-
-            {/* CTA */}
-            {currentAvailable ? (
-              <button 
-                className={`btn btn--large ${added ? 'btn--success' : ''}`}
-                onClick={handleAddToCart}
-              >
-                {added ? '✓ Added to Cart' : 'Add to Cart'}
-              </button>
-            ) : (
-              <button className="btn btn--large" disabled>
-                Not Available
-              </button>
-            )}
-
-            <button 
-              className="btn btn--ghost btn--large"
-              onClick={() => navigate('/commissions')}
-            >
-              Commission Similar Work
-            </button>
           </div>
         </div>
       </div>
