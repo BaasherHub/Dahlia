@@ -103,7 +103,7 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* ── COLLECTION HIGHLIGHTS ── */}
+      {/* ── LIMITED EDITIONS ── */}
       {prints.length > 0 && (
         <section className="collection-highlights">
           <div className="container">
