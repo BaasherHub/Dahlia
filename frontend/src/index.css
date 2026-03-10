@@ -1,31 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
 /* ══════════════════════════════════════════════════════════════
-   GLOBAL STYLES - LUXURY ARTIST PORTFOLIO
+   LUXURY DESIGN SYSTEM - DAHLIA BAASHER
+   Premium Art Gallery Branding
    ══════════════════════════════════════════════════════════════ */
 
-/* ────────────────────────────────────────────────────────────
-   CSS VARIABLES
-   ──────────────────────────────────────────────────────────── */
 :root {
-  /* Colors */
-  --color-bg: #faf9f7;
-  --color-surface: #fff;
-  --color-surface2: #f5f3f0;
-  --color-surface3: #ede8e3;
-  --color-text: #1a1815;
-  --color-text-secondary: #7a7469;
-  --color-muted: #a39c91;
-  --color-border: #e8e3db;
-  --color-accent: #8b7355;
+  /* COLORS */
+  --color-bg: #fefdfb;
+  --color-surface: #faf8f3;
+  --color-surface2: #f3ede5;
+  --color-surface3: #ede5db;
+  --color-border: rgba(15, 13, 10, 0.08);
+  
+  /* TEXT */
+  --color-text: #0f0d0a;
+  --color-text-secondary: #4a4540;
+  --color-text-tertiary: #6b6460;
+  --color-muted: rgba(15, 13, 10, 0.45);
+  
+  /* ACCENT */
+  --color-accent: #a89968;
   --color-accent2: #d4a574;
-  --color-success: #4a9d6f;
-  --color-error: #c1424b;
+  --color-accent3: #8b7355;
+  
+  /* STATUS */
+  --color-success: #2d5f3f;
+  --color-error: #8b3a3a;
+  --color-warning: #d4a052;
+  
+  /* TYPOGRAPHY */
+  --font-display: 'EB Garamond', Georgia, serif;
+  --font-ui: 'DM Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-body: 'DM Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
-  /* Typography */
-  --font-display: 'Lora', 'Georgia', serif;
-  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-  --font-ui: 'Segoe UI', 'Roboto', sans-serif;
-
-  /* Spacing */
+  /* SPACING */
   --space-xs: 4px;
   --space-sm: 8px;
   --space-md: 16px;
@@ -36,7 +51,7 @@
   --space-4xl: 96px;
   --space-5xl: 128px;
 
-  /* Layout */
+  /* LAYOUT */
   --nav-h: 64px;
   --radius: 8px;
   --transition-fast: 0.2s ease;
@@ -44,15 +59,7 @@
   --transition-slow: 0.5s ease;
 }
 
-/* ────────────────────��───────────────────────────────────────
-   RESET & BASE STYLES
-   ──────────────────────────────────────────────────────────── */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
+/* RESET & BASE */
 html {
   scroll-behavior: smooth;
 }
@@ -72,9 +79,7 @@ main {
   display: block;
 }
 
-/* ────────────────────────────────────────────────────────────
-   TYPOGRAPHY
-   ──────────────────────────────────────────────────────────── */
+/* TYPOGRAPHY */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
   font-weight: 400;
@@ -99,6 +104,7 @@ p:last-child {
 a {
   color: inherit;
   text-decoration: none;
+  transition: all var(--transition-fast);
 }
 
 strong, b {
@@ -109,9 +115,7 @@ em, i {
   font-style: italic;
 }
 
-/* ────────────────────────────────────────────────────────────
-   LABELS & UTILITIES
-   ──────────────────────────────────────────────────────────── */
+/* LABELS */
 .label {
   font-family: var(--font-ui);
   font-size: 11px;
@@ -130,9 +134,7 @@ em, i {
   padding: 0 var(--space-lg);
 }
 
-/* ────────────────────────────────────────────────────────────
-   BUTTONS
-   ──────────────────────────────────────────────────────────── */
+/* BUTTONS */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -182,20 +184,7 @@ em, i {
   outline-offset: 2px;
 }
 
-.btn-outline {
-  background: transparent;
-  color: var(--color-text);
-  border: 1.5px solid var(--color-border);
-}
-
-.btn-outline:hover {
-  background: var(--color-surface2);
-  border-color: var(--color-accent);
-}
-
-/* ────────────────────────────────────────────────────────────
-   FORMS
-   ─────────────────────────────────────────────��────────────── */
+/* FORMS */
 input,
 textarea,
 select {
@@ -215,46 +204,26 @@ textarea:focus,
 select:focus {
   outline: none;
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.1);
+  box-shadow: 0 0 0 3px rgba(168, 153, 104, 0.1);
 }
 
 input::placeholder {
   color: var(--color-muted);
 }
 
-/* ────────────────────────────────────────────────────────────
-   IMAGES
-   ──────────────────────────────────────────────────────────── */
+/* IMAGES */
 img {
   max-width: 100%;
   height: auto;
   display: block;
 }
 
-/* ────────────────────────────────────────────────────────────
-   ACCESSIBILITY
-   ──────────────────────────────────────────────────────────── */
+/* ACCESSIBILITY */
 :focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
 
-/* Skip to main content link */
-.skip-to-main {
-  position: absolute;
-  top: -40px;
-  left: 0;
-  background: var(--color-accent);
-  color: white;
-  padding: 8px 16px;
-  z-index: 100;
-}
-
-.skip-to-main:focus {
-  top: 0;
-}
-
-/* High contrast mode support */
 @media (prefers-contrast: more) {
   :root {
     --color-accent: #000;
@@ -263,7 +232,6 @@ img {
   }
 }
 
-/* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -275,23 +243,21 @@ img {
   }
 }
 
-/* Dark mode support */
+/* DARK MODE */
 @media (prefers-color-scheme: dark) {
   :root {
     --color-bg: #0f0d0a;
     --color-surface: #1a1815;
     --color-surface2: #252120;
     --color-surface3: #2d2822;
-    --color-text: #faf9f7;
+    --color-text: #faf8f3;
     --color-text-secondary: #b8b0a0;
     --color-muted: #8a8078;
-    --color-border: #3d3730;
+    --color-border: rgba(250, 248, 243, 0.1);
   }
 }
 
-/* ────────────────────────────────────────────────────────────
-   RESPONSIVE
-   ──────────────────────────────────────────────────────────── */
+/* RESPONSIVE */
 @media (max-width: 1024px) {
   :root {
     --space-3xl: 48px;
@@ -341,13 +307,11 @@ img {
   textarea,
   select {
     padding: 10px;
-    font-size: 16px; /* Prevents zoom on iOS */
+    font-size: 16px;
   }
 }
 
-/* ────────────────────────────────────────────────────────────
-   UTILITY CLASSES
-   ──────────────────────────────────────────────────────────── */
+/* UTILITY */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -360,9 +324,7 @@ img {
   border-width: 0;
 }
 
-/* ────────────────────────────────────────────────────────────
-   PRINT STYLES
-   ──────────────────────────────────────────────────────────── */
+/* PRINT */
 @media print {
   body {
     background: white;
