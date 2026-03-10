@@ -68,6 +68,15 @@ export default function GalleryPage() {
       });
   }, []);
 
+  // ✅ Scroll to top when filters change
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'instant'
+    });
+  }, [filters, type]);
+
   const originals = paintings.filter(p => 
     !p.sold && (p.originalAvailable !== false) && (p.category !== 'print')
   );
@@ -120,7 +129,10 @@ export default function GalleryPage() {
             <button
               key={val}
               className={`gallery-filter ${type === val ? 'active' : ''}`}
-              onClick={() => setSearchParams(val === 'all' ? {} : { type: val })}
+              onClick={() => {
+                setSearchParams(val === 'all' ? {} : { type: val });
+                window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+              }}
             >
               {label}
             </button>
@@ -142,14 +154,17 @@ export default function GalleryPage() {
           collections.length > 0 ? (
             <CollectionsView collections={collections} />
           ) : (
-            <p style={{ textAlign: 'center' }}>No collections available.</p>
+            <p style={{ textAlign: 'center', padding: '60px 0' }}>No collections available.</p>
           )
         ) : (
           <div className="gallery-page__layout">
             <aside className="gallery-page__filters-sidebar">
               <GalleryFilters 
                 filters={filters}
-                onFilterChange={setFilters}
+                onFilterChange={(newFilters) => {
+                  setFilters(newFilters);
+                  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+                }}
                 availableMediums={['Oil', 'Acrylic', 'Watercolor', 'Mixed Media']}
                 availableYears={['2024', '2023', '2022', '2021', '2020']}
               />
