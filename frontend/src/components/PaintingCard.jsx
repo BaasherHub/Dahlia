@@ -24,8 +24,21 @@ export default function PaintingCard({ painting }) {
     }
   };
 
+  // ✅ Scroll to top when clicking
+  const handleClick = () => {
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'instant'
+    });
+  };
+
   return (
-    <Link to={`/paintings/${painting.id}`} className="painting-card">
+    <Link 
+      to={`/paintings/${painting.id}`} 
+      className="painting-card"
+      onClick={handleClick}
+    >
       <div className="painting-card__img-wrap">
         <img 
           src={painting.image} 
@@ -54,7 +67,7 @@ export default function PaintingCard({ painting }) {
           {painting.medium && <span>{painting.medium}</span>}
           {painting.available && <span className="painting-card__available">Available</span>}
         </div>
-        {painting.price && <div className="painting-card__price">${painting.price}</div>}
+        {painting.price && <div className="painting-card__price">${painting.price.toLocaleString()}</div>}
       </div>
     </Link>
   );
