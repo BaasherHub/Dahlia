@@ -15,12 +15,12 @@ import OrderSuccessPage from './pages/OrderSuccessPage';
 import CommissionsPage from './pages/CommissionsPage';
 import CollectionPage from './pages/CollectionPage';
 import AdminPage from './pages/AdminPage';
+import NotFoundPage from './pages/NotFoundPage';
 
 // Components - with safe imports
 let Navigation = null;
 let Footer = null;
 
-// Try to import Navigation, fallback if not found
 try {
   Navigation = require('./components/Navigation').default || (() => null);
 } catch (e) {
@@ -28,7 +28,6 @@ try {
   Navigation = () => null;
 }
 
-// Try to import Footer, fallback if not found
 try {
   Footer = require('./components/Footer').default || (() => null);
 } catch (e) {
@@ -37,7 +36,7 @@ try {
 }
 
 function AppContent() {
-  const { toasts, addToast, removeToast } = useToast();
+  const { toasts, removeToast } = useToast();
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -90,6 +89,7 @@ function AppContent() {
           <Route path="/commissions" element={<CommissionsPage />} />
           <Route path="/collection/:id" element={<CollectionPage />} />
           <Route path="/admin" element={<AdminPage />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
       {Footer && <Footer />}
