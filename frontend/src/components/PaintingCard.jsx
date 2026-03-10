@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import './PaintingCard.css';
 
 export default function PaintingCard({ painting }) {
+  const [imageLoaded, setImageLoaded] = useState(false);
   const [isInWishlist, setIsInWishlist] = useState(() => {
     const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
     return wishlist.some(item => item.id === painting.id);
@@ -36,8 +37,14 @@ export default function PaintingCard({ painting }) {
   // Safe price formatting
   const formatPrice = (price) => {
     if (!price && price !== 0) return '';
-    return `$${Number(price).toLocaleString()}`;
+    try {
+      return `$${Number(price).toLocaleString()}`;
+    } catch {
+      return '';
+    }
   };
+
+  const imageUrl = painting.image || painting.images?.[0];
 
   return (
     <Link 
@@ -46,12 +53,26 @@ export default function PaintingCard({ painting }) {
       onClick={handleClick}
     >
       <div className="painting-card__img-wrap">
-        <img 
-          src={painting.image} 
-          alt={painting.title} 
-          className="painting-card__img" 
-          decoding="async"
-        />
+        {imageUrl ? (
+          <img 
+            src={imageUrl}
+            alt={painting.title || 'Artwork'} 
+            className={`painting-card__img ${imageLoaded ? 'loaded' : ''}`}
+            onLoad={() => setImageLoaded(true)}
+            onError={() => setImageLoaded(true)}
+            decoding="async"
+            loading="lazy"
+          />
+        ) : (
+          <div className="painting-card__img-placeholder">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+          </div>
+        )}
+        
         <button
           className={`painting-card__wishlist ${isInWishlist ? 'active' : ''}`}
           onClick={toggleWishlist}
@@ -62,12 +83,14 @@ export default function PaintingCard({ painting }) {
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
           </svg>
         </button>
+        
         <div className="painting-card__hover">
           <span>View Details</span>
         </div>
       </div>
+
       <div className="painting-card__info">
-        <h3 className="painting-card__title">{painting.title}</h3>
+        <h3 className="painting-card__title">{painting.title || 'Untitled'}</h3>
         <div className="painting-card__meta">
           {painting.year && <span>{painting.year}</span>}
           {painting.medium && <span>{painting.medium}</span>}
