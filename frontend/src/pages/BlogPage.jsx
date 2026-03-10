@@ -104,7 +104,7 @@ export default function BlogPage() {
                     })}
                   </time>
                   <Link to={`/blog/${post.id}`} className="blog-card__link">
-                    Read More
+                    Read More →
                   </Link>
                 </div>
               </div>
