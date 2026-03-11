@@ -181,6 +181,10 @@
   margin-top: auto;
 }
 
+/* ════════════════════════════════════════════════════════════════
+   RESPONSIVE DESIGN
+   ════════════════════════════════════════════════════════════════ */
+
 @media (max-width: 768px) {
   .painting-card__img-wrap {
     margin-bottom: var(--space-md);
@@ -198,5 +202,51 @@
   .painting-card__wishlist {
     width: 36px;
     height: 36px;
+  }
+
+  .painting-card__meta {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .painting-card__wishlist {
+    opacity: 1;
+    width: 44px;
+    height: 44px;
+    top: 8px;
+    right: 8px;
+  }
+
+  .painting-card__img-wrap {
+    margin-bottom: var(--space-sm);
+  }
+
+  .painting-card__info {
+    padding: var(--space-xs);
+  }
+
+  .painting-card__title {
+    font-size: 14px;
+    padding-bottom: var(--space-xs);
+    margin-bottom: 4px;
+  }
+
+  .painting-card__meta {
+    font-size: 10px;
+    gap: var(--space-sm);
+  }
+
+  .painting-card__price {
+    font-size: 14px;
+  }
+
+  .painting-card__available {
+    font-size: 9px;
+    padding: 3px 6px;
+  }
+
+  .painting-card__hover {
+    display: none;
   }
 }
