@@ -75,6 +75,9 @@
   color: var(--color-text-secondary);
   cursor: pointer;
   transition: all var(--transition-fast);
+  min-height: 44px;
+  display: flex;
+  align-items: center;
 }
 
 .gallery-filters__option:hover {
@@ -100,6 +103,7 @@
   color: var(--color-text);
   cursor: pointer;
   transition: all var(--transition-fast);
+  min-height: 44px;
 }
 
 .gallery-filters__select:hover,
@@ -126,6 +130,9 @@
   cursor: pointer;
   transition: all var(--transition-fast);
   text-align: left;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
 }
 
 .gallery-filters__price-btn:hover {
@@ -140,9 +147,14 @@
   font-weight: 500;
 }
 
+/* ════════════════════════════════════════════════════════════════
+   RESPONSIVE DESIGN
+   ════════════════════════════════════════════════════════════════ */
+
 @media (max-width: 1024px) {
   .gallery-filters {
     position: static;
+    top: auto;
     max-height: none;
     margin-bottom: var(--space-2xl);
   }
@@ -150,10 +162,80 @@
 
 @media (max-width: 768px) {
   .gallery-filters {
+    position: static;
+    top: auto;
+    max-height: none;
     padding: var(--space-lg);
+    margin-bottom: var(--space-2xl);
+  }
+
+  .gallery-filters__header {
+    margin-bottom: var(--space-lg);
+    flex-wrap: wrap;
+  }
+
+  .gallery-filters__title {
+    font-size: 16px;
+  }
+
+  .gallery-filters__options {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+  }
+
+  .gallery-filters__option {
+    flex: 1;
+    min-width: 100px;
   }
 
   .gallery-filters__price-options {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .gallery-filters__group {
+    margin-bottom: var(--space-lg);
+  }
+}
+
+@media (max-width: 480px) {
+  .gallery-filters {
+    padding: var(--space-md);
+    margin-bottom: var(--space-lg);
+  }
+
+  .gallery-filters__header {
+    margin-bottom: var(--space-md);
+  }
+
+  .gallery-filters__title {
+    font-size: 14px;
+  }
+
+  .gallery-filters__reset {
+    font-size: 9px;
+  }
+
+  .gallery-filters__options {
+    gap: var(--space-xs);
+  }
+
+  .gallery-filters__option {
+    font-size: 12px;
+    padding: 6px 8px;
+    min-height: 40px;
+  }
+
+  .gallery-filters__label {
+    font-size: 10px;
+    margin-bottom: var(--space-sm);
+  }
+
+  .gallery-filters__price-options {
+    grid-template-columns: 1fr;
+  }
+
+  .gallery-filters__group {
+    margin-bottom: var(--space-md);
   }
 }
