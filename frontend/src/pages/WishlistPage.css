@@ -110,6 +110,13 @@
   background: var(--color-error);
 }
 
+@media (hover: none), (max-width: 768px) {
+  .wishlist-item__remove {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.6);
+  }
+}
+
 @media (max-width: 1024px) {
   .wishlist-grid {
     grid-template-columns: repeat(2, 1fr);
