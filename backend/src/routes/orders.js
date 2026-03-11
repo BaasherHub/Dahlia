@@ -1,11 +1,10 @@
 import { Router } from 'express';
 import Stripe from 'stripe';
-import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import rateLimit from 'express-rate-limit';
+import prisma from '../lib/prisma.js';
 
 const router = Router();
-const prisma = new PrismaClient();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 const checkoutLimiter = rateLimit({
@@ -69,7 +68,7 @@ router.post('/checkout', checkoutLimiter, async (req, res) => {
     line_items: lineItems,
     mode: 'payment',
     customer_email: data.customerEmail,
-    success_url: `${process.env.FRONTEND_URL}/order/success?session_id={CHECKOUT_SESSION_ID}`,
+    success_url: `${process.env.FRONTEND_URL}/order-success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${process.env.FRONTEND_URL}/cart`,
     metadata: {
       paintingIds: JSON.stringify(data.paintingIds),

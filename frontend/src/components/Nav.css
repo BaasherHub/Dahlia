@@ -332,13 +332,21 @@
   .nav__cart {
     width: 44px;
     height: 44px;
-    align-self: flex-start;
-    margin-top: 16px;
     color: #0f0d0a;
   }
 
+  /* Put wishlist and cart in a row */
+  .nav__links {
+    justify-content: flex-start;
+  }
+
   .nav__wishlist {
-    margin-right: 16px;
+    margin-top: auto;
+    margin-right: 8px;
+  }
+
+  .nav__cart {
+    margin-top: auto;
   }
 }
 
