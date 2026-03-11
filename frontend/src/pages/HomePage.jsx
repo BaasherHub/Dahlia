@@ -33,7 +33,7 @@ export default function HomePage() {
   return (
     <main className="home">
       {/* ── HERO SECTION ── */}
-      <section className="hero">
+      <section className={`hero${!heroPainting ? ' hero--fallback' : ''}`}>
         {heroPainting?.images?.[0] ? (
           <div className="hero__painting">
             <img 

@@ -499,9 +499,6 @@ select {
   width: 100%;
 }
 
-main {
-  padding-top: var(--nav-h);
-}
 
 section {
   padding: var(--space-4xl) 0;

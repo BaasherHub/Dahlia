@@ -83,9 +83,9 @@ function AppContent() {
       <SEOSchema type="artist" data={artistSchema} />
       <SEOSchema type="gallery" data={gallerySchema} />
       <Nav />
-      <Breadcrumbs />
       <Toast toasts={toasts} onRemove={removeToast} />
       <main style={{ minHeight: '100vh' }} id="main-content">
+        <Breadcrumbs />
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/gallery" element={<GalleryPage />} />
