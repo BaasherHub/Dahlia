@@ -1,26 +1,123 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { getPaintings, getCollections } from '../api.js';
 import PaintingCard from '../components/PaintingCard.jsx';
+import GalleryFilters from '../components/GalleryFilters.jsx';
 import './GalleryPage.css';
+
+function CollectionsView({ collections }) {
+  return (
+    <div className="gallery-grid gallery-grid--3">
+      {collections.map(collection => (
+        <Link 
+          key={collection.id} 
+          to={`/collection/${collection.id}`}
+          className="collection-card"
+        >
+          <div className="collection-card__img">
+            {collection.paintings?.[0]?.images?.[0] && (
+              <img 
+                src={collection.paintings[0].images[0]} 
+                alt={collection.name} 
+                decoding="async"
+                loading="lazy"
+              />
+            )}
+          </div>
+          <h3 className="collection-card__name">{collection.name}</h3>
+          <p className="collection-card__count">
+            {collection.paintings?.length || collection._count?.paintings || 0} Painting{(collection.paintings?.length || collection._count?.paintings || 0) !== 1 ? 's' : ''}
+          </p>
+        </Link>
+      ))}
+    </div>
+  );
+}
 
 export default function GalleryPage() {
   const [paintings, setPaintings] = useState([]);
   const [collections, setCollections] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const type = searchParams.get('type') || 'all';
 
+  const [filters, setFilters] = useState({
+    medium: null,
+    year: null,
+    priceRange: null,
+  });
+
   useEffect(() => {
     setLoading(true);
+    setError(null);
+    
     Promise.all([getPaintings(), getCollections()])
-      .then(([p, c]) => { setPaintings(p); setCollections(c); setLoading(false); })
-      .catch(() => setLoading(false));
+      .then(([paintingsData, collectionsData]) => {
+        try {
+          const pData = paintingsData.data || paintingsData;
+          const cData = collectionsData.data || collectionsData;
+          setPaintings(Array.isArray(pData) ? pData : []);
+          setCollections(Array.isArray(cData) ? cData : []);
+        } catch (e) {
+          console.error('Error processing data:', e);
+          setPaintings([]);
+          setCollections([]);
+        }
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error('Failed to load data:', err);
+        setError('Failed to load artworks. Please try again.');
+        setLoading(false);
+      });
   }, []);
 
-  // Robust filtering — works with both old DB (no category/printAvailable) and new schema
-  const originals = paintings.filter(p => !p.sold && (p.originalAvailable !== false) && (p.category !== 'print'));
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [filters, type]);
+
+  // Derive available mediums and years from actual data
+  const availableMediums = useMemo(() => {
+    const mediums = [...new Set(paintings.map(p => p.medium).filter(Boolean))];
+    return mediums.sort();
+  }, [paintings]);
+
+  const availableYears = useMemo(() => {
+    const years = [...new Set(paintings.map(p => String(p.year)).filter(y => y && y !== 'null'))];
+    return years.sort((a, b) => b - a);
+  }, [paintings]);
+
+  const originals = paintings.filter(p => 
+    !p.sold && (p.originalAvailable !== false) && (p.category !== 'print')
+  );
   const prints = paintings.filter(p => p.printAvailable === true);
+
+  let displayPaintings = [];
+  if (type === 'original') {
+    displayPaintings = originals;
+  } else if (type === 'print') {
+    displayPaintings = prints;
+  } else {
+    displayPaintings = paintings;
+  }
+
+  // Apply additional filters
+  if (filters.medium) {
+    displayPaintings = displayPaintings.filter(p => p.medium === filters.medium);
+  }
+  if (filters.year) {
+    displayPaintings = displayPaintings.filter(p => String(p.year) === filters.year);
+  }
+  if (filters.priceRange) {
+    displayPaintings = displayPaintings.filter(p => {
+      const price = p.originalPrice || p.printPrice || p.price || 0;
+      if (filters.priceRange === 'under-1000') return price < 1000;
+      if (filters.priceRange === '1000-5000') return price >= 1000 && price <= 5000;
+      if (filters.priceRange === 'above-5000') return price > 5000;
+      return true;
+    });
+  }
 
   return (
     <main className="gallery-page">
@@ -28,68 +125,79 @@ export default function GalleryPage() {
         <div className="container">
           <p className="label">Portfolio</p>
           <h1 className="gallery-page__title">Artworks</h1>
+          <p className="gallery-page__subtitle">Explore original paintings and limited edition prints</p>
         </div>
       </div>
 
       <div className="container">
         <div className="gallery-page__filters">
-          {[['all','All Works'],['original','Original Paintings'],['print','Limited Edition Prints'],['collections','Collections']].map(([val, label]) => (
-            <button key={val}
+          {[
+            ['all', 'All Works'],
+            ['original', 'Original Paintings'],
+            ['print', 'Limited Edition Prints'],
+            ['collections', 'Collections']
+          ].map(([val, label]) => (
+            <button
+              key={val}
               className={`gallery-filter ${type === val ? 'active' : ''}`}
-              onClick={() => setSearchParams(val === 'all' ? {} : { type: val })}
-            >{label}</button>
+              onClick={() => {
+                setSearchParams(val === 'all' ? {} : { type: val });
+                window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+              }}
+            >
+              {label}
+            </button>
           ))}
         </div>
 
+        {error && (
+          <div className="gallery-error">
+            <p>{error}</p>
+          </div>
+        )}
+
         {loading ? (
-          <div className="gallery-grid">
-            {[1,2,3,4,5,6].map(i => <div key={i} className="painting-skeleton" />)}
+          <div className="gallery-page--loading">
+            <div className="spinner" />
+            <p>Loading gallery...</p>
           </div>
         ) : type === 'collections' ? (
-          <CollectionsView collections={collections} />
+          collections.length > 0 ? (
+            <CollectionsView collections={collections} />
+          ) : (
+            <p style={{ textAlign: 'center', padding: '60px 0' }}>No collections available.</p>
+          )
         ) : (
-          <>
-            {(type === 'all' || type === 'original') && originals.length > 0 && (
-              <div className="gallery-section">
-                {type === 'all' && <h2 className="gallery-section__title">Original Paintings</h2>}
+          <div className="gallery-page__layout">
+            <aside className="gallery-page__filters-sidebar">
+              <GalleryFilters 
+                filters={filters}
+                onFilterChange={(newFilters) => {
+                  setFilters(newFilters);
+                  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+                }}
+                availableMediums={availableMediums}
+                availableYears={availableYears}
+              />
+            </aside>
+
+            <div className="gallery-page__content">
+              {displayPaintings.length > 0 ? (
                 <div className="gallery-grid">
-                  {originals.map(p => <PaintingCard key={p.id} painting={p} />)}
+                  {displayPaintings.map(painting => (
+                    <PaintingCard key={painting.id} painting={painting} />
+                  ))}
                 </div>
-              </div>
-            )}
-            {(type === 'all' || type === 'print') && prints.length > 0 && (
-              <div className="gallery-section">
-                {type === 'all' && <h2 className="gallery-section__title">Limited Edition Prints</h2>}
-                <div className="gallery-grid">
-                  {prints.map(p => <PaintingCard key={p.id} painting={p} type="print" />)}
+              ) : (
+                <div style={{ textAlign: 'center', padding: '60px 0' }}>
+                  <h3>No artworks found</h3>
+                  <p>Try adjusting your filters</p>
                 </div>
-              </div>
-            )}
-            {originals.length === 0 && prints.length === 0 && (
-              <p className="gallery-empty">No works available at this time.</p>
-            )}
-          </>
+              )}
+            </div>
+          </div>
         )}
       </div>
     </main>
-  );
-}
-
-function CollectionsView({ collections }) {
-  if (collections.length === 0) return <p className="gallery-empty">No collections yet.</p>;
-  return (
-    <div className="collections-list">
-      {collections.map(c => (
-        <Link key={c.id} to={`/collections/${c.id}`} className="collection-row">
-          {c.coverImage && <img src={c.coverImage} alt={c.name} className="collection-row__img" />}
-          {!c.coverImage && <div className="collection-row__placeholder" />}
-          <div className="collection-row__info">
-            <h3 className="collection-row__name">{c.name}</h3>
-            {c.description && <p className="collection-row__desc">{c.description}</p>}
-            <span className="collection-row__link">View Collection →</span>
-          </div>
-        </Link>
-      ))}
-    </div>
   );
 }

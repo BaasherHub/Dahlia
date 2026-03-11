@@ -2,30 +2,51 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getPaintings, getHeroPainting } from '../api.js';
 import PaintingCard from '../components/PaintingCard.jsx';
+import Testimonials from '../components/Testimonials.jsx';
+import NewsletterSignup from '../components/NewsletterSignup.jsx';
+import SEOHead from '../components/SEOHead.jsx';
 import './HomePage.css';
 
 export default function HomePage() {
   const [heroPainting, setHeroPainting] = useState(null);
   const [originals, setOriginals] = useState([]);
   const [prints, setPrints] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getHeroPainting().then(p => p && setHeroPainting(p)).catch(() => {});
-    getPaintings().then(all => {
-      // Robust filtering — works with both old DB schema and new
-      setOriginals(all.filter(p => !p.sold && p.originalAvailable !== false && p.category !== 'print').slice(0, 3));
-      setPrints(all.filter(p => p.printAvailable === true).slice(0, 3));
-    }).catch(() => {});
+    getHeroPainting()
+      .then(p => p && setHeroPainting(p))
+      .catch(err => console.error('Failed to load hero:', err));
+    
+    getPaintings()
+      .then(all => {
+        const paintingArray = Array.isArray(all) ? all : (all.data || []);
+        setOriginals(paintingArray.filter(p => !p.sold && p.originalAvailable !== false && p.category !== 'print').slice(0, 6));
+        setPrints(paintingArray.filter(p => p.printAvailable === true).slice(0, 3));
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Failed to load paintings:', err);
+        setLoading(false);
+      });
   }, []);
 
   return (
     <main className="home">
-
-      {/* ── Hero ── */}
-      <section className="hero">
+      <SEOHead 
+        title="Home" 
+        description="Contemporary oil paintings by Dahlia Baasher. Explore original paintings and limited edition prints on premium linen canvas." 
+      />
+      {/* ── HERO SECTION ── */}
+      <section className={`hero${heroPainting?.images?.[0] ? '' : ' hero--fallback'}`}>
         {heroPainting?.images?.[0] ? (
           <div className="hero__painting">
-            <img src={heroPainting.images[0]} alt={heroPainting.title} className="hero__painting-img" />
+            <img 
+              src={heroPainting.images[0]} 
+              alt={heroPainting.title} 
+              className="hero__painting-img" 
+              decoding="async"
+            />
             <div className="hero__overlay" />
           </div>
         ) : (
@@ -34,125 +55,93 @@ export default function HomePage() {
 
         <div className="hero__content container">
           <div className="hero__text">
-            <p className="label hero__eyebrow">Dahlia Baasher</p>
-            <div className="hero__divider" />
-            <blockquote className="hero__quote">
-              "The intricacy of human nature is rooted in our need for emotional connection and social interaction, which is deceptively simple"
-            </blockquote>
+            <h1 className="hero__title">Dahlia Baasher</h1>
+            <p className="hero__subtitle">Contemporary Oil Paintings</p>
+            <p className="hero__description">
+              Refined works on premium linen canvas, defined by deliberate palette knife technique and expressive brushwork.
+            </p>
             <div className="hero__actions">
-              <Link to="/artworks" className="btn">View Works</Link>
-              <Link to="/about" className="btn btn-outline-white">About the Artist</Link>
+              <Link to="/gallery" className="btn">
+                Explore Collection
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </Link>
             </div>
           </div>
-
-          {heroPainting && (
-            <div className="hero__painting-caption">
-              <p className="hero__painting-title">{heroPainting.title}</p>
-              <p className="hero__painting-meta">{heroPainting.medium} · {heroPainting.dimensions}</p>
-            </div>
-          )}
         </div>
 
         <div className="hero__scroll-hint">
-          <span>Scroll</span>
-          <div className="hero__scroll-line" />
+          <span>Scroll to explore</span>
+          <svg width="16" height="24" viewBox="0 0 16 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <rect x="4" y="2" width="8" height="14" rx="4"/>
+            <path d="M8 18v4"/>
+          </svg>
         </div>
       </section>
 
-      {/* ── Statement ── */}
-      <section className="home-statement container">
-        <div className="home-statement__inner">
-          <p className="label">Artist Statement</p>
-          <blockquote className="home-statement__quote">
-            "A refined collection of original oil paintings on premium linen canvas, defined by the deliberate use of palette knife and confident, expressive brushstrokes."
-          </blockquote>
-          <p className="home-statement__attr">— Dahlia Baasher, Toronto</p>
-          <Link to="/about" className="home-statement__link">Read full statement →</Link>
-        </div>
-      </section>
-
-      {/* ── Original Paintings ── */}
-      {originals.length > 0 && (
-        <section className="home-section container">
-          <div className="home-section__header">
-            <div>
-              <p className="label">Selected Works</p>
-              <h2 className="home-section__title">Original Paintings</h2>
-            </div>
-            <Link to="/artworks?tab=originals" className="home-section__all">
-              View all
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </Link>
-          </div>
-          <div className="home-section__grid">
-            {originals.map(p => <PaintingCard key={p.id} painting={p} />)}
-          </div>
-        </section>
-      )}
-
-      {/* ── Limited Edition Prints ── */}
-      {prints.length > 0 && (
-        <section className="home-section home-section--alt">
+      {/* ── FEATURED WORKS ── */}
+      {!loading && originals.length > 0 && (
+        <section className="featured-works">
           <div className="container">
-            <div className="home-section__header">
+            <div className="section-header">
               <div>
-                <p className="label">Collectible Editions</p>
-                <h2 className="home-section__title">Limited Edition Prints</h2>
+                <h2 className="section-title">Featured Works</h2>
+                <p className="section-subtitle">Original Paintings</p>
               </div>
-              <Link to="/artworks?tab=prints" className="home-section__all">
-                View all
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              <Link to="/gallery" className="btn btn--ghost">
+                View All
               </Link>
             </div>
-            <div className="home-section__grid">
-              {prints.map(p => <PaintingCard key={p.id} painting={p} version="print" />)}
+            <div className="gallery-grid">
+              {originals.map(painting => (
+                <PaintingCard key={painting.id} painting={painting} />
+              ))}
             </div>
           </div>
         </section>
       )}
 
-      {/* ── Press strip ── */}
-      <section className="home-press">
-        <div className="container">
-          <div className="home-press__grid">
-            {[
-              { outlet: 'The New York Times', title: 'Sudan War Strikes a Blow to the Country\'s Emerging Art Scene' },
-              { outlet: 'AD Middle East', title: 'Meet 7 Sudanese Artists Giving Voice to Sudan\'s Civil War' },
-              { outlet: 'Saatchi Gallery, London', title: 'Detour — Travelling Exhibition' },
-              { outlet: 'Institut Français d\'Egypte', title: 'Ici Le Soudan — Group Exhibition' },
-            ].map((p, i) => (
-              <div key={i} className="home-press__item">
-                <p className="home-press__outlet">{p.outlet}</p>
-                <p className="home-press__title">{p.title}</p>
+      {/* ── PRINTS SECTION ── */}
+      {!loading && prints.length > 0 && (
+        <section className="featured-works" style={{ background: 'var(--color-surface)' }}>
+          <div className="container">
+            <div className="section-header">
+              <div>
+                <h2 className="section-title">Limited Edition Prints</h2>
+                <p className="section-subtitle">High-Quality Reproductions</p>
               </div>
-            ))}
+              <Link to="/gallery?type=print" className="btn btn--ghost">
+                View All Prints
+              </Link>
+            </div>
+            <div className="gallery-grid">
+              {prints.map(printing => (
+                <PaintingCard key={printing.id} painting={printing} />
+              ))}
+            </div>
           </div>
+        </section>
+      )}
+
+      {/* ── TESTIMONIALS SECTION ── */}
+      <Testimonials />
+
+      {/* ── NEWSLETTER SIGNUP ── */}
+      <NewsletterSignup />
+
+      {/* ── CTA SECTION ── */}
+      <section className="cta-section">
+        <div className="container">
+          <h2 className="cta-section__title">Ready to Commission?</h2>
+          <p className="cta-section__desc">
+            I work with collectors and designers worldwide to create bespoke artwork tailored to your vision and space.
+          </p>
+          <Link to="/commissions" className="btn btn--large">
+            Start a Commission
+          </Link>
         </div>
       </section>
-
-      {/* ── Newsletter ── */}
-      <section className="home-newsletter container">
-        <div className="home-newsletter__card">
-          <p className="label">Collector's List</p>
-          <h2 className="home-newsletter__title">Stay close to the studio</h2>
-          <p className="home-newsletter__sub">Early access to new works, exhibition invitations, and studio insights.</p>
-          <NewsletterForm />
-        </div>
-      </section>
-
     </main>
-  );
-}
-
-function NewsletterForm() {
-  const [email, setEmail] = useState('');
-  const [submitted, setSubmitted] = useState(false);
-  if (submitted) return <p className="home-newsletter__thanks">✦ Thank you — you're on the list.</p>;
-  return (
-    <form className="home-newsletter__form" onSubmit={e => { e.preventDefault(); if (email) setSubmitted(true); }}>
-      <input className="form-input home-newsletter__input" type="email" placeholder="your@email.com"
-        value={email} onChange={e => setEmail(e.target.value)} required />
-      <button type="submit" className="btn">Join</button>
-    </form>
   );
 }

@@ -1,133 +1,135 @@
+import { Link } from 'react-router-dom';
 import './AboutPage.css';
-
-const EXHIBITIONS = [
-  { year: '2025', name: 'Detour at the Italy Pavilion EXPO Osaka', location: 'Osaka, Japan' },
-  { year: '2025', name: 'Black Art Fair', location: 'Nia Art Center, Toronto, Canada' },
-  { year: '2024', name: 'Detour at the Pinacoteca Ambrosiana', location: 'Milan, Italy' },
-  { year: '2024', name: 'The Other Art Fair by Saatchi Art', location: 'Barker Hangar, Los Angeles, USA' },
-  { year: '2024', name: 'Houston Art Fair', location: 'Matthew Reeves Gallery, Texas, USA' },
-  { year: '2023', name: 'Detour at Saatchi Art Gallery', location: 'London, UK' },
-  { year: '2023', name: 'Ici Le Soudan', location: 'Institut Français d\'Egypte, Cairo, Egypt' },
-  { year: '2023', name: 'Sudan Heritage', location: 'Lamasat Art Gallery, Cairo, Egypt' },
-  { year: '2022', name: 'Pink Flame', location: 'Village Market, Nairobi, Kenya' },
-  { year: '2021', name: 'Solo Exhibition — A Place Named Embrace', location: 'Savanna Innovation Lab, Khartoum, Sudan' },
-  { year: '2021', name: 'Fragrance of Sudan', location: 'Karim Francis Gallery, Cairo, Egypt' },
-  { year: '2020', name: 'Art in Isolation', location: 'Middle East Art Institute, Washington DC, USA' },
-  { year: '2020', name: 'L\'effet Papillon', location: 'French Cultural Institute, Khartoum, Sudan' },
-  { year: '2020', name: 'Sudan Contemporary Art', location: 'Khartoum International Community School, Sudan' },
-  { year: '2019', name: 'Blanc et Noir', location: 'French Cultural Institute, Khartoum, Sudan' },
-  { year: '2019', name: 'Group Exhibition Conversations', location: 'French Cultural Center, Khartoum, Sudan' },
-  { year: '2018', name: 'Group Exhibition Women in Art', location: 'Al-Gunied Cultural Center, Khartoum, Sudan' },
-];
-
-const PRESS = [
-  { outlet: 'LOTA', title: 'Artist Dahlia Baasher — A canvas of revolution and resilience capturing stories of Sudan' },
-  { outlet: 'The New York Times', title: 'Sudan War Strikes a Blow to the Country\'s Emerging Art Scene' },
-  { outlet: 'AD Middle East', title: 'Meet 7 Sudanese Artists Who Are Giving Voice to Sudan\'s Civil War' },
-  { outlet: 'The Muse Multi Studio', title: 'A Place Named Embrace' },
-];
 
 export default function AboutPage() {
   return (
     <main className="about-page">
-      <div className="about-page__header">
+      {/* Hero Section */}
+      <section className="about-hero">
         <div className="container">
-          <p className="label">The Artist</p>
-          <h1 className="about-page__title">Dahlia Baasher</h1>
-          <p className="about-page__location">Sudanese Artist · Toronto, Canada</p>
+          <p className="label">About</p>
+          <h1>About Dahlia Baasher</h1>
+          <p className="about-hero__subtitle">
+            Contemporary artist creating refined works on premium linen canvas
+          </p>
         </div>
-      </div>
+      </section>
 
-      <div className="container">
-        <div className="about-page__body">
-
-          {/* Bio */}
-          <section className="about-bio">
-            <div className="about-bio__text">
-              <p className="label" style={{ marginBottom: 24 }}>Statement</p>
-              <p className="about-bio__para about-bio__para--calibri">
-                Born in the vibrant city of Port-Sudan by the Red Sea, and then moved to Khartoum where the 
-                dusty atmosphere influenced the colour palette of my artwork. I'm often intrigued by blending 
-                figures and buildings as they symbolize the simple concept of shelter providing us with a place 
-                for comfort, safety, and belonging.
+      {/* Bio Section */}
+      <section className="about-section">
+        <div className="container">
+          <div className="about-content">
+            <div className="about-text">
+              <h2>My Artistic Journey</h2>
+              <p>
+                I am a contemporary artist specializing in oil paintings on premium linen canvas. 
+                My work is defined by deliberate palette knife technique and expressive brushwork, 
+                creating pieces that resonate with collectors and designers worldwide.
               </p>
-              <p className="about-bio__para about-bio__para--calibri">
-                A concept that has been scattered after the breakout of war in Sudan last April, causing millions 
-                of people to be displaced. Following the outbreak of war in Sudan in April 2023, thousands of 
-                individuals, including myself, were displaced. I spent over six months in Cairo before settling 
-                in Canada. During this period, I got involved in raising awareness about the ongoing conflict in 
-                Sudan; at the group exhibition "Ici Le Soudan" that was commissioned by Institut Français d'Egypte 
-                in response to the large number of people displaced.
+              <p>
+                Each painting begins with careful consideration of color, composition, and emotional 
+                resonance. I work exclusively with the finest materials to ensure longevity and visual 
+                impact that endures through time.
               </p>
-              <p className="about-bio__para about-bio__para--calibri">
-                In addition to a collaboration with the Moleskine Foundation on the project "The Legendary Power 
-                of Creativity on Paper" in "Detour" — the travelling exhibition showcased at Saatchi Gallery in 
-                London, the Pinacoteca Ambrosiana in Milan and the Italian Pavilion in Osaka, Japan.
+              <p>
+                My practice combines technical precision with spontaneous creativity, resulting in 
+                works that are both carefully considered and intuitively executed.
               </p>
-              <blockquote className="about-bio__quote">
-                "Painting allows me to hold space for stories that are often silenced—faces lost in protest, 
-                the quiet dignity of survival, the ongoing fight for justice."
-              </blockquote>
             </div>
-            <div className="about-bio__aside">
-              <div className="about-bio__fact">
-                <p className="label">Based in</p>
-                <p>Toronto, Ontario, Canada</p>
-              </div>
-              <div className="about-bio__fact">
-                <p className="label">Medium</p>
-                <p>Oil on canvas & linen</p>
-              </div>
-              <div className="about-bio__fact">
-                <p className="label">Technique</p>
-                <p>Palette knife & expressive brushwork</p>
-              </div>
-              <div className="about-bio__fact">
-                <p className="label">Active Since</p>
-                <p>2018</p>
-              </div>
-              <div className="about-bio__fact">
-                <p className="label">Saatchi Art</p>
-                <a href="https://www.saatchiart.com/en-ca/dahliabaasher" target="_blank" rel="noopener noreferrer" className="about-bio__link">View Profile →</a>
+
+            <div className="about-image">
+              <div className="about-image__placeholder">
+                <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                  <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+                <p>Studio Portrait</p>
               </div>
             </div>
-          </section>
+          </div>
+        </div>
+      </section>
 
-          {/* Press */}
-          <section className="about-press">
-            <p className="label" style={{ marginBottom: 32 }}>Press & Features</p>
-            <div className="about-press__list">
-              {PRESS.map((p, i) => (
-                <div key={i} className="about-press__item">
-                  <span className="about-press__outlet">{p.outlet}</span>
-                  <p className="about-press__title">{p.title}</p>
-                </div>
-              ))}
+      {/* Practice Section */}
+      <section className="about-section about-section--alt">
+        <div className="container">
+          <h2>My Practice</h2>
+          
+          <div className="about-grid">
+            <div className="about-card">
+              <h3>Materials & Technique</h3>
+              <p>
+                I work exclusively with premium materials: linen canvas, oil pigments, and 
+                professional-grade mediums. My technique emphasizes the palette knife for 
+                texture and expressive mark-making.
+              </p>
             </div>
-          </section>
 
-          {/* Exhibitions */}
-          <section className="about-exhibitions">
-            <p className="label" style={{ marginBottom: 8 }}>Exhibition History</p>
-            <p className="about-exhibitions__intro">
-              My work has been featured in numerous exhibitions earning recognition for its unique 
-              ability to evoke emotional responses and inspire introspection.
+            <div className="about-card">
+              <h3>Creative Process</h3>
+              <p>
+                Each piece begins with careful composition planning, followed by multiple 
+                layers of paint application. I allow each layer to inform the next, creating 
+                depth and visual interest.
+              </p>
+            </div>
+
+            <div className="about-card">
+              <h3>Commissions & Collaborations</h3>
+              <p>
+                I welcome commission inquiries from collectors and designers. I work closely 
+                with clients to bring their vision to life, creating bespoke artwork for 
+                homes and commercial spaces.
+              </p>
+            </div>
+
+            <div className="about-card">
+              <h3>Exhibition History</h3>
+              <p>
+                My work has been featured in contemporary galleries and private collections. 
+                I continue to exhibit regularly and participate in art fairs and curated shows.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Statement Section */}
+      <section className="about-section">
+        <div className="container">
+          <div className="about-statement">
+            <h2>Artist Statement</h2>
+            <p>
+              My practice is rooted in a deep engagement with color, form, and the physical 
+              materiality of paint. I create work that exists in conversation with contemporary 
+              art practice while maintaining a reverence for the traditions of painting.
             </p>
-            <div className="about-exhibitions__list">
-              {EXHIBITIONS.map((ex, i) => (
-                <div key={i} className="about-ex-row">
-                  <span className="about-ex-year">{ex.year}</span>
-                  <div>
-                    <p className="about-ex-name">{ex.name}</p>
-                    <p className="about-ex-loc">{ex.location}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-
+            <p>
+              Through careful observation and intuitive response, I build paintings that invite 
+              contemplation and emotional engagement. Each piece is an attempt to capture a moment 
+              of synthesis between intention and spontaneity, between control and surrender.
+            </p>
+            <p>
+              I am committed to creating work of lasting value—both visually and materially. 
+              My practice is defined by a pursuit of excellence and a dedication to the craft 
+              of painting.
+            </p>
+          </div>
         </div>
-      </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="cta-section">
+        <div className="container">
+          <h2 className="cta-section__title">Ready to Start a Collaboration?</h2>
+          <p className="cta-section__desc">
+            I'm always open to discussing new projects, exhibitions, and commissions.
+          </p>
+          <Link to="/commissions" className="btn btn--large">
+            Start a Commission
+          </Link>
+        </div>
+      </section>
     </main>
   );
 }

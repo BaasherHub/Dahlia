@@ -4,7 +4,7 @@ import './CollectionCard.css';
 export default function CollectionCard({ collection }) {
   const cover = collection.coverImage || collection.paintings?.[0]?.images?.[0];
   return (
-    <Link to={`/collections/${collection.id}`} className="collection-card">
+    <Link to={`/collection/${collection.id}`} className="collection-card">
       <div className="collection-card__img-wrap">
         {cover ? <img src={cover} alt={collection.name} className="collection-card__img" /> : <div className="collection-card__placeholder" />}
         <div className="collection-card__hover"><span>Explore Collection →</span></div>

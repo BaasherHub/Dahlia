@@ -1,17 +1,68 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma.js';
+import { z } from 'zod';
+import rateLimit from 'express-rate-limit';
 import { requireAdmin } from './admin.js';
 
 const router = Router();
-const prisma = new PrismaClient();
 
-// GET all paintings including sold (admin) - must be before /:id
+const CreatePaintingSchema = z.object({
+  title: z.string().min(1).max(255),
+  description: z.string().max(2000).default(''),
+  originalPrice: z.number().positive().nullable().optional(),
+  originalAvailable: z.boolean().default(true),
+  printPrice: z.number().positive().nullable().optional(),
+  printAvailable: z.boolean().default(false),
+  images: z.array(z.string().url()).min(1),
+  dimensions: z.string().min(1).max(100),
+  medium: z.string().max(100).default('Oil on canvas'),
+  year: z.number().int().min(1900).max(new Date().getFullYear()).optional(),
+  featured: z.boolean().default(false),
+  heroImage: z.boolean().default(false),
+  category: z.enum(['original', 'print', 'both']).default('original'),
+  collectionId: z.string().nullable().optional(),
+});
+
+const UpdatePaintingSchema = CreatePaintingSchema.partial();
+
+const PaginationSchema = z.object({
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(20),
+  collectionId: z.string().optional(),
+});
+
+const adminLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  skip: (req) => process.env.NODE_ENV !== 'production',
+  message: 'Too many requests, please try again later.',
+});
+
+router.use(adminLimiter);
+
+// GET all paintings (admin - includes sold) - must be before /:id
 router.get('/all', requireAdmin, async (req, res) => {
+  const { page, limit } = PaginationSchema.parse(req.query);
+  const skip = (page - 1) * limit;
+
   const paintings = await prisma.painting.findMany({
+    skip,
+    take: limit,
     orderBy: { createdAt: 'desc' },
     include: { collection: true },
   });
-  res.json(paintings);
+
+  const total = await prisma.painting.count();
+
+  res.json({
+    data: paintings,
+    pagination: {
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit),
+    },
+  });
 });
 
 // GET hero painting - must be before /:id
@@ -24,16 +75,33 @@ router.get('/hero', async (req, res) => {
 
 // GET all available paintings (public)
 router.get('/', async (req, res) => {
-  const { collectionId } = req.query;
-  const where = {};
-  if (collectionId) where.collectionId = collectionId;
-  
+  const { collectionId, page, limit } = PaginationSchema.parse(req.query);
+  const skip = (page - 1) * limit;
+
+  const where = {
+    originalAvailable: true,
+    ...(collectionId && { collectionId }),
+  };
+
   const paintings = await prisma.painting.findMany({
     where,
+    skip,
+    take: limit,
     orderBy: { createdAt: 'desc' },
     include: { collection: { select: { id: true, name: true } } },
   });
-  res.json(paintings);
+
+  const total = await prisma.painting.count({ where });
+
+  res.json({
+    data: paintings,
+    pagination: {
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit),
+    },
+  });
 });
 
 // GET single painting
@@ -42,76 +110,38 @@ router.get('/:id', async (req, res) => {
     where: { id: req.params.id },
     include: { collection: { select: { id: true, name: true } } },
   });
-  if (!painting) return res.status(404).json({ error: 'Not found' });
+  if (!painting) {
+    return res.status(404).json({ error: 'Painting not found' });
+  }
   res.json(painting);
 });
 
 // POST create painting (admin)
 router.post('/', requireAdmin, async (req, res) => {
-  const {
-    title, description, originalPrice, originalAvailable,
-    printPrice, printAvailable, images, dimensions, medium,
-    year, featured, heroImage, category, collectionId
-  } = req.body;
+  const data = CreatePaintingSchema.parse(req.body);
 
-  // If setting as hero, unset others
-  if (heroImage) {
+  if (data.heroImage) {
     await prisma.painting.updateMany({ data: { heroImage: false } });
   }
 
-  const painting = await prisma.painting.create({
-    data: {
-      title,
-      description: description || '',
-      originalPrice: originalPrice ? parseFloat(originalPrice) : null,
-      originalAvailable: originalAvailable !== false,
-      printPrice: printPrice ? parseFloat(printPrice) : null,
-      printAvailable: printAvailable === true,
-      images: images || [],
-      dimensions: dimensions || '',
-      medium: medium || 'Oil on canvas',
-      year: year ? parseInt(year) : new Date().getFullYear(),
-      featured: featured || false,
-      heroImage: heroImage || false,
-      category: category || 'original',
-      collectionId: collectionId || null,
-    },
-  });
-  res.json(painting);
+  const painting = await prisma.painting.create({ data });
+  res.status(201).json(painting);
 });
 
 // PUT update painting (admin)
 router.put('/:id', requireAdmin, async (req, res) => {
-  const {
-    title, description, originalPrice, originalAvailable,
-    printPrice, printAvailable, images, dimensions, medium,
-    year, featured, heroImage, sold, category, collectionId
-  } = req.body;
+  const data = UpdatePaintingSchema.parse(req.body);
 
-  // If setting as hero, unset others first
-  if (heroImage) {
-    await prisma.painting.updateMany({ data: { heroImage: false } });
+  if (data.heroImage) {
+    await prisma.painting.updateMany({
+      where: { id: { not: req.params.id } },
+      data: { heroImage: false },
+    });
   }
 
   const painting = await prisma.painting.update({
     where: { id: req.params.id },
-    data: {
-      ...(title !== undefined && { title }),
-      ...(description !== undefined && { description }),
-      ...(originalPrice !== undefined && { originalPrice: originalPrice ? parseFloat(originalPrice) : null }),
-      ...(originalAvailable !== undefined && { originalAvailable }),
-      ...(printPrice !== undefined && { printPrice: printPrice ? parseFloat(printPrice) : null }),
-      ...(printAvailable !== undefined && { printAvailable }),
-      ...(images !== undefined && { images }),
-      ...(dimensions !== undefined && { dimensions }),
-      ...(medium !== undefined && { medium }),
-      ...(year !== undefined && { year: parseInt(year) }),
-      ...(featured !== undefined && { featured }),
-      ...(heroImage !== undefined && { heroImage }),
-      ...(sold !== undefined && { sold }),
-      ...(category !== undefined && { category }),
-      ...(collectionId !== undefined && { collectionId: collectionId || null }),
-    },
+    data,
   });
   res.json(painting);
 });

@@ -1,10 +1,19 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma.js';
+import { z } from 'zod';
+import { requireAdmin } from './admin.js';
 
 const router = Router();
-const prisma = new PrismaClient();
 
-// Get all collections (public)
+const CreateCollectionSchema = z.object({
+  name: z.string().min(1).max(100),
+  description: z.string().max(1000).optional(),
+  coverImage: z.string().url().nullable().optional(),
+  order: z.number().int().default(0),
+});
+
+const UpdateCollectionSchema = CreateCollectionSchema.partial();
+
 router.get('/', async (req, res) => {
   const collections = await prisma.collection.findMany({
     orderBy: { order: 'asc' },
@@ -12,6 +21,7 @@ router.get('/', async (req, res) => {
       paintings: {
         take: 1,
         orderBy: { createdAt: 'desc' },
+        where: { originalAvailable: true },
         select: { id: true, images: true, title: true },
       },
       _count: { select: { paintings: true } },
@@ -20,41 +30,38 @@ router.get('/', async (req, res) => {
   res.json(collections);
 });
 
-// Get single collection with all paintings
 router.get('/:id', async (req, res) => {
   const collection = await prisma.collection.findUnique({
     where: { id: req.params.id },
     include: {
-      paintings: { orderBy: { createdAt: 'desc' } },
+      paintings: {
+        where: { originalAvailable: true },
+        orderBy: { createdAt: 'desc' },
+      },
     },
   });
-  if (!collection) return res.status(404).json({ error: 'Not found' });
+  if (!collection) {
+    return res.status(404).json({ error: 'Collection not found' });
+  }
   res.json(collection);
 });
 
-// Create collection (admin)
-router.post('/', async (req, res) => {
-  const key = req.headers['x-admin-key'];
-  if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
-  const collection = await prisma.collection.create({ data: req.body });
-  res.json(collection);
+router.post('/', requireAdmin, async (req, res) => {
+  const data = CreateCollectionSchema.parse(req.body);
+  const collection = await prisma.collection.create({ data });
+  res.status(201).json(collection);
 });
 
-// Update collection (admin)
-router.put('/:id', async (req, res) => {
-  const key = req.headers['x-admin-key'];
-  if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+router.put('/:id', requireAdmin, async (req, res) => {
+  const data = UpdateCollectionSchema.parse(req.body);
   const collection = await prisma.collection.update({
     where: { id: req.params.id },
-    data: req.body,
+    data,
   });
   res.json(collection);
 });
 
-// Delete collection (admin)
-router.delete('/:id', async (req, res) => {
-  const key = req.headers['x-admin-key'];
-  if (key !== process.env.ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+router.delete('/:id', requireAdmin, async (req, res) => {
   await prisma.collection.delete({ where: { id: req.params.id } });
   res.json({ ok: true });
 });

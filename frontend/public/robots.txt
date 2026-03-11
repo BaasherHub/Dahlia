@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin
+Disallow: /api/
+Disallow: /checkout
+Disallow: /order-success
+
+Crawl-delay: 1
+
+Sitemap: https://www.dahliabaasher.com/sitemap.xml

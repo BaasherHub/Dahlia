@@ -1,61 +1,74 @@
-// src/routes/orders.js
 import { Router } from 'express';
 import Stripe from 'stripe';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma.js';
 import { z } from 'zod';
+import rateLimit from 'express-rate-limit';
 
 const router = Router();
-const prisma = new PrismaClient();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
+const checkoutLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  skip: (req) => process.env.NODE_ENV !== 'production',
+  message: 'Too many checkout attempts, please try again later.',
+});
+
 const CheckoutSchema = z.object({
-  paintingIds: z.array(z.string()).min(1),
+  paintingIds: z.array(z.string()).min(1).max(20),
   customerEmail: z.string().email(),
   shipping: z.object({
-    name: z.string(),
-    street: z.string(),
-    city: z.string(),
-    state: z.string(),
-    zip: z.string(),
-    country: z.string(),
+    name: z.string().min(1).max(100),
+    street: z.string().min(1).max(100),
+    city: z.string().min(1).max(50),
+    state: z.string().min(1).max(50),
+    zip: z.string().min(1).max(20),
+    country: z.string().min(2).max(2),
     phone: z.string().optional(),
   }),
 });
 
-// POST /api/orders/checkout — create Stripe session
-router.post('/checkout', async (req, res) => {
+router.post('/checkout', checkoutLimiter, async (req, res) => {
   const data = CheckoutSchema.parse(req.body);
 
-  // Fetch paintings from DB
   const paintings = await prisma.painting.findMany({
-    where: { id: { in: data.paintingIds }, sold: false },
+    where: {
+      id: { in: data.paintingIds },
+      originalAvailable: true,
+    },
   });
 
   if (paintings.length !== data.paintingIds.length) {
-    return res.status(400).json({ error: 'One or more paintings are unavailable.' });
+    return res.status(400).json({
+      error: 'One or more paintings are unavailable.',
+    });
   }
 
-  // Build Stripe line items
-  const lineItems = paintings.map((p) => ({
-    price_data: {
-      currency: 'usd',
-      product_data: {
-        name: p.title,
-        description: `${p.medium} · ${p.dimensions}`,
-        images: p.images.slice(0, 1),
+  const lineItems = paintings.map((p) => {
+    const priceInCents = Math.round((p.originalPrice || 0) * 100);
+    if (priceInCents <= 0) {
+      throw new Error(`Invalid price for painting ${p.id}`);
+    }
+    return {
+      price_data: {
+        currency: 'usd',
+        product_data: {
+          name: p.title,
+          description: `${p.medium} · ${p.dimensions}`,
+          images: p.images.slice(0, 1),
+        },
+        unit_amount: priceInCents,
       },
-      unit_amount: Math.round(p.price * 100),
-    },
-    quantity: 1,
-  }));
+      quantity: 1,
+    };
+  });
 
-  // Create Stripe Checkout session
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],
     line_items: lineItems,
     mode: 'payment',
     customer_email: data.customerEmail,
-    success_url: `${process.env.FRONTEND_URL}/order/success?session_id={CHECKOUT_SESSION_ID}`,
+    success_url: `${process.env.FRONTEND_URL}/order-success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${process.env.FRONTEND_URL}/cart`,
     metadata: {
       paintingIds: JSON.stringify(data.paintingIds),
@@ -74,13 +87,14 @@ router.post('/checkout', async (req, res) => {
   res.json({ url: session.url });
 });
 
-// GET /api/orders/:sessionId — fetch order by stripe session
 router.get('/session/:sessionId', async (req, res) => {
   const order = await prisma.order.findUnique({
     where: { stripeSessionId: req.params.sessionId },
     include: { items: { include: { painting: true } } },
   });
-  if (!order) return res.status(404).json({ error: 'Order not found' });
+  if (!order) {
+    return res.status(404).json({ error: 'Order not found' });
+  }
   res.json(order);
 });
 
