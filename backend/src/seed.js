@@ -1,15 +1,13 @@
 // src/seed.js — run with: npm run db:seed
 import 'dotenv/config';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from './lib/prisma.js';
 
 const paintings = [
   {
     title: 'Golden Hour',
     description: 'A warm, meditative landscape capturing the last light of evening across the Nile Delta. Layered glazes of amber and gold create a luminous depth that shifts with the viewer\'s eye.',
-    price: 1200,
-    images: ['https://via.placeholder.com/800x1000/c9a96e/ffffff?text=Golden+Hour'],
+    originalPrice: 1200,
+    images: ['https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=800&q=80'],
     dimensions: '80 × 100 cm',
     medium: 'Oil on canvas',
     year: 2024,
@@ -18,8 +16,8 @@ const paintings = [
   {
     title: 'Still Life with Pomegranates',
     description: 'A contemporary take on the classical still life tradition. Rich crimson and deep burgundy tones set against a warm neutral ground.',
-    price: 850,
-    images: ['https://via.placeholder.com/800x900/8b2635/ffffff?text=Pomegranates'],
+    originalPrice: 850,
+    images: ['https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=800&q=80'],
     dimensions: '60 × 70 cm',
     medium: 'Oil on linen',
     year: 2024,
@@ -28,8 +26,8 @@ const paintings = [
   {
     title: 'Quiet Interior',
     description: 'Morning light filters through sheer curtains onto a pale room. A study in restraint and stillness.',
-    price: 980,
-    images: ['https://via.placeholder.com/800x800/d4c5b2/3d3530?text=Quiet+Interior'],
+    originalPrice: 980,
+    images: ['https://images.unsplash.com/photo-1578301978693-85fa9c0320b9?w=800&q=80'],
     dimensions: '70 × 70 cm',
     medium: 'Oil on canvas',
     year: 2023,
@@ -38,8 +36,8 @@ const paintings = [
   {
     title: 'Garden Study No. 4',
     description: 'Loose, gestural marks describe a garden in high summer — lush, abundant, almost overwhelming in its beauty.',
-    price: 650,
-    images: ['https://via.placeholder.com/800x1000/5a7a4a/ffffff?text=Garden+Study'],
+    originalPrice: 650,
+    images: ['https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80'],
     dimensions: '50 × 70 cm',
     medium: 'Oil on panel',
     year: 2024,
@@ -48,8 +46,8 @@ const paintings = [
   {
     title: 'Vessel',
     description: 'A solitary ceramic jug, rendered with quiet precision. The object becomes a meditation on form and presence.',
-    price: 550,
-    images: ['https://via.placeholder.com/600x800/b5a99e/ffffff?text=Vessel'],
+    originalPrice: 550,
+    images: ['https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=800&q=80'],
     dimensions: '40 × 55 cm',
     medium: 'Oil on linen',
     year: 2023,
@@ -58,15 +56,16 @@ const paintings = [
 ];
 
 async function main() {
-  console.log('🌱 Seeding database...');
-  for (const painting of paintings) {
-    await prisma.painting.upsert({
-      where: { id: painting.title.toLowerCase().replace(/\s+/g, '-') },
-      update: {},
-      create: painting,
-    });
+  if (process.env.NODE_ENV === 'production') {
+    console.error('❌ Seeding is not allowed in production. Set NODE_ENV to development or test.');
+    process.exit(1);
   }
-  console.log(`✅ Seeded ${paintings.length} paintings`);
+  console.info('🌱 Seeding database...');
+  await prisma.painting.deleteMany({});
+  for (const painting of paintings) {
+    await prisma.painting.create({ data: painting });
+  }
+  console.info(`✅ Seeded ${paintings.length} paintings`);
 }
 
 main()
