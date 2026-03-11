@@ -500,7 +500,9 @@ select {
 }
 
 main {
-  padding-top: var(--nav-h);
+  display: block;
+  width: 100%;
+  min-height: 100vh;
 }
 
 section {
