@@ -65,6 +65,29 @@
   z-index: 0;
 }
 
+/* When no image is loaded, switch all hero text to dark colors */
+.hero--fallback .hero__content {
+  color: var(--color-text);
+}
+
+.hero--fallback .hero__title {
+  color: var(--color-text);
+  text-shadow: none;
+}
+
+.hero--fallback .hero__subtitle {
+  color: var(--color-text-secondary);
+  text-shadow: none;
+}
+
+.hero--fallback .hero__description {
+  color: var(--color-text-secondary);
+}
+
+.hero--fallback .hero__scroll-hint {
+  color: var(--color-text-secondary);
+}
+
 .hero__content {
   position: relative;
   z-index: 2;
@@ -256,7 +279,7 @@
   }
 
   .hero__subtitle {
-    font-size: clamp(10px, 1.5vw, 14px);
+    font-size: clamp(12px, 2vw, 14px);
   }
 
   .hero__description {
@@ -289,7 +312,7 @@
 
 @media (max-width: 480px) {
   .hero {
-    min-height: calc(50vh - var(--nav-h));
+    min-height: 70vh;
   }
 
   .hero__content {
@@ -301,8 +324,8 @@
   }
 
   .hero__subtitle {
-    font-size: clamp(9px, 1.2vw, 12px);
-    letter-spacing: 0.1em;
+    font-size: 12px;
+    letter-spacing: 0.08em;
   }
 
   .hero__description {

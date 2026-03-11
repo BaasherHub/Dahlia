@@ -2,7 +2,6 @@
   padding: 24px 0;
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
-  margin-top: var(--nav-h);
 }
 
 .breadcrumbs__inner {
