@@ -267,46 +267,33 @@ a:active {
   background: var(--color-accent);
   color: #fff;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
   text-decoration: none;
   min-height: 44px;
   min-width: 44px;
   position: relative;
-  overflow: hidden;
   white-space: nowrap;
   user-select: none;
-  isolation: isolate;
 }
 
-.btn::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
-  transform: translate(-50%, -50%);
-  transition: width 0.6s, height 0.6s;
-  pointer-events: none;
-  z-index: -1;
-}
+/* Ensure button text is ALWAYS visible, even on <a> tags */
+a.btn, a.btn:hover, a.btn:visited, a.btn:active,
+a.btn:link, button.btn { color: #fff; text-decoration: none; }
+a.btn--ghost, a.btn--ghost:visited { color: var(--color-text); }
+a.btn--ghost:hover { color: var(--color-accent); }
+a.btn--secondary, a.btn--secondary:visited { color: var(--color-accent); }
+a.btn--secondary:hover { color: #fff; }
 
 .btn:hover:not(:disabled) {
   background: var(--color-accent3);
   border-color: var(--color-accent3);
+  color: #fff;
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }
 
 .btn:active:not(:disabled) {
   transform: translateY(0);
-}
-
-.btn:active:not(:disabled)::before {
-  width: 300px;
-  height: 300px;
 }
 
 .btn:disabled {

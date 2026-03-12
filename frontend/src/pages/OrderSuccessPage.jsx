@@ -1,5 +1,5 @@
 // src/pages/OrderSuccessPage.jsx
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { fetchOrderBySession } from '../api.js';
 import { useCart } from '../context/CartContext.jsx';
@@ -10,16 +10,11 @@ export default function OrderSuccessPage() {
   const { clear } = useCart();
   const [order, setOrder] = useState(null);
   const sessionId = params.get('session_id');
-  const clearedRef = useRef(false);
 
   useEffect(() => {
-    // Only clear cart once
-    if (!clearedRef.current) {
-      clear();
-      clearedRef.current = true;
-    }
-
+    clear(); // Empty the cart
     if (sessionId) {
+      // Poll up to 5 times — webhook may take a moment to process
       let attempts = 0;
       const poll = async () => {
         try {

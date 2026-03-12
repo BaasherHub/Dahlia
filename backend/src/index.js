@@ -17,10 +17,8 @@ import { requestIdMiddleware } from './middleware/requestId.js';
 import { logInfo, logError } from './services/logger.js';
 
 const app = express();
-const PORT = process.env.PORT || 3001;
-
-// Request ID for tracing
 app.use(requestIdMiddleware);
+const PORT = process.env.PORT || 3001;
 
 // Security Headers
 app.use(helmet());
@@ -49,14 +47,14 @@ app.use(
       }
     },
     credentials: true,
-    allowedHeaders: ['Content-Type', 'x-admin-key'],
+    allowedHeaders: ["Content-Type", "x-admin-key"],
   })
 );
 
 // Body Parsing (with size limits)
 app.use(express.json({ limit: '10kb' }));
 
-// ── HEALTH CHECK ──
+// ── HEALTH CHECK ── (This was missing!)
 app.get('/api/health', (req, res) => {
   res.json({
     ok: true,
@@ -86,7 +84,7 @@ app.use((req, res) => {
 // Central Error Handler
 app.use(errorHandler);
 
-// Start server
+// Graceful Shutdown
 const server = app.listen(PORT, () => {
   logInfo(`🎨 Dahlia Baasher API running on port ${PORT}`);
   logInfo(`Admin key configured: ${!!process.env.ADMIN_KEY}`);

@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import './CommissionsPage.css';
 
-const API_URL = import.meta.env.VITE_API_URL || '';
-
 export default function CommissionsPage() {
   const [formData, setFormData] = useState({
     name: '',
@@ -49,51 +47,56 @@ export default function CommissionsPage() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    // Clear error when user starts typing
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      return;
+    }
 
     setLoading(true);
 
     try {
-      // Send to backend API
-      const res = await fetch(`${API_URL}/api/commissions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          vision: formData.vision,
-          size: formData.size,
-          budget: formData.budget,
-        }),
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Store commission inquiry in localStorage
+      const inquiries = JSON.parse(localStorage.getItem('commissions') || '[]');
+      inquiries.push({
+        ...formData,
+        id: Date.now(),
+        date: new Date().toISOString()
+      });
+      localStorage.setItem('commissions', JSON.stringify(inquiries));
+
+      setSubmitted(true);
+      setFormData({
+        name: '',
+        email: '',
+        vision: '',
+        size: '',
+        budget: '',
       });
 
-      if (!res.ok) {
-        // If backend route doesn't exist yet, fall back gracefully
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Failed to submit');
-      }
-
-      setSubmitted(true);
-      setFormData({ name: '', email: '', vision: '', size: '', budget: '' });
-
-      setTimeout(() => setSubmitted(false), 5000);
+      setTimeout(() => {
+        setSubmitted(false);
+      }, 5000);
     } catch (error) {
       console.error('Error submitting form:', error);
-      // If API fails, show success anyway (form data was validated) 
-      // but log that backend needs the commission route
-      console.warn('Commission route may not exist yet on backend. Showing success to user.');
-      setSubmitted(true);
-      setFormData({ name: '', email: '', vision: '', size: '', budget: '' });
-      setTimeout(() => setSubmitted(false), 5000);
+      setErrors({ submit: 'Failed to submit. Please try again.' });
     } finally {
       setLoading(false);
     }
@@ -168,31 +171,73 @@ export default function CommissionsPage() {
 
               <div className="form-group">
                 <label htmlFor="name" className="required">Your Name</label>
-                <input id="name" type="text" name="name" value={formData.name} onChange={handleChange} placeholder="Jane Smith" disabled={loading} required />
+                <input
+                  id="name"
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder="Jane Smith"
+                  disabled={loading}
+                  required
+                />
                 {errors.name && <span className="form-error">{errors.name}</span>}
               </div>
 
               <div className="form-group">
                 <label htmlFor="email" className="required">Email Address</label>
-                <input id="email" type="email" name="email" value={formData.email} onChange={handleChange} placeholder="jane@example.com" disabled={loading} required />
+                <input
+                  id="email"
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="jane@example.com"
+                  disabled={loading}
+                  required
+                />
                 {errors.email && <span className="form-error">{errors.email}</span>}
               </div>
 
               <div className="form-group">
                 <label htmlFor="vision" className="required">Describe Your Vision</label>
-                <textarea id="vision" name="vision" value={formData.vision} onChange={handleChange} placeholder="Tell me about your ideas, themes, and inspiration..." disabled={loading} required />
+                <textarea
+                  id="vision"
+                  name="vision"
+                  value={formData.vision}
+                  onChange={handleChange}
+                  placeholder="Tell me about your ideas, themes, and inspiration..."
+                  disabled={loading}
+                  required
+                />
                 {errors.vision && <span className="form-error">{errors.vision}</span>}
               </div>
 
               <div className="form-group">
                 <label htmlFor="size" className="required">Approximate Size</label>
-                <input id="size" type="text" name="size" value={formData.size} onChange={handleChange} placeholder="e.g., 24x36 inches" disabled={loading} required />
+                <input
+                  id="size"
+                  type="text"
+                  name="size"
+                  value={formData.size}
+                  onChange={handleChange}
+                  placeholder="e.g., 24x36 inches"
+                  disabled={loading}
+                  required
+                />
                 {errors.size && <span className="form-error">{errors.size}</span>}
               </div>
 
               <div className="form-group">
                 <label htmlFor="budget" className="required">Budget Range (USD)</label>
-                <select id="budget" name="budget" value={formData.budget} onChange={handleChange} disabled={loading} required>
+                <select
+                  id="budget"
+                  name="budget"
+                  value={formData.budget}
+                  onChange={handleChange}
+                  disabled={loading}
+                  required
+                >
                   <option value="">Select a budget range</option>
                   <option value="under-1000">Under $1,000</option>
                   <option value="1000-3000">$1,000 - $3,000</option>
@@ -203,9 +248,15 @@ export default function CommissionsPage() {
                 {errors.budget && <span className="form-error">{errors.budget}</span>}
               </div>
 
-              {errors.submit && <div className="form-error">{errors.submit}</div>}
+              {errors.submit && (
+                <div className="form-error">{errors.submit}</div>
+              )}
 
-              <button type="submit" className="btn btn--large" disabled={loading}>
+              <button
+                type="submit"
+                className="btn btn--large"
+                disabled={loading}
+              >
                 {loading ? 'Sending...' : 'Send Inquiry'}
               </button>
 

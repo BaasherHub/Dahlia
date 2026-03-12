@@ -8,11 +8,7 @@ export function CartProvider({ children }) {
   useEffect(() => {
     const saved = localStorage.getItem('cart');
     if (saved) {
-      try {
-        setItems(JSON.parse(saved));
-      } catch (err) {
-        console.error('Failed to load cart:', err);
-      }
+      try { setItems(JSON.parse(saved)); } catch (err) { console.error('Failed to load cart:', err); }
     }
   }, []);
 
@@ -21,20 +17,12 @@ export function CartProvider({ children }) {
   }, [items]);
 
   const addItem = (item) => {
-    // Prevent duplicate originals (one-of-a-kind paintings)
-    if (item.selectedVersion === 'original') {
-      const alreadyInCart = items.some(
-        (i) => i.id === item.id && i.selectedVersion === 'original'
-      );
-      if (alreadyInCart) return false;
-    }
-    setItems((prev) => [...prev, { ...item, quantity: item.quantity || 1 }]);
-    return true;
+    setItems(prev => [...prev, { ...item, quantity: item.quantity || 1 }]);
   };
 
   const removeItem = (id) => {
-    setItems((prev) => {
-      const idx = prev.findIndex((item) => item.id === id);
+    setItems(prev => {
+      const idx = prev.findIndex(item => item.id === id);
       if (idx === -1) return prev;
       return [...prev.slice(0, idx), ...prev.slice(idx + 1)];
     });
@@ -42,27 +30,16 @@ export function CartProvider({ children }) {
 
   const updateQuantity = (id, quantity) => {
     if (quantity < 1) return;
-    setItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, quantity } : item))
-    );
+    setItems(prev => prev.map(item => item.id === id ? { ...item, quantity } : item));
   };
 
-  const clear = () => {
-    setItems([]);
-  };
-
-  // Alias for backwards compat
+  const clear = () => setItems([]);
   const clearCart = clear;
 
-  const total = items.reduce(
-    (sum, item) => sum + (item.price || 0) * (item.quantity || 1),
-    0
-  );
+  const total = items.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0);
 
   return (
-    <CartContext.Provider
-      value={{ items, addItem, removeItem, updateQuantity, clear, clearCart, total }}
-    >
+    <CartContext.Provider value={{ items, addItem, removeItem, updateQuantity, clear, clearCart, total }}>
       {children}
     </CartContext.Provider>
   );
@@ -71,15 +48,7 @@ export function CartProvider({ children }) {
 export function useCart() {
   const context = useContext(CartContext);
   if (!context) {
-    return {
-      items: [],
-      addItem: () => false,
-      removeItem: () => {},
-      updateQuantity: () => {},
-      clear: () => {},
-      clearCart: () => {},
-      total: 0,
-    };
+    return { items: [], addItem: () => {}, removeItem: () => {}, updateQuantity: () => {}, clear: () => {}, clearCart: () => {}, total: 0 };
   }
   return context;
 }

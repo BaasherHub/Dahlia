@@ -1,12 +1,13 @@
 import { Router } from 'express';
 import Stripe from 'stripe';
-import prisma from '../lib/prisma.js';
+import { PrismaClient } from '@prisma/client';
 import { createShippingLabel } from '../services/shipping.js';
 import { sendOrderConfirmation } from '../services/email.js';
 import { alertAdmin } from '../services/alert.js';
 import { logInfo, logError } from '../services/logger.js';
 
 const router = Router();
+const prisma = new PrismaClient();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 router.post('/', async (req, res) => {

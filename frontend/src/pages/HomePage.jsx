@@ -4,7 +4,6 @@ import { getPaintings, getHeroPainting } from '../api.js';
 import PaintingCard from '../components/PaintingCard.jsx';
 import Testimonials from '../components/Testimonials.jsx';
 import NewsletterSignup from '../components/NewsletterSignup.jsx';
-import SEOHead from '../components/SEOHead.jsx';
 import './HomePage.css';
 
 export default function HomePage() {
@@ -33,10 +32,6 @@ export default function HomePage() {
 
   return (
     <main className="home">
-      <SEOHead 
-        title="Home" 
-        description="Contemporary oil paintings by Dahlia Baasher. Explore original paintings and limited edition prints on premium linen canvas." 
-      />
       {/* ── HERO SECTION ── */}
       <section className={`hero${heroPainting?.images?.[0] ? '' : ' hero--fallback'}`}>
         {heroPainting?.images?.[0] ? (

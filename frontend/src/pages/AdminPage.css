@@ -248,66 +248,7 @@
   margin-top: var(--space-lg);
 }
 
-/* BADGES */
-.admin-painting-card__badges {
-  display: flex;
-  gap: var(--space-sm);
-  flex-wrap: wrap;
-  margin-top: var(--space-sm);
-}
-
-.admin-badge {
-  font-family: var(--font-ui);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  padding: 4px 8px;
-  border-radius: 4px;
-  background: rgba(168, 153, 104, 0.1);
-  color: var(--color-accent);
-}
-
-.admin-badge--hero {
-  background: rgba(45, 95, 63, 0.1);
-  color: var(--color-success);
-}
-
-.admin-badge--sold {
-  background: rgba(139, 58, 58, 0.1);
-  color: var(--color-error);
-}
-
-/* STATUS */
-.admin-status {
-  font-family: var(--font-ui);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  padding: 4px 10px;
-  border-radius: 4px;
-}
-
-.admin-status--paid {
-  background: rgba(168, 153, 104, 0.1);
-  color: var(--color-accent);
-}
-
-.admin-status--shipped {
-  background: rgba(45, 95, 63, 0.1);
-  color: var(--color-success);
-}
-
-.admin-status--pending {
-  background: rgba(212, 160, 82, 0.1);
-  color: var(--color-warning);
-}
-
-.admin-status--cancelled {
-  background: rgba(139, 58, 58, 0.1);
-  color: var(--color-error);
-}
+/* BUTTONS */
 .admin-btn {
   font-family: var(--font-ui);
   font-size: 11px;

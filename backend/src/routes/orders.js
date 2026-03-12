@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import Stripe from 'stripe';
-import prisma from '../lib/prisma.js';
+import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import rateLimit from 'express-rate-limit';
 
 const router = Router();
+const prisma = new PrismaClient();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 const checkoutLimiter = rateLimit({

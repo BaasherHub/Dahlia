@@ -25,10 +25,16 @@ export default function PaintingCard({ painting }) {
     }
   };
 
+  // Scroll to top when clicking
   const handleClick = () => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'instant'
+    });
   };
 
+  // Safe price formatting
   const formatPrice = (price) => {
     if (!price && price !== 0) return '';
     try {
@@ -37,9 +43,6 @@ export default function PaintingCard({ painting }) {
       return '';
     }
   };
-
-  // Derive display price from the correct schema fields
-  const displayPrice = painting.originalPrice || painting.printPrice || painting.price || null;
 
   const imageUrl = painting.image || painting.images?.[0];
 
@@ -91,16 +94,9 @@ export default function PaintingCard({ painting }) {
         <div className="painting-card__meta">
           {painting.year && <span>{painting.year}</span>}
           {painting.medium && <span>{painting.medium}</span>}
-          {painting.originalAvailable && <span className="painting-card__available">Available</span>}
+          {painting.available && <span className="painting-card__available">Available</span>}
         </div>
-        {displayPrice && (
-          <div className="painting-card__price">
-            {formatPrice(displayPrice)}
-            {painting.printPrice && painting.originalPrice && (
-              <span className="painting-card__price-from"> (prints from {formatPrice(painting.printPrice)})</span>
-            )}
-          </div>
-        )}
+        {painting.price && <div className="painting-card__price">{formatPrice(painting.price)}</div>}
       </div>
     </Link>
   );

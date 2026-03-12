@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import './NewsletterSignup.css';
 
-const API_URL = import.meta.env.VITE_API_URL || '';
-
 export default function NewsletterSignup() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState(null);
@@ -13,27 +11,20 @@ export default function NewsletterSignup() {
     setStatus('loading');
 
     try {
-      const res = await fetch(`${API_URL}/api/newsletter/subscribe`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await res.json().catch(() => ({}));
-
-      if (res.status === 409) {
+      const subscribers = JSON.parse(localStorage.getItem('newsletter_subscribers') || '[]');
+      
+      if (subscribers.includes(email)) {
         setStatus('error');
         setMessage('This email is already subscribed.');
         setTimeout(() => setStatus(null), 5000);
         return;
       }
 
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to subscribe');
-      }
+      subscribers.push(email);
+      localStorage.setItem('newsletter_subscribers', JSON.stringify(subscribers));
 
       setStatus('success');
-      setMessage('Thank you for subscribing! You\'ll receive updates about new artworks.');
+      setMessage('Thank you for subscribing! Check your email for updates.');
       setEmail('');
       setTimeout(() => {
         setStatus(null);

@@ -1,13 +1,14 @@
 import { Router } from 'express';
-import prisma from '../lib/prisma.js';
+import { PrismaClient } from '@prisma/client';
 import rateLimit from 'express-rate-limit';
 import { logInfo, logError } from '../services/logger.js';
 
 const router = Router();
+const prisma = new PrismaClient();
 
 // Admin authentication middleware
 export function requireAdmin(req, res, next) {
-  const key = req.headers['x-admin-key'];
+  const key = (req.headers['x-admin-key'] || '').trim();
 
   if (!key) {
     logInfo('Admin request without key', { path: req.path });
@@ -15,7 +16,7 @@ export function requireAdmin(req, res, next) {
   }
 
   // Debug: Log the comparison (remove after testing)
-  const expectedKey = process.env.ADMIN_KEY;
+  const expectedKey = (process.env.ADMIN_KEY || '').trim();
   const keyMatch = key === expectedKey;
 
   if (!keyMatch) {
@@ -35,10 +36,10 @@ export function requireAdmin(req, res, next) {
 // Rate limiter for admin endpoints
 const adminAuthLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20, // 20 requests per window
+  max: 5, // 5 requests per window
   skip: (req) => {
     // Don't rate limit if key is correct
-    const key = req.headers['x-admin-key'];
+    const key = (req.headers['x-admin-key'] || '').trim();
     return key === process.env.ADMIN_KEY;
   },
   message: 'Too many failed admin attempts. Please try again later.',

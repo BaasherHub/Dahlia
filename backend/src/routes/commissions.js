@@ -6,11 +6,7 @@ import { alertAdmin } from '../services/alert.js';
 
 const router = Router();
 
-const commissionLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 5,
-  message: 'Too many commission requests. Please try again later.',
-});
+const commissionLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, message: 'Too many requests.' });
 
 const CommissionSchema = z.object({
   name: z.string().min(1).max(100),
@@ -23,33 +19,11 @@ const CommissionSchema = z.object({
 router.post('/', commissionLimiter, async (req, res) => {
   try {
     const data = CommissionSchema.parse(req.body);
-
-    logInfo('New commission inquiry', {
-      name: data.name,
-      email: data.email,
-      budget: data.budget,
-    });
-
-    // Send alert email to admin
-    await alertAdmin(
-      `New Commission Inquiry from ${data.name}`,
-      `
-        <strong>Name:</strong> ${data.name}<br>
-        <strong>Email:</strong> ${data.email}<br>
-        <strong>Budget:</strong> ${data.budget}<br>
-        <strong>Size:</strong> ${data.size}<br>
-        <strong>Vision:</strong><br>${data.vision}
-      `
-    );
-
+    logInfo('New commission inquiry', { name: data.name, email: data.email, budget: data.budget });
+    await alertAdmin(`New Commission from ${data.name}`, `<strong>Email:</strong> ${data.email}<br><strong>Budget:</strong> ${data.budget}<br><strong>Size:</strong> ${data.size}<br><strong>Vision:</strong><br>${data.vision}`);
     res.json({ ok: true, message: 'Inquiry received' });
   } catch (error) {
-    if (error.name === 'ZodError') {
-      return res.status(400).json({
-        error: 'Validation error',
-        details: error.errors,
-      });
-    }
+    if (error.name === 'ZodError') return res.status(400).json({ error: 'Validation error', details: error.errors });
     logError({ message: 'Commission submission failed', error: error.message });
     res.status(500).json({ error: 'Failed to submit inquiry' });
   }

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { getPaintings, getCollections } from '../api.js';
 import PaintingCard from '../components/PaintingCard.jsx';
@@ -26,7 +26,7 @@ function CollectionsView({ collections }) {
           </div>
           <h3 className="collection-card__name">{collection.name}</h3>
           <p className="collection-card__count">
-            {collection.paintings?.length || collection._count?.paintings || 0} Painting{(collection.paintings?.length || collection._count?.paintings || 0) !== 1 ? 's' : ''}
+            {collection.paintings?.length || 0} Painting{collection.paintings?.length !== 1 ? 's' : ''}
           </p>
         </Link>
       ))}
@@ -73,20 +73,14 @@ export default function GalleryPage() {
       });
   }, []);
 
+  // Scroll to top when filters change
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'instant'
+    });
   }, [filters, type]);
-
-  // Derive available mediums and years from actual data
-  const availableMediums = useMemo(() => {
-    const mediums = [...new Set(paintings.map(p => p.medium).filter(Boolean))];
-    return mediums.sort();
-  }, [paintings]);
-
-  const availableYears = useMemo(() => {
-    const years = [...new Set(paintings.map(p => String(p.year)).filter(y => y && y !== 'null'))];
-    return years.sort((a, b) => b - a);
-  }, [paintings]);
 
   const originals = paintings.filter(p => 
     !p.sold && (p.originalAvailable !== false) && (p.category !== 'print')
@@ -107,11 +101,11 @@ export default function GalleryPage() {
     displayPaintings = displayPaintings.filter(p => p.medium === filters.medium);
   }
   if (filters.year) {
-    displayPaintings = displayPaintings.filter(p => String(p.year) === filters.year);
+    displayPaintings = displayPaintings.filter(p => p.year === filters.year);
   }
   if (filters.priceRange) {
     displayPaintings = displayPaintings.filter(p => {
-      const price = p.originalPrice || p.printPrice || p.price || 0;
+      const price = p.price || 0;
       if (filters.priceRange === 'under-1000') return price < 1000;
       if (filters.priceRange === '1000-5000') return price >= 1000 && price <= 5000;
       if (filters.priceRange === 'above-5000') return price > 5000;
@@ -176,8 +170,8 @@ export default function GalleryPage() {
                   setFilters(newFilters);
                   window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
                 }}
-                availableMediums={availableMediums}
-                availableYears={availableYears}
+                availableMediums={['Oil', 'Acrylic', 'Watercolor', 'Mixed Media']}
+                availableYears={['2024', '2023', '2022', '2021', '2020']}
               />
             </aside>
 

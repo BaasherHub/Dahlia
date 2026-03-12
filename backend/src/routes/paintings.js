@@ -1,10 +1,11 @@
 import { Router } from 'express';
-import prisma from '../lib/prisma.js';
+import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import rateLimit from 'express-rate-limit';
 import { requireAdmin } from './admin.js';
 
 const router = Router();
+const prisma = new PrismaClient();
 
 const CreatePaintingSchema = z.object({
   title: z.string().min(1).max(255),
@@ -28,7 +29,6 @@ const UpdatePaintingSchema = CreatePaintingSchema.partial();
 const PaginationSchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(20),
-  collectionId: z.string().optional(),
 });
 
 const adminLimiter = rateLimit({

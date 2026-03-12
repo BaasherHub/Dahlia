@@ -1,231 +1,198 @@
 import { useState, useEffect } from 'react';
-import {
-  adminVerify,
-  adminGetPaintings,
-  adminCreatePainting,
-  adminUpdatePainting,
-  adminDeletePainting,
-  adminGetOrders,
-} from '../api.js';
 import './AdminPage.css';
+
+const ADMIN_PASSWORD = 'dahlia2026';
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [adminKey, setAdminKey] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('paintings');
-
-  // Data state
+  
+  // Paintings state
   const [paintings, setPaintings] = useState([]);
-  const [orders, setOrders] = useState([]);
-
+  const [commissions, setCommissions] = useState([]);
+  const [newsletter, setNewsletter] = useState([]);
+  
   // Form state
   const [formData, setFormData] = useState({
     title: '',
     year: '',
-    medium: 'Oil on canvas',
+    medium: '',
     dimensions: '',
+    price: '',
     originalPrice: '',
     printPrice: '',
     description: '',
-    images: '',
+    image: '',
     category: 'original',
     originalAvailable: true,
     printAvailable: false,
-    featured: false,
-    heroImage: false,
   });
-
+  
   const [editingId, setEditingId] = useState(null);
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
 
-  // Check existing auth on mount
   useEffect(() => {
-    const savedKey = sessionStorage.getItem('adminKey');
-    if (savedKey) {
-      adminVerify()
-        .then((ok) => {
-          if (ok) {
-            setIsAuthenticated(true);
-            loadData();
-          }
-          setLoading(false);
-        })
-        .catch(() => setLoading(false));
-    } else {
-      setLoading(false);
+    const auth = localStorage.getItem('admin_auth');
+    if (auth === 'true') {
+      setIsAuthenticated(true);
+      loadData();
     }
   }, []);
 
-  const loadData = async () => {
-    try {
-      const paintingsRes = await adminGetPaintings();
-      const pData = paintingsRes.data || paintingsRes;
-      setPaintings(Array.isArray(pData) ? pData : []);
-    } catch (err) {
-      console.error('Failed to load paintings:', err);
-    }
+  const loadData = () => {
+    const paintingsData = JSON.parse(localStorage.getItem('paintings') || '[]');
+    const commissionsData = JSON.parse(localStorage.getItem('commissions') || '[]');
+    const newsletterData = JSON.parse(localStorage.getItem('newsletter_subscribers') || '[]');
 
-    try {
-      const ordersRes = await adminGetOrders();
-      setOrders(Array.isArray(ordersRes) ? ordersRes : []);
-    } catch (err) {
-      console.error('Failed to load orders:', err);
-    }
+    setPaintings(paintingsData);
+    setCommissions(commissionsData);
+    setNewsletter(newsletterData);
   };
 
-  const handleLogin = async (e) => {
+  const handleLogin = (e) => {
     e.preventDefault();
     setError('');
 
-    // Store key in sessionStorage for API calls
-    sessionStorage.setItem('adminKey', adminKey);
-
-    const ok = await adminVerify();
-    if (ok) {
+    if (password === ADMIN_PASSWORD) {
+      localStorage.setItem('admin_auth', 'true');
       setIsAuthenticated(true);
-      setAdminKey('');
+      setPassword('');
       loadData();
     } else {
-      sessionStorage.removeItem('adminKey');
-      setError('Invalid admin key. Please try again.');
-      setAdminKey('');
+      setError('Invalid password. Please try again.');
+      setPassword('');
     }
   };
 
   const handleLogout = () => {
-    sessionStorage.removeItem('adminKey');
+    localStorage.removeItem('admin_auth');
     setIsAuthenticated(false);
-    setAdminKey('');
+    setPassword('');
   };
 
-  // ── Painting form handlers ──
-
+  // Painting Management Functions
   const handleFormChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: type === 'checkbox' ? checked : value
     }));
   };
 
-  const resetForm = () => {
-    setFormData({
-      title: '',
-      year: '',
-      medium: 'Oil on canvas',
-      dimensions: '',
-      originalPrice: '',
-      printPrice: '',
-      description: '',
-      images: '',
-      category: 'original',
-      originalAvailable: true,
-      printAvailable: false,
-      featured: false,
-      heroImage: false,
-    });
-    setEditingId(null);
-    setFormError('');
-  };
-
-  const handleSavePainting = async (e) => {
-    e.preventDefault();
-    setFormError('');
-    setFormSuccess('');
-
+  const validatePaintingForm = () => {
     if (!formData.title.trim()) {
       setFormError('Title is required');
+      return false;
+    }
+    if (!formData.price && !formData.originalPrice && !formData.printPrice) {
+      setFormError('At least one price is required');
+      return false;
+    }
+    setFormError('');
+    return true;
+  };
+
+  const handleSavePainting = (e) => {
+    e.preventDefault();
+    
+    if (!validatePaintingForm()) {
       return;
     }
 
-    // Build payload matching backend Zod schema
-    const payload = {
-      title: formData.title.trim(),
-      description: formData.description || '',
-      medium: formData.medium || 'Oil on canvas',
-      dimensions: formData.dimensions || '',
-      category: formData.category || 'original',
-      originalAvailable: formData.originalAvailable,
-      printAvailable: formData.printAvailable,
-      featured: formData.featured || false,
-      heroImage: formData.heroImage || false,
-      images: formData.images
-        ? formData.images.split(',').map((s) => s.trim()).filter(Boolean)
-        : [],
-    };
+    let updated = [...paintings];
 
-    if (formData.originalPrice) payload.originalPrice = Number(formData.originalPrice);
-    if (formData.printPrice) payload.printPrice = Number(formData.printPrice);
-    if (formData.year) payload.year = Number(formData.year);
-
-    try {
-      if (editingId) {
-        await adminUpdatePainting(editingId, payload);
-        setFormSuccess('Painting updated successfully!');
-      } else {
-        if (payload.images.length === 0) {
-          setFormError('At least one image URL is required');
-          return;
-        }
-        await adminCreatePainting(payload);
-        setFormSuccess('Painting added successfully!');
-      }
-      resetForm();
-      loadData();
-      setTimeout(() => setFormSuccess(''), 3000);
-    } catch (err) {
-      setFormError(err.message || 'Failed to save painting');
+    if (editingId) {
+      // Update existing
+      updated = updated.map(p => 
+        p.id === editingId ? { ...formData, id: editingId } : p
+      );
+      setFormSuccess('Painting updated successfully!');
+    } else {
+      // Add new
+      const newPainting = {
+        ...formData,
+        id: Date.now()
+      };
+      updated.push(newPainting);
+      setFormSuccess('Painting added successfully!');
     }
+
+    setPaintings(updated);
+    localStorage.setItem('paintings', JSON.stringify(updated));
+    
+    // Reset form
+    setFormData({
+      title: '',
+      year: '',
+      medium: '',
+      dimensions: '',
+      price: '',
+      originalPrice: '',
+      printPrice: '',
+      description: '',
+      image: '',
+      category: 'original',
+      originalAvailable: true,
+      printAvailable: false,
+    });
+    setEditingId(null);
+
+    setTimeout(() => setFormSuccess(''), 3000);
   };
 
   const handleEditPainting = (painting) => {
-    setFormData({
-      title: painting.title || '',
-      year: painting.year || '',
-      medium: painting.medium || '',
-      dimensions: painting.dimensions || '',
-      originalPrice: painting.originalPrice || '',
-      printPrice: painting.printPrice || '',
-      description: painting.description || '',
-      images: (painting.images || []).join(', '),
-      category: painting.category || 'original',
-      originalAvailable: painting.originalAvailable ?? true,
-      printAvailable: painting.printAvailable ?? false,
-      featured: painting.featured ?? false,
-      heroImage: painting.heroImage ?? false,
-    });
+    setFormData(painting);
     setEditingId(painting.id);
     setActiveTab('paintings');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDeletePainting = async (id) => {
-    if (!window.confirm('Delete this painting? This cannot be undone.')) return;
-    try {
-      await adminDeletePainting(id);
+  const handleDeletePainting = (id) => {
+    if (window.confirm('Delete this painting?')) {
+      const updated = paintings.filter(p => p.id !== id);
+      setPaintings(updated);
+      localStorage.setItem('paintings', JSON.stringify(updated));
       setFormSuccess('Painting deleted!');
-      loadData();
       setTimeout(() => setFormSuccess(''), 3000);
-    } catch (err) {
-      setFormError(err.message || 'Failed to delete');
     }
   };
 
-  // ── Loading / Auth screens ──
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setFormData({
+      title: '',
+      year: '',
+      medium: '',
+      dimensions: '',
+      price: '',
+      originalPrice: '',
+      printPrice: '',
+      description: '',
+      image: '',
+      category: 'original',
+      originalAvailable: true,
+      printAvailable: false,
+    });
+  };
 
-  if (loading) {
-    return (
-      <main className="admin-page">
-        <div className="admin-container" style={{ textAlign: 'center', padding: '80px 0' }}>
-          <div className="spinner" />
-          <p>Checking authentication...</p>
-        </div>
-      </main>
-    );
-  }
+  const deleteCommission = (id) => {
+    if (window.confirm('Delete this commission inquiry?')) {
+      const updated = commissions.filter(c => c.id !== id);
+      setCommissions(updated);
+      localStorage.setItem('commissions', JSON.stringify(updated));
+    }
+  };
+
+  const deleteNewsletter = (email) => {
+    if (window.confirm(`Remove ${email} from newsletter?`)) {
+      const updated = newsletter.filter(e => e !== email);
+      setNewsletter(updated);
+      localStorage.setItem('newsletter_subscribers', JSON.stringify(updated));
+    }
+  };
 
   if (!isAuthenticated) {
     return (
@@ -235,18 +202,18 @@ export default function AdminPage() {
             <div className="admin-login__card">
               <div className="admin-login__header">
                 <h1>Admin Dashboard</h1>
-                <p>Enter your admin key to continue</p>
+                <p>Enter your password to continue</p>
               </div>
 
               <form className="admin-login__form" onSubmit={handleLogin}>
                 <div className="form-group">
-                  <label htmlFor="adminKey">Admin Key</label>
+                  <label htmlFor="password">Password</label>
                   <input
-                    id="adminKey"
+                    id="password"
                     type="password"
-                    value={adminKey}
-                    onChange={(e) => setAdminKey(e.target.value)}
-                    placeholder="Enter admin key"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter admin password"
                     autoFocus
                   />
                 </div>
@@ -257,6 +224,10 @@ export default function AdminPage() {
                   Sign In
                 </button>
               </form>
+
+              <p className="admin-login__hint">
+                Demo password: dahlia2026
+              </p>
             </div>
           </div>
         </div>
@@ -264,15 +235,13 @@ export default function AdminPage() {
     );
   }
 
-  // ── Main dashboard ──
-
   return (
     <main className="admin-page">
       <div className="admin-container">
         <div className="admin-header">
           <div>
             <h1>Admin Dashboard</h1>
-            <p>Manage your gallery, paintings, and orders</p>
+            <p>Manage your gallery, paintings, inquiries and subscribers</p>
           </div>
           <button className="btn btn--secondary" onClick={handleLogout}>
             Sign Out
@@ -288,16 +257,23 @@ export default function AdminPage() {
             Paintings ({paintings.length})
           </button>
           <button
-            className={`admin-tab ${activeTab === 'orders' ? 'active' : ''}`}
-            onClick={() => setActiveTab('orders')}
+            className={`admin-tab ${activeTab === 'commissions' ? 'active' : ''}`}
+            onClick={() => setActiveTab('commissions')}
           >
-            Orders ({orders.length})
+            Commissions ({commissions.length})
+          </button>
+          <button
+            className={`admin-tab ${activeTab === 'newsletter' ? 'active' : ''}`}
+            onClick={() => setActiveTab('newsletter')}
+          >
+            Newsletter ({newsletter.length})
           </button>
         </div>
 
         {/* PAINTINGS TAB */}
         {activeTab === 'paintings' && (
           <>
+            {/* Form Section */}
             <section className="admin-section">
               <h2>{editingId ? 'Edit Painting' : 'Add New Painting'}</h2>
 
@@ -308,26 +284,59 @@ export default function AdminPage() {
                 <div className="admin-form__row">
                   <div className="form-group">
                     <label htmlFor="title">Title *</label>
-                    <input id="title" name="title" value={formData.title} onChange={handleFormChange} placeholder="e.g., Golden Hour" required />
+                    <input
+                      id="title"
+                      name="title"
+                      value={formData.title}
+                      onChange={handleFormChange}
+                      placeholder="e.g., Golden Hour"
+                      required
+                    />
                   </div>
+
                   <div className="form-group">
                     <label htmlFor="year">Year</label>
-                    <input id="year" name="year" type="number" value={formData.year} onChange={handleFormChange} placeholder="e.g., 2024" />
+                    <input
+                      id="year"
+                      name="year"
+                      value={formData.year}
+                      onChange={handleFormChange}
+                      placeholder="e.g., 2024"
+                    />
                   </div>
+
                   <div className="form-group">
                     <label htmlFor="medium">Medium</label>
-                    <input id="medium" name="medium" value={formData.medium} onChange={handleFormChange} placeholder="e.g., Oil on canvas" />
+                    <input
+                      id="medium"
+                      name="medium"
+                      value={formData.medium}
+                      onChange={handleFormChange}
+                      placeholder="e.g., Oil on canvas"
+                    />
                   </div>
                 </div>
 
                 <div className="admin-form__row">
                   <div className="form-group">
                     <label htmlFor="dimensions">Dimensions</label>
-                    <input id="dimensions" name="dimensions" value={formData.dimensions} onChange={handleFormChange} placeholder="e.g., 24 x 36 inches" />
+                    <input
+                      id="dimensions"
+                      name="dimensions"
+                      value={formData.dimensions}
+                      onChange={handleFormChange}
+                      placeholder="e.g., 24 x 36 inches"
+                    />
                   </div>
+
                   <div className="form-group">
                     <label htmlFor="category">Category</label>
-                    <select id="category" name="category" value={formData.category} onChange={handleFormChange}>
+                    <select
+                      id="category"
+                      name="category"
+                      value={formData.category}
+                      onChange={handleFormChange}
+                    >
                       <option value="original">Original</option>
                       <option value="print">Print</option>
                       <option value="both">Both</option>
@@ -338,51 +347,90 @@ export default function AdminPage() {
                 <div className="admin-form__row">
                   <div className="form-group">
                     <label htmlFor="originalPrice">Original Price ($)</label>
-                    <input id="originalPrice" name="originalPrice" type="number" value={formData.originalPrice} onChange={handleFormChange} placeholder="e.g., 5000" />
+                    <input
+                      id="originalPrice"
+                      name="originalPrice"
+                      type="number"
+                      value={formData.originalPrice}
+                      onChange={handleFormChange}
+                      placeholder="e.g., 5000"
+                    />
                   </div>
+
                   <div className="form-group">
                     <label htmlFor="printPrice">Print Price ($)</label>
-                    <input id="printPrice" name="printPrice" type="number" value={formData.printPrice} onChange={handleFormChange} placeholder="e.g., 150" />
+                    <input
+                      id="printPrice"
+                      name="printPrice"
+                      type="number"
+                      value={formData.printPrice}
+                      onChange={handleFormChange}
+                      placeholder="e.g., 150"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="price">Price ($) - General</label>
+                    <input
+                      id="price"
+                      name="price"
+                      type="number"
+                      value={formData.price}
+                      onChange={handleFormChange}
+                      placeholder="e.g., 3000"
+                    />
                   </div>
                 </div>
 
                 <div className="admin-form__row">
                   <div className="form-group">
                     <label htmlFor="description">Description</label>
-                    <textarea id="description" name="description" value={formData.description} onChange={handleFormChange} placeholder="Painting description..." rows="4" />
+                    <textarea
+                      id="description"
+                      name="description"
+                      value={formData.description}
+                      onChange={handleFormChange}
+                      placeholder="Painting description..."
+                      rows="4"
+                    />
                   </div>
                 </div>
 
                 <div className="admin-form__row">
                   <div className="form-group">
-                    <label htmlFor="images">Image URLs (comma-separated)</label>
-                    <input id="images" name="images" value={formData.images} onChange={handleFormChange} placeholder="https://..., https://..." />
+                    <label htmlFor="image">Image URL</label>
+                    <input
+                      id="image"
+                      name="image"
+                      value={formData.image}
+                      onChange={handleFormChange}
+                      placeholder="https://..."
+                    />
                   </div>
                 </div>
 
                 <div className="admin-form__row">
                   <div className="form-group">
                     <label className="checkbox-label">
-                      <input type="checkbox" name="originalAvailable" checked={formData.originalAvailable} onChange={handleFormChange} />
+                      <input
+                        type="checkbox"
+                        name="originalAvailable"
+                        checked={formData.originalAvailable}
+                        onChange={handleFormChange}
+                      />
                       Original Available
                     </label>
                   </div>
+
                   <div className="form-group">
                     <label className="checkbox-label">
-                      <input type="checkbox" name="printAvailable" checked={formData.printAvailable} onChange={handleFormChange} />
+                      <input
+                        type="checkbox"
+                        name="printAvailable"
+                        checked={formData.printAvailable}
+                        onChange={handleFormChange}
+                      />
                       Print Available
-                    </label>
-                  </div>
-                  <div className="form-group">
-                    <label className="checkbox-label">
-                      <input type="checkbox" name="featured" checked={formData.featured} onChange={handleFormChange} />
-                      Featured
-                    </label>
-                  </div>
-                  <div className="form-group">
-                    <label className="checkbox-label">
-                      <input type="checkbox" name="heroImage" checked={formData.heroImage} onChange={handleFormChange} />
-                      Hero Image
                     </label>
                   </div>
                 </div>
@@ -392,7 +440,11 @@ export default function AdminPage() {
                     {editingId ? 'Update Painting' : 'Add Painting'}
                   </button>
                   {editingId && (
-                    <button type="button" className="btn btn--ghost" onClick={resetForm}>
+                    <button
+                      type="button"
+                      className="btn btn--ghost"
+                      onClick={handleCancelEdit}
+                    >
                       Cancel
                     </button>
                   )}
@@ -405,30 +457,43 @@ export default function AdminPage() {
               <h2>All Paintings ({paintings.length})</h2>
 
               {paintings.length === 0 ? (
-                <div className="admin-empty">No paintings yet. Add your first painting above.</div>
+                <div className="admin-empty">No paintings yet</div>
               ) : (
                 <div className="admin-paintings-grid">
-                  {paintings.map((painting) => (
+                  {paintings.map(painting => (
                     <div key={painting.id} className="admin-painting-card">
-                      {painting.images?.[0] && <img src={painting.images[0]} alt={painting.title} />}
+                      {painting.image && (
+                        <img src={painting.image} alt={painting.title} />
+                      )}
                       <div className="admin-painting-card__content">
                         <h3>{painting.title}</h3>
                         <p className="admin-painting-card__meta">
-                          {painting.year} &middot; {painting.medium}
+                          {painting.year} • {painting.medium}
                         </p>
-                        <p className="admin-painting-card__meta">{painting.dimensions}</p>
+                        <p className="admin-painting-card__meta">
+                          {painting.dimensions}
+                        </p>
                         <div className="admin-painting-card__prices">
-                          {painting.originalPrice && <p>Original: ${painting.originalPrice}</p>}
-                          {painting.printPrice && <p>Print: ${painting.printPrice}</p>}
-                        </div>
-                        <div className="admin-painting-card__badges">
-                          {painting.featured && <span className="admin-badge">Featured</span>}
-                          {painting.heroImage && <span className="admin-badge admin-badge--hero">Hero</span>}
-                          {!painting.originalAvailable && <span className="admin-badge admin-badge--sold">Sold</span>}
+                          {painting.originalPrice && (
+                            <p>Original: ${painting.originalPrice}</p>
+                          )}
+                          {painting.printPrice && (
+                            <p>Print: ${painting.printPrice}</p>
+                          )}
                         </div>
                         <div className="admin-painting-card__actions">
-                          <button className="admin-btn admin-btn--edit" onClick={() => handleEditPainting(painting)}>Edit</button>
-                          <button className="admin-btn admin-btn--delete" onClick={() => handleDeletePainting(painting.id)}>Delete</button>
+                          <button
+                            className="admin-btn admin-btn--edit"
+                            onClick={() => handleEditPainting(painting)}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            className="admin-btn admin-btn--delete"
+                            onClick={() => handleDeletePainting(painting.id)}
+                          >
+                            Delete
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -439,39 +504,80 @@ export default function AdminPage() {
           </>
         )}
 
-        {/* ORDERS TAB */}
-        {activeTab === 'orders' && (
+        {/* COMMISSIONS TAB */}
+        {activeTab === 'commissions' && (
           <section className="admin-section">
-            <h2>Orders</h2>
+            <h2>Commission Inquiries</h2>
 
-            {orders.length === 0 ? (
-              <div className="admin-empty">No orders yet</div>
+            {commissions.length === 0 ? (
+              <div className="admin-empty">No commission inquiries yet</div>
             ) : (
               <div className="admin-table">
                 <div className="admin-table__header">
-                  <div>Customer</div>
+                  <div>Name</div>
                   <div>Email</div>
-                  <div>Total</div>
-                  <div>Status</div>
+                  <div>Budget</div>
                   <div>Date</div>
+                  <div></div>
                 </div>
 
-                {orders.map((order) => (
-                  <div key={order.id} className="admin-table__row">
+                {commissions.map(commission => (
+                  <div key={commission.id} className="admin-table__row">
+                    <div className="admin-table__cell"><strong>{commission.name}</strong></div>
                     <div className="admin-table__cell">
-                      <strong>{order.customerName}</strong>
+                      <a href={`mailto:${commission.email}`}>{commission.email}</a>
                     </div>
+                    <div className="admin-table__cell">{commission.budget}</div>
                     <div className="admin-table__cell">
-                      <a href={`mailto:${order.customerEmail}`}>{order.customerEmail}</a>
+                      {new Date(commission.date).toLocaleDateString()}
                     </div>
-                    <div className="admin-table__cell">${order.total?.toFixed(2)}</div>
-                    <div className="admin-table__cell">
-                      <span className={`admin-status admin-status--${order.status?.toLowerCase()}`}>
-                        {order.status}
-                      </span>
+                    <div className="admin-table__cell admin-table__cell--actions">
+                      <button
+                        className="admin-table__btn-details"
+                        onClick={() => alert(`Vision: ${commission.vision}\nSize: ${commission.size}`)}
+                      >
+                        View
+                      </button>
+                      <button
+                        className="admin-table__btn-delete"
+                        onClick={() => deleteCommission(commission.id)}
+                      >
+                        Delete
+                      </button>
                     </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* NEWSLETTER TAB */}
+        {activeTab === 'newsletter' && (
+          <section className="admin-section">
+            <h2>Newsletter Subscribers</h2>
+
+            {newsletter.length === 0 ? (
+              <div className="admin-empty">No newsletter subscribers yet</div>
+            ) : (
+              <div className="admin-table">
+                <div className="admin-table__header">
+                  <div>Email Address</div>
+                  <div></div>
+                </div>
+
+                {newsletter.map((email, idx) => (
+                  <div key={idx} className="admin-table__row">
                     <div className="admin-table__cell">
-                      {new Date(order.createdAt).toLocaleDateString()}
+                      <a href={`mailto:${email}`}>{email}</a>
+                    </div>
+                    <div className="admin-table__cell admin-table__cell--actions">
+                      <button
+                        className="admin-table__btn-delete"
+                        onClick={() => deleteNewsletter(email)}
+                      >
+                        Remove
+                      </button>
                     </div>
                   </div>
                 ))}
