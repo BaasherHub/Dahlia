@@ -1,5 +1,8 @@
--- CreateEnum
-CREATE TYPE "OrderStatus" AS ENUM ('PENDING', 'PAID', 'SHIPPED', 'DELIVERED', 'CANCELLED');
+-- CreateEnum (only if not exists)
+DO $$ BEGIN
+  CREATE TYPE "OrderStatus" AS ENUM ('PENDING', 'PAID', 'SHIPPED', 'DELIVERED', 'CANCELLED');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- CreateTable
 CREATE TABLE IF NOT EXISTS "Painting" (
