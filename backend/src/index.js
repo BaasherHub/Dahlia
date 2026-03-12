@@ -49,6 +49,7 @@ app.use(
       }
     },
     credentials: true,
+    allowedHeaders: ['Content-Type', 'x-admin-key'],
   })
 );
 

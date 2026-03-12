@@ -54,43 +54,37 @@ export async function fetchOrderBySession(sessionId) {
 
 // ── Admin API ─────────────────────────────────────────────
 
-const adminHeaders = () => ({
+const adminGetHeaders = () => ({
+  'x-admin-key': sessionStorage.getItem('adminKey') || '',
+});
+
+const adminPostHeaders = () => ({
   'Content-Type': 'application/json',
   'x-admin-key': sessionStorage.getItem('adminKey') || '',
 });
 
 export async function adminVerify() {
-  // Try new endpoint first, fall back to old endpoint for backwards compatibility
   try {
-    const res = await fetch(`${BASE}/api/admin/verify`, { headers: adminHeaders() });
-    if (res.status !== 404) return res.ok;
-  } catch {}
-  // Fallback: old backend used /api/paintings/all for auth check
-  try {
-    const res = await fetch(`${BASE}/api/paintings/all`, { headers: adminHeaders() });
-    if (res.status !== 404) return res.ok;
-  } catch {}
-  // Fallback 2: try fetching paintings with admin header (works on new backend too)
-  try {
-    const res = await fetch(`${BASE}/api/admin/paintings`, { headers: adminHeaders() });
+    const res = await fetch(`${BASE}/api/admin/verify`, {
+      method: 'GET',
+      headers: adminGetHeaders(),
+    });
     return res.ok;
-  } catch {}
-  return false;
+  } catch (err) {
+    console.error('Admin verify failed:', err);
+    return false;
+  }
 }
 
 export async function adminGetPaintings() {
-  // Try new endpoint, fall back to old for backwards compatibility
-  let res = await fetch(`${BASE}/api/admin/paintings`, { headers: adminHeaders() });
-  if (res.status === 404) {
-    res = await fetch(`${BASE}/api/paintings/all`, { headers: adminHeaders() });
-  }
+  let res = await fetch(`${BASE}/api/paintings/all`, { headers: adminGetHeaders() });
   if (!res.ok) throw new Error('Unauthorized');
   return res.json();
 }
 
 export async function adminCreatePainting(data) {
   const res = await fetch(`${BASE}/api/paintings`, {
-    method: 'POST', headers: adminHeaders(), body: JSON.stringify(data),
+    method: 'POST', headers: adminPostHeaders(), body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error('Failed to create');
   return res.json();
@@ -98,7 +92,7 @@ export async function adminCreatePainting(data) {
 
 export async function adminUpdatePainting(id, data) {
   const res = await fetch(`${BASE}/api/paintings/${id}`, {
-    method: 'PUT', headers: adminHeaders(), body: JSON.stringify(data),
+    method: 'PUT', headers: adminPostHeaders(), body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error('Failed to update');
   return res.json();
@@ -106,21 +100,21 @@ export async function adminUpdatePainting(id, data) {
 
 export async function adminDeletePainting(id) {
   const res = await fetch(`${BASE}/api/paintings/${id}`, {
-    method: 'DELETE', headers: adminHeaders(),
+    method: 'DELETE', headers: adminPostHeaders(),
   });
   if (!res.ok) throw new Error('Failed to delete');
   return res.json();
 }
 
 export async function adminGetCollections() {
-  const res = await fetch(`${BASE}/api/collections`, { headers: adminHeaders() });
+  const res = await fetch(`${BASE}/api/collections`, { headers: adminGetHeaders() });
   if (!res.ok) throw new Error('Failed to fetch');
   return res.json();
 }
 
 export async function adminCreateCollection(data) {
   const res = await fetch(`${BASE}/api/collections`, {
-    method: 'POST', headers: adminHeaders(), body: JSON.stringify(data),
+    method: 'POST', headers: adminPostHeaders(), body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error('Failed to create');
   return res.json();
@@ -128,7 +122,7 @@ export async function adminCreateCollection(data) {
 
 export async function adminUpdateCollection(id, data) {
   const res = await fetch(`${BASE}/api/collections/${id}`, {
-    method: 'PUT', headers: adminHeaders(), body: JSON.stringify(data),
+    method: 'PUT', headers: adminPostHeaders(), body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error('Failed to update');
   return res.json();
@@ -136,16 +130,16 @@ export async function adminUpdateCollection(id, data) {
 
 export async function adminDeleteCollection(id) {
   const res = await fetch(`${BASE}/api/collections/${id}`, {
-    method: 'DELETE', headers: adminHeaders(),
+    method: 'DELETE', headers: adminPostHeaders(),
   });
   if (!res.ok) throw new Error('Failed to delete');
   return res.json();
 }
 
 export async function adminGetOrders() {
-  let res = await fetch(`${BASE}/api/admin/orders`, { headers: adminHeaders() });
+  let res = await fetch(`${BASE}/api/admin/orders`, { headers: adminGetHeaders() });
   if (res.status === 404) {
-    res = await fetch(`${BASE}/api/orders/all`, { headers: adminHeaders() });
+    res = await fetch(`${BASE}/api/orders/all`, { headers: adminGetHeaders() });
   }
   if (!res.ok) throw new Error('Unauthorized');
   return res.json();

@@ -121,14 +121,17 @@
 .nav__hamburger {
   display: none;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
   background: none;
   border: none;
   cursor: pointer;
-  gap: 6px;
+  gap: 5px;
   padding: 8px;
   z-index: 1001;
   min-height: 44px;
   min-width: 44px;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .nav__hamburger:focus-visible {
@@ -137,23 +140,26 @@
 }
 
 .nav__hamburger span {
-  width: 24px;
+  display: block;
+  width: 22px;
   height: 2px;
   background: #0f0d0a;
-  transition: all 0.2s ease;
-  border-radius: 1px;
+  transition: all 0.3s ease;
+  border-radius: 2px;
+  transform-origin: center;
 }
 
 .nav__hamburger.open span:nth-child(1) {
-  transform: rotate(45deg) translate(8px, 8px);
+  transform: translateY(7px) rotate(45deg);
 }
 
 .nav__hamburger.open span:nth-child(2) {
   opacity: 0;
+  transform: scaleX(0);
 }
 
 .nav__hamburger.open span:nth-child(3) {
-  transform: rotate(-45deg) translate(7px, -7px);
+  transform: translateY(-7px) rotate(-45deg);
 }
 
 @media (max-width: 768px) {

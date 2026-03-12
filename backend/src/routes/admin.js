@@ -35,7 +35,7 @@ export function requireAdmin(req, res, next) {
 // Rate limiter for admin endpoints
 const adminAuthLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 requests per window
+  max: 20, // 20 requests per window
   skip: (req) => {
     // Don't rate limit if key is correct
     const key = req.headers['x-admin-key'];
