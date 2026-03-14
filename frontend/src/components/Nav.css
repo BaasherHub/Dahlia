@@ -1,4 +1,4 @@
-/* Navigation - Fixed Logo Color to #0f0d0a (Dark) */
+/* Navigation */
 
 .nav {
   position: fixed;
@@ -92,7 +92,7 @@
   display: none;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 769px) {
   .nav__logo-sub {
     display: inline;
   }
@@ -110,25 +110,25 @@
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
+/* Hamburger - hidden on desktop */
 .nav__hamburger {
   display: none;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
   background: none;
   border: none;
   cursor: pointer;
-  gap: 6px;
+  gap: 5px;
   padding: 8px;
   z-index: 10001;
   min-height: 44px;
   min-width: 44px;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .nav__hamburger:focus-visible {
@@ -141,33 +141,29 @@
   width: 22px;
   height: 2px;
   background: #0f0d0a;
-  transition: all 0.2s ease;
-  border-radius: 1px;
+  transition: all 0.3s ease;
+  border-radius: 2px;
+  transform-origin: center;
 }
 
 .nav__hamburger.open span:nth-child(1) {
-  transform: translateY(8px) rotate(45deg);
+  transform: translateY(7px) rotate(45deg);
 }
 
 .nav__hamburger.open span:nth-child(2) {
   opacity: 0;
+  transform: scaleX(0);
 }
 
 .nav__hamburger.open span:nth-child(3) {
-  transform: translateY(-8px) rotate(-45deg);
+  transform: translateY(-7px) rotate(-45deg);
 }
 
-@media (max-width: 768px) {
-  .nav__hamburger {
-    display: flex;
-  }
-}
-
+/* Nav links - desktop: fixed in header area */
 .nav__links {
   display: flex;
   align-items: center;
   gap: 48px;
-  /* On desktop: position absolutely inside the header bar */
   position: fixed;
   top: 0;
   right: 24px;
@@ -274,6 +270,10 @@
   min-height: 24px;
 }
 
+/* ═══════════════════════════════════
+   MOBILE - 768px and below
+   ═══════════════════════════════════ */
+
 @media (max-width: 768px) {
   .nav {
     height: 56px;
@@ -289,27 +289,31 @@
 
   .nav__logo-name {
     font-size: 14px;
-    color: #0f0d0a;
   }
 
+  .nav__hamburger {
+    display: flex;
+  }
+
+  /* Mobile nav panel - full screen overlay */
   .nav__links {
     position: fixed;
     top: 56px;
     left: 0;
     right: 0;
     bottom: 0;
+    width: 100%;
+    height: auto;
     flex-direction: column;
     gap: 0;
     padding: 0;
     background: #fefdfb;
-    margin-right: 0;
-    max-height: calc(100vh - 56px);
-    overflow-y: auto;
     transform: translateX(-100%);
     transition: transform 0.3s ease, visibility 0.3s ease;
     z-index: 9999;
     align-items: stretch;
     visibility: hidden;
+    overflow-y: auto;
   }
 
   .nav__links.open {
@@ -335,27 +339,22 @@
 
   .nav__link.active {
     color: #a89968;
+    background: rgba(168, 153, 104, 0.05);
   }
 
   .nav__wishlist,
   .nav__cart {
-    width: 44px;
-    height: 44px;
-    align-self: flex-start;
-    margin-top: 16px;
+    width: 100%;
+    height: 56px;
+    justify-content: flex-start;
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(15, 13, 10, 0.06);
     color: #0f0d0a;
-  }
-
-  .nav__wishlist {
-    margin-right: 16px;
+    gap: 12px;
   }
 }
 
 @media (max-width: 480px) {
-  .nav {
-    height: 56px;
-  }
-
   .nav__inner {
     padding: 0 12px;
   }
@@ -366,16 +365,14 @@
 
   .nav__logo-name {
     font-size: 14px;
-    color: #0f0d0a;
   }
 
   .nav__links {
-    padding: 32px 16px;
-    gap: 24px;
+    padding: 0;
   }
 
   .nav__link {
-    font-size: 14px;
-    color: #0f0d0a;
+    font-size: 16px;
+    padding: 18px 20px;
   }
 }
