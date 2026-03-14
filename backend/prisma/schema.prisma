@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Painting {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  
+  // Original painting
+  originalPrice       Float?
+  originalAvailable   Boolean @default(true)
+  
+  // Print version
+  printPrice          Float?
+  printAvailable      Boolean @default(false)
+  
+  images      String[]
+  dimensions  String
+  medium      String
+  year        Int?
+  sold        Boolean  @default(false)
+  featured    Boolean  @default(false)
+  heroImage   Boolean  @default(false)
+  
+  // Category: "original" | "print" | "both"
+  category    String   @default("original")
+  
+  // Collection
+  collection  Collection? @relation(fields: [collectionId], references: [id])
+  collectionId String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  orderItems  OrderItem[]
+}
+
+model Collection {
+  id          String     @id @default(cuid())
+  name        String
+  description String?
+  coverImage  String?
+  order       Int        @default(0)
+  paintings   Painting[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Order {
+  id               String      @id @default(cuid())
+  stripePaymentId  String      @unique
+  stripeSessionId  String      @unique
+  status           OrderStatus @default(PENDING)
+  customerEmail    String
+  customerName     String
+  shipName         String
+  shipStreet       String
+  shipCity         String
+  shipState        String
+  shipZip          String
+  shipCountry      String
+  shipPhone        String?
+  trackingCode     String?
+  labelUrl         String?
+  carrier          String?
+  total            Float
+  items            OrderItem[]
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model OrderItem {
+  id         String   @id @default(cuid())
+  order      Order    @relation(fields: [orderId], references: [id])
+  orderId    String
+  painting   Painting @relation(fields: [paintingId], references: [id])
+  paintingId String
+  price      Float
+  version    String   @default("original") // "original" | "print"
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+model SiteSettings {
+  id    String @id @default("singleton")
+  
+  // About page content
+  aboutHeroSubtitle   String @default("Contemporary artist creating refined works on premium linen canvas")
+  aboutBio1           String @default("I am a contemporary artist specializing in oil paintings on premium linen canvas. My work is defined by deliberate palette knife technique and expressive brushwork, creating pieces that resonate with collectors and designers worldwide.")
+  aboutBio2           String @default("Each painting begins with careful consideration of color, composition, and emotional resonance. I work exclusively with the finest materials to ensure longevity and visual impact that endures through time.")
+  aboutBio3           String @default("My practice combines technical precision with spontaneous creativity, resulting in works that are both carefully considered and intuitively executed.")
+  aboutStatement1     String @default("My practice is rooted in a deep engagement with color, form, and the physical materiality of paint. I create work that exists in conversation with contemporary art practice while maintaining a reverence for the traditions of painting.")
+  aboutStatement2     String @default("Through careful observation and intuitive response, I build paintings that invite contemplation and emotional engagement. Each piece is an attempt to capture a moment of synthesis between intention and spontaneity, between control and surrender.")
+  aboutStatement3     String @default("I am committed to creating work of lasting value—both visually and materially. My practice is defined by a pursuit of excellence and a dedication to the craft of painting.")
+  
+  // Testimonials (stored as JSON array)
+  testimonials        String @default("[]")
+  
+  updatedAt           DateTime @updatedAt
+}
