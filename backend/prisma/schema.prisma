@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Painting {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  
+  // Original painting
+  originalPrice       Float?
+  originalAvailable   Boolean @default(true)
+  
+  // Print version
+  printPrice          Float?
+  printAvailable      Boolean @default(false)
+  
+  images      String[]
+  dimensions  String
+  medium      String
+  year        Int?
+  sold        Boolean  @default(false)
+  featured    Boolean  @default(false)
+  heroImage   Boolean  @default(false)
+  
+  // Category: "original" | "print" | "both"
+  category    String   @default("original")
+  
+  // Collection
+  collection  Collection? @relation(fields: [collectionId], references: [id])
+  collectionId String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  orderItems  OrderItem[]
+}
+
+model Collection {
+  id          String     @id @default(cuid())
+  name        String
+  description String?
+  coverImage  String?
+  order       Int        @default(0)
+  paintings   Painting[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Order {
+  id               String      @id @default(cuid())
+  stripePaymentId  String      @unique
+  stripeSessionId  String      @unique
+  status           OrderStatus @default(PENDING)
+  customerEmail    String
+  customerName     String
+  shipName         String
+  shipStreet       String
+  shipCity         String
+  shipState        String
+  shipZip          String
+  shipCountry      String
+  shipPhone        String?
+  trackingCode     String?
+  labelUrl         String?
+  carrier          String?
+  total            Float
+  items            OrderItem[]
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model OrderItem {
+  id         String   @id @default(cuid())
+  order      Order    @relation(fields: [orderId], references: [id])
+  orderId    String
+  painting   Painting @relation(fields: [paintingId], references: [id])
+  paintingId String
+  price      Float
+  version    String   @default("original") // "original" | "print"
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
