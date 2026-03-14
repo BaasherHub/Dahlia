@@ -34,7 +34,6 @@ export default function Nav() {
 
   return (
     <>
-      {/* Mobile Menu Overlay/Backdrop */}
       {menuOpen && (
         <div 
           className="nav__overlay"
@@ -87,7 +86,6 @@ export default function Nav() {
         </div>
       </header>
 
-      {/* Mobile nav panel - OUTSIDE header to avoid stacking context issues */}
       <nav
         id="nav-menu"
         className={`nav__links ${menuOpen ? 'open' : ''}`}
