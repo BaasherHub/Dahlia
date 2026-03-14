@@ -1,5 +1,7 @@
+import { randomUUID } from 'crypto';
+
 export function requestIdMiddleware(req, res, next) {
-  req.id = req.headers['x-request-id'] || crypto.randomUUID();
+  req.id = req.headers['x-request-id'] || randomUUID();
   res.setHeader('X-Request-ID', req.id);
   next();
 }
