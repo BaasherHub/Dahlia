@@ -13,10 +13,10 @@
 
 :root {
   /* COLORS */
-  --color-bg: #fefdfb;
-  --color-surface: #faf8f3;
-  --color-surface2: #f3ede5;
-  --color-surface3: #ede5db;
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface2: #f9f9f9;
+  --color-surface3: #f5f5f5;
   --color-border: rgba(15, 13, 10, 0.08);
   
   /* TEXT - WCAG AA Compliant */
