@@ -22,6 +22,10 @@ const app = express();
 app.use(requestIdMiddleware);
 const PORT = process.env.PORT || 3001;
 
+// Railway/Render/Vercel run behind a reverse proxy and set X-Forwarded-* headers.
+// Trust first proxy so rate-limit can identify users correctly.
+app.set('trust proxy', 1);
+
 // Security Headers
 app.use(helmet());
 
@@ -69,6 +73,15 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Platform health checks commonly ping the service root.
+app.get('/', (req, res) => {
+  res.status(200).json({
+    ok: true,
+    service: 'dahlia-baasher-api',
+    health: '/api/health',
+  });
+});
+
 // API Routes
 app.use('/api/admin', adminRouter);
 app.use('/api/paintings', paintingsRouter);
@@ -94,16 +107,3 @@ app.use(errorHandler);
 // Graceful Shutdown
 const server = app.listen(PORT, () => {
   logInfo(`🎨 Dahlia Baasher API running on port ${PORT}`);
-  logInfo(`Admin key configured: ${!!process.env.ADMIN_KEY}`);
-});
-
-// Graceful Shutdown
-process.on('SIGTERM', () => {
-  logInfo('SIGTERM received, shutting down gracefully...');
-  server.close(() => {
-    logInfo('Server closed');
-    process.exit(0);
-  });
-});
-
-export default app;
