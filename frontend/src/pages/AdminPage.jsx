@@ -213,6 +213,24 @@ export default function AdminPage() {
     } catch (err) { flash(err.message, 'error'); }
   };
 
+  const updateOrderStatus = async (id, status, trackingCode, carrier) => {
+    try {
+      const payload = { status, trackingCode, carrier };
+      const r = await fetch(`${BASE}/api/admin/orders/${id}`, {
+        method: 'PUT',
+        headers: adminPost(),
+        body: JSON.stringify(payload),
+      });
+      if (!r.ok) throw new Error('Failed to update order');
+      setOrders(prev => prev.map(o =>
+        o.id === id
+          ? { ...o, status: status ?? o.status, trackingCode: trackingCode ?? o.trackingCode, carrier: carrier ?? o.carrier }
+          : o
+      ));
+      flash('Order updated!');
+    } catch (err) { flash(err.message, 'error'); }
+  };
+
   const deleteSubscriber = async (id) => {
     if (!confirm('Remove this subscriber?')) return;
     try {
@@ -477,6 +495,20 @@ export default function AdminPage() {
                 <div>${o.total?.toFixed(2)}</div>
                 <div className={`admin-status admin-status--${o.status?.toLowerCase()}`}>{o.status}</div>
                 <div>{new Date(o.createdAt).toLocaleDateString()}</div>
+                <div className="admin-order-card__actions">
+                  <select
+                    className="admin-select"
+                    value={o.status}
+                    onChange={(e) => updateOrderStatus(o.id, e.target.value, undefined, undefined)}
+                  >
+                    {['PENDING','PAID','SHIPPED','DELIVERED','CANCELLED'].map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                  {o.trackingCode && (
+                    <span className="admin-order-card__tracking">📦 {o.carrier}: {o.trackingCode}</span>
+                  )}
+                </div>
               </div>
             ))}</div>
           )}

@@ -31,6 +31,7 @@ import CheckoutPage from './pages/CheckoutPage';
 import OrderSuccessPage from './pages/OrderSuccessPage';
 import CommissionsPage from './pages/CommissionsPage';
 import CollectionPage from './pages/CollectionPage';
+import CollectionsPage from './pages/CollectionsPage';
 import WishlistPage from './pages/WishlistPage';
 import AdminPage from './pages/AdminPage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -97,6 +98,7 @@ function AppContent() {
           <Route path="/order-success" element={<OrderSuccessPage />} />
           <Route path="/commissions" element={<CommissionsPage />} />
           <Route path="/collection/:id" element={<CollectionPage />} />
+          <Route path="/collections" element={<CollectionsPage />} />
           <Route path="/wishlist" element={<WishlistPage />} />
           <Route path="/portfolio" element={<PortfolioPage />} />
           <Route path="/admin" element={<AdminPage />} />
