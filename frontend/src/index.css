@@ -283,6 +283,11 @@ a.btn--ghost, a.btn--ghost:visited { color: var(--color-text); }
 a.btn--ghost:hover { color: var(--color-accent); }
 a.btn--secondary, a.btn--secondary:visited { color: var(--color-accent); }
 a.btn--secondary:hover { color: #fff; }
+/* Override the forced white text for secondary/ghost <button> variants */
+button.btn--secondary { color: var(--color-accent); }
+button.btn--secondary:hover:not(:disabled) { color: #fff; }
+button.btn--ghost { color: var(--color-text); }
+button.btn--ghost:hover:not(:disabled) { color: var(--color-accent); }
 
 .btn:hover:not(:disabled) {
   background: var(--color-accent3);
