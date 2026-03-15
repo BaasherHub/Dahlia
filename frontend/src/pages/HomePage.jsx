@@ -1,16 +1,31 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getPaintings, getHeroPainting } from '../api.js';
+import { getPaintings, getHeroPainting, getSiteSettings } from '../api.js';
 import PaintingCard from '../components/PaintingCard.jsx';
 import Testimonials from '../components/Testimonials.jsx';
 import NewsletterSignup from '../components/NewsletterSignup.jsx';
 import './HomePage.css';
+
+const DEFAULTS = {
+  heroTitle: 'Dahlia Baasher',
+  heroSubtitle: 'Contemporary Oil Paintings',
+  heroDescription: 'Refined works on premium linen canvas, defined by deliberate palette knife technique and expressive brushwork.',
+  featuredWorksTitle: 'Featured Works',
+  featuredWorksSubtitle: 'Original Paintings',
+  printsTitle: 'Limited Edition Prints',
+  printsSubtitle: 'High-Quality Reproductions',
+  ctaTitle: 'Ready to Commission?',
+  ctaDescription: 'I work with collectors and designers worldwide to create bespoke artwork tailored to your vision and space.',
+  newsletterTitle: 'Stay Updated',
+  newsletterSubtitle: 'Subscribe to receive updates about new artworks, exhibitions, and commission opportunities.',
+};
 
 export default function HomePage() {
   const [heroPainting, setHeroPainting] = useState(null);
   const [originals, setOriginals] = useState([]);
   const [prints, setPrints] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [content, setContent] = useState(DEFAULTS);
 
   useEffect(() => {
     getHeroPainting()
@@ -28,6 +43,10 @@ export default function HomePage() {
         console.error('Failed to load paintings:', err);
         setLoading(false);
       });
+
+    getSiteSettings()
+      .then(data => setContent({ ...DEFAULTS, ...data }))
+      .catch(() => {});
   }, []);
 
   return (
@@ -50,11 +69,9 @@ export default function HomePage() {
 
         <div className="hero__content container">
           <div className="hero__text">
-            <h1 className="hero__title">Dahlia Baasher</h1>
-            <p className="hero__subtitle">Contemporary Oil Paintings</p>
-            <p className="hero__description">
-              Refined works on premium linen canvas, defined by deliberate palette knife technique and expressive brushwork.
-            </p>
+            <h1 className="hero__title">{content.heroTitle}</h1>
+            <p className="hero__subtitle">{content.heroSubtitle}</p>
+            <p className="hero__description">{content.heroDescription}</p>
             <div className="hero__actions">
               <Link to="/gallery" className="btn">
                 Explore Collection
@@ -81,8 +98,8 @@ export default function HomePage() {
           <div className="container">
             <div className="section-header">
               <div>
-                <h2 className="section-title">Featured Works</h2>
-                <p className="section-subtitle">Original Paintings</p>
+                <h2 className="section-title">{content.featuredWorksTitle}</h2>
+                <p className="section-subtitle">{content.featuredWorksSubtitle}</p>
               </div>
               <Link to="/gallery" className="btn btn--ghost">
                 View All
@@ -103,8 +120,8 @@ export default function HomePage() {
           <div className="container">
             <div className="section-header">
               <div>
-                <h2 className="section-title">Limited Edition Prints</h2>
-                <p className="section-subtitle">High-Quality Reproductions</p>
+                <h2 className="section-title">{content.printsTitle}</h2>
+                <p className="section-subtitle">{content.printsSubtitle}</p>
               </div>
               <Link to="/gallery?type=print" className="btn btn--ghost">
                 View All Prints
@@ -123,15 +140,13 @@ export default function HomePage() {
       <Testimonials />
 
       {/* ── NEWSLETTER SIGNUP ── */}
-      <NewsletterSignup />
+      <NewsletterSignup title={content.newsletterTitle} subtitle={content.newsletterSubtitle} />
 
       {/* ── CTA SECTION ── */}
       <section className="cta-section">
         <div className="container">
-          <h2 className="cta-section__title">Ready to Commission?</h2>
-          <p className="cta-section__desc">
-            I work with collectors and designers worldwide to create bespoke artwork tailored to your vision and space.
-          </p>
+          <h2 className="cta-section__title">{content.ctaTitle}</h2>
+          <p className="cta-section__desc">{content.ctaDescription}</p>
           <Link to="/commissions" className="btn btn--large">
             Start a Commission
           </Link>
@@ -140,3 +155,4 @@ export default function HomePage() {
     </main>
   );
 }
+

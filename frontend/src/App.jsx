@@ -34,6 +34,7 @@ import CollectionPage from './pages/CollectionPage';
 import WishlistPage from './pages/WishlistPage';
 import AdminPage from './pages/AdminPage';
 import NotFoundPage from './pages/NotFoundPage';
+import PortfolioPage from './pages/PortfolioPage';
 
 // Components
 import Nav from './components/Nav';
@@ -97,6 +98,7 @@ function AppContent() {
           <Route path="/commissions" element={<CommissionsPage />} />
           <Route path="/collection/:id" element={<CollectionPage />} />
           <Route path="/wishlist" element={<WishlistPage />} />
+          <Route path="/portfolio" element={<PortfolioPage />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>

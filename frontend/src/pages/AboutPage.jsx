@@ -4,6 +4,25 @@ import './AboutPage.css';
 
 const BASE = import.meta.env.VITE_API_URL || '';
 
+const DEFAULT_PRACTICE_CARDS = [
+  {
+    title: 'Materials & Technique',
+    description: 'I work exclusively with premium materials: linen canvas, oil pigments, and professional-grade mediums. My technique emphasizes the palette knife for texture and expressive mark-making.',
+  },
+  {
+    title: 'Creative Process',
+    description: 'Each piece begins with careful composition planning, followed by multiple layers of paint application. I allow each layer to inform the next, creating depth and visual interest.',
+  },
+  {
+    title: 'Commissions & Collaborations',
+    description: 'I welcome commission inquiries from collectors and designers. I work closely with clients to bring their vision to life, creating bespoke artwork for homes and commercial spaces.',
+  },
+  {
+    title: 'Exhibition History',
+    description: 'My work has been featured in contemporary galleries and private collections. I continue to exhibit regularly and participate in art fairs and curated shows.',
+  },
+];
+
 const DEFAULTS = {
   aboutHeroSubtitle: 'Contemporary artist creating refined works on premium linen canvas',
   aboutBio1: 'I am a contemporary artist specializing in oil paintings on premium linen canvas. My work is defined by deliberate palette knife technique and expressive brushwork, creating pieces that resonate with collectors and designers worldwide.',
@@ -12,6 +31,7 @@ const DEFAULTS = {
   aboutStatement1: 'My practice is rooted in a deep engagement with color, form, and the physical materiality of paint. I create work that exists in conversation with contemporary art practice while maintaining a reverence for the traditions of painting.',
   aboutStatement2: 'Through careful observation and intuitive response, I build paintings that invite contemplation and emotional engagement. Each piece is an attempt to capture a moment of synthesis between intention and spontaneity, between control and surrender.',
   aboutStatement3: 'I am committed to creating work of lasting value\u2014both visually and materially. My practice is defined by a pursuit of excellence and a dedication to the craft of painting.',
+  practiceCards: DEFAULT_PRACTICE_CARDS,
 };
 
 export default function AboutPage() {
@@ -20,7 +40,14 @@ export default function AboutPage() {
   useEffect(() => {
     fetch(`${BASE}/api/site-settings`)
       .then(r => r.ok ? r.json() : DEFAULTS)
-      .then(data => setContent({ ...DEFAULTS, ...data }))
+      .then(data => {
+        setContent({
+          ...DEFAULTS,
+          ...data,
+          practiceCards: Array.isArray(data.practiceCards) && data.practiceCards.length > 0
+            ? data.practiceCards : DEFAULT_PRACTICE_CARDS,
+        });
+      })
       .catch(() => setContent(DEFAULTS));
   }, []);
 
@@ -60,22 +87,12 @@ export default function AboutPage() {
         <div className="container">
           <h2>My Practice</h2>
           <div className="about-grid">
-            <div className="about-card">
-              <h3>Materials & Technique</h3>
-              <p>I work exclusively with premium materials: linen canvas, oil pigments, and professional-grade mediums. My technique emphasizes the palette knife for texture and expressive mark-making.</p>
-            </div>
-            <div className="about-card">
-              <h3>Creative Process</h3>
-              <p>Each piece begins with careful composition planning, followed by multiple layers of paint application. I allow each layer to inform the next, creating depth and visual interest.</p>
-            </div>
-            <div className="about-card">
-              <h3>Commissions & Collaborations</h3>
-              <p>I welcome commission inquiries from collectors and designers. I work closely with clients to bring their vision to life, creating bespoke artwork for homes and commercial spaces.</p>
-            </div>
-            <div className="about-card">
-              <h3>Exhibition History</h3>
-              <p>My work has been featured in contemporary galleries and private collections. I continue to exhibit regularly and participate in art fairs and curated shows.</p>
-            </div>
+            {content.practiceCards.map((card, i) => (
+              <div key={i} className="about-card">
+                <h3>{card.title}</h3>
+                <p>{card.description}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -101,3 +118,4 @@ export default function AboutPage() {
     </main>
   );
 }
+

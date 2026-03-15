@@ -1,0 +1,214 @@
+.portfolio-page {
+  min-height: 100vh;
+}
+
+/* ── HEADER ── */
+.portfolio-page__header {
+  padding: 120px 0 80px;
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+  text-align: center;
+}
+
+.portfolio-page__title {
+  font-size: clamp(2.5rem, 6vw, 5rem);
+  font-family: var(--font-serif);
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+  margin: 12px 0;
+}
+
+.portfolio-page__subtitle {
+  font-size: 1.1rem;
+  color: var(--color-text-secondary);
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+/* ── ARTIST STATEMENT ── */
+.portfolio-statement {
+  padding: 80px 0;
+  background: var(--color-surface);
+}
+
+.portfolio-statement__inner {
+  max-width: 760px;
+  margin: 0 auto;
+  position: relative;
+  padding: 0 24px;
+  text-align: center;
+}
+
+.portfolio-statement__quote {
+  display: block;
+  margin: 0 auto 24px;
+  color: var(--color-accent);
+}
+
+.portfolio-statement__text {
+  font-size: 1.2rem;
+  line-height: 1.85;
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+/* ── MASONRY GRID ── */
+.portfolio-grid-section {
+  padding: 80px 0 100px;
+}
+
+.portfolio-masonry {
+  columns: 3 280px;
+  column-gap: 20px;
+}
+
+.portfolio-item {
+  display: block;
+  break-inside: avoid;
+  margin-bottom: 20px;
+  overflow: hidden;
+  border-radius: 4px;
+  text-decoration: none;
+}
+
+.portfolio-item__img-wrap {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+.portfolio-item__img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.5s ease;
+}
+
+.portfolio-item:hover .portfolio-item__img-wrap img {
+  transform: scale(1.04);
+}
+
+.portfolio-item__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  display: flex;
+  align-items: flex-end;
+  padding: 24px;
+}
+
+.portfolio-item:hover .portfolio-item__overlay {
+  opacity: 1;
+}
+
+.portfolio-item__info {
+  color: #fff;
+}
+
+.portfolio-item__title {
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  font-weight: 400;
+  margin: 0 0 4px;
+}
+
+.portfolio-item__year,
+.portfolio-item__medium {
+  font-size: 0.8rem;
+  opacity: 0.85;
+  margin: 0;
+}
+
+/* Tall variant for visual rhythm */
+.portfolio-item--tall .portfolio-item__img-wrap {
+  aspect-ratio: 3/4;
+}
+
+.portfolio-item--normal .portfolio-item__img-wrap {
+  aspect-ratio: 4/5;
+}
+
+/* Loading / Empty */
+.portfolio-loading,
+.portfolio-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 0;
+  gap: 16px;
+  color: var(--color-text-secondary);
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── CTA ── */
+.portfolio-cta {
+  padding: 80px 0;
+  background: var(--color-surface);
+  text-align: center;
+  border-top: 1px solid var(--color-border);
+}
+
+.portfolio-cta h2 {
+  font-family: var(--font-serif);
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  font-weight: 300;
+  margin-bottom: 12px;
+  color: var(--color-text);
+}
+
+.portfolio-cta p {
+  color: var(--color-text-secondary);
+  max-width: 500px;
+  margin: 0 auto 32px;
+  line-height: 1.7;
+}
+
+.portfolio-cta__actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .portfolio-page__header {
+    padding: 100px 0 60px;
+  }
+
+  .portfolio-masonry {
+    columns: 2 220px;
+    column-gap: 12px;
+  }
+
+  .portfolio-item {
+    margin-bottom: 12px;
+  }
+
+  .portfolio-item__overlay {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 480px) {
+  .portfolio-masonry {
+    columns: 1;
+  }
+}

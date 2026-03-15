@@ -181,3 +181,61 @@ export async function adminUpdateSiteSettings(data) {
   if (!res.ok) throw new Error('Failed to update site settings');
   return res.json();
 }
+
+// ── Commission Inquiries (Admin) ──────────────────────────
+
+export async function adminGetCommissionInquiries() {
+  const res = await fetch(`${BASE}/api/commissions`, { headers: adminGetHeaders() });
+  if (!res.ok) throw new Error('Failed to fetch inquiries');
+  return res.json();
+}
+
+export async function adminUpdateCommissionStatus(id, status) {
+  const res = await fetch(`${BASE}/api/commissions/${id}`, {
+    method: 'PUT', headers: adminPostHeaders(), body: JSON.stringify({ status }),
+  });
+  if (!res.ok) throw new Error('Failed to update status');
+  return res.json();
+}
+
+// ── Newsletter Subscribers (Admin) ────────────────────────
+
+export async function adminGetNewsletterSubscribers() {
+  const res = await fetch(`${BASE}/api/newsletter`, { headers: adminGetHeaders() });
+  if (!res.ok) throw new Error('Failed to fetch subscribers');
+  return res.json();
+}
+
+export async function adminDeleteNewsletterSubscriber(id) {
+  const res = await fetch(`${BASE}/api/newsletter/${id}`, {
+    method: 'DELETE', headers: adminPostHeaders(),
+  });
+  if (!res.ok) throw new Error('Failed to delete subscriber');
+  return res.json();
+}
+
+// ── Public Newsletter Subscribe ───────────────────────────
+
+export async function subscribeNewsletter(email) {
+  const res = await fetch(`${BASE}/api/newsletter/subscribe`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Failed to subscribe');
+  return data;
+}
+
+// ── Public Commission Submit ──────────────────────────────
+
+export async function submitCommission(data) {
+  const res = await fetch(`${BASE}/api/commissions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error || 'Failed to submit inquiry');
+  return json;
+}

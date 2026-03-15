@@ -1,8 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { getPaintings, getCollections } from '../api.js';
+import { getPaintings, getCollections, getSiteSettings } from '../api.js';
 import PaintingCard from '../components/PaintingCard.jsx';
 import './GalleryPage.css';
+
+const HEADER_DEFAULTS = {
+  galleryLabel: 'Portfolio',
+  galleryTitle: 'Artworks',
+  gallerySubtitle: 'Explore original paintings and limited edition prints',
+};
 
 function CollectionsView({ collections }) {
   return (
@@ -39,6 +45,7 @@ export default function GalleryPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
+  const [header, setHeader] = useState(HEADER_DEFAULTS);
   const type = searchParams.get('type') || 'all';
 
   useEffect(() => {
@@ -64,6 +71,10 @@ export default function GalleryPage() {
         setError('Failed to load artworks. Please try again.');
         setLoading(false);
       });
+
+    getSiteSettings()
+      .then(data => setHeader({ ...HEADER_DEFAULTS, ...data }))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -88,9 +99,9 @@ export default function GalleryPage() {
     <main className="gallery-page">
       <div className="gallery-page__header">
         <div className="container">
-          <p className="label">Portfolio</p>
-          <h1 className="gallery-page__title">Artworks</h1>
-          <p className="gallery-page__subtitle">Explore original paintings and limited edition prints</p>
+          <p className="label">{header.galleryLabel}</p>
+          <h1 className="gallery-page__title">{header.galleryTitle}</h1>
+          <p className="gallery-page__subtitle">{header.gallerySubtitle}</p>
         </div>
       </div>
 
