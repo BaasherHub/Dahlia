@@ -83,11 +83,21 @@ export default function AdminPage() {
   const emptyCard = { title: '', description: '' };
   const [cardForm, setCardForm] = useState(emptyCard);
   const [editCardIdx, setEditCardIdx] = useState(null);
+  const [settingsDirty, setSettingsDirty] = useState(false);
+  const [paintingDirty, setPaintingDirty] = useState(false);
+
+  const settingsTextChange = (field) => (e) => { setSiteSettings(s=>({...s,[field]:e.target.value})); setSettingsDirty(true); };
 
   useEffect(() => {
     const saved = sessionStorage.getItem('adminKey');
     if (saved) verify(saved);
   }, []);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e) => { if (settingsDirty) { e.preventDefault(); e.returnValue = ''; } };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [settingsDirty]);
 
   const verify = async (k) => {
     try {
@@ -140,12 +150,12 @@ export default function AdminPage() {
       const fd = new FormData(); fd.append('file', file); fd.append('upload_preset', UPLOAD_PRESET); fd.append('folder', 'dahlia-paintings');
       const r = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: fd });
       if (!r.ok) { const err = await r.json().catch(()=>({})); throw new Error(err?.error?.message || 'Upload failed'); }
-      const d = await r.json(); setForm(p => ({ ...p, images: [...p.images, d.secure_url] })); flash('Image uploaded!');
+      const d = await r.json(); setForm(p => ({ ...p, images: [...p.images, d.secure_url] })); if (editId) setPaintingDirty(true); flash('Image uploaded!');
     } catch (err) { flash(err.message, 'error'); }
     setUploading(false); if (fileRef.current) fileRef.current.value = '';
   };
 
-  const removeImage = (idx) => setForm(p => ({ ...p, images: p.images.filter((_,i)=>i!==idx) }));
+  const removeImage = (idx) => { setForm(p => ({ ...p, images: p.images.filter((_,i)=>i!==idx) })); if (editId) setPaintingDirty(true); };
 
   const savePainting = async (e) => {
     e.preventDefault();
@@ -160,7 +170,7 @@ export default function AdminPage() {
       const url = editId ? `${BASE}/api/paintings/${editId}` : `${BASE}/api/paintings`;
       const r = await fetch(url, { method: editId?'PUT':'POST', headers: adminPost(), body: JSON.stringify(payload) });
       if (!r.ok) throw new Error('Failed');
-      flash(editId ? 'Updated!' : 'Added!'); setForm(emptyForm); setEditId(null); load();
+      flash(editId ? 'Updated!' : 'Added!'); setForm(emptyForm); setEditId(null); setPaintingDirty(false); load();
     } catch (err) { flash(err.message, 'error'); }
   };
 
@@ -171,8 +181,11 @@ export default function AdminPage() {
 
   const deletePainting = async (id) => {
     if (!confirm('Delete this painting?')) return;
-    await fetch(`${BASE}/api/paintings/${id}`, { method:'DELETE', headers:adminPost() });
-    flash('Deleted!'); load();
+    try {
+      const r = await fetch(`${BASE}/api/paintings/${id}`, { method:'DELETE', headers:adminPost() });
+      if (!r.ok) throw new Error('Failed to delete painting');
+      flash('Deleted!'); load();
+    } catch (err) { flash(err.message, 'error'); }
   };
 
   const saveCollection = async (e) => {
@@ -184,85 +197,128 @@ export default function AdminPage() {
 
   const deleteCollection = async (id) => {
     if (!confirm('Delete this collection?')) return;
-    await fetch(`${BASE}/api/collections/${id}`, { method:'DELETE', headers:adminPost() });
-    flash('Deleted!'); load();
+    try {
+      const r = await fetch(`${BASE}/api/collections/${id}`, { method:'DELETE', headers:adminPost() });
+      if (!r.ok) throw new Error('Failed to delete collection');
+      flash('Deleted!'); load();
+    } catch (err) { flash(err.message, 'error'); }
   };
 
   const updateInquiryStatus = async (id, status) => {
     try {
-      await fetch(`${BASE}/api/commissions/${id}`, { method:'PUT', headers:adminPost(), body: JSON.stringify({ status }) });
+      const r = await fetch(`${BASE}/api/commissions/${id}`, { method:'PUT', headers:adminPost(), body: JSON.stringify({ status }) });
+      if (!r.ok) throw new Error('Failed to update status');
       setInquiries(prev => prev.map(i => i.id === id ? { ...i, status } : i));
       flash('Status updated!');
-    } catch { flash('Failed to update', 'error'); }
+    } catch (err) { flash(err.message, 'error'); }
   };
 
   const deleteSubscriber = async (id) => {
     if (!confirm('Remove this subscriber?')) return;
     try {
-      await fetch(`${BASE}/api/newsletter/${id}`, { method:'DELETE', headers:adminPost() });
+      const r = await fetch(`${BASE}/api/newsletter/${id}`, { method:'DELETE', headers:adminPost() });
+      if (!r.ok) throw new Error('Failed to remove subscriber');
       setSubscribers(prev => prev.filter(s => s.id !== id));
       flash('Removed!');
-    } catch { flash('Failed', 'error'); }
+    } catch (err) { flash(err.message, 'error'); }
   };
 
-  const saveSiteSettings = async (e) => {
-    e.preventDefault();
+  const persistSiteSettings = async (newSettings) => {
     try {
-      const r = await fetch(`${BASE}/api/site-settings`, { method: 'PUT', headers: adminPost(), body: JSON.stringify(siteSettings) });
+      const r = await fetch(`${BASE}/api/site-settings`, { method: 'PUT', headers: adminPost(), body: JSON.stringify(newSettings) });
       if (!r.ok) throw new Error('Failed to save');
       const d = await r.json();
-      setSiteSettings(prev => ({ ...prev, ...d, testimonials: Array.isArray(d.testimonials)?d.testimonials:[], socialLinks: Array.isArray(d.socialLinks)?d.socialLinks:[], commissionSteps: Array.isArray(d.commissionSteps)?d.commissionSteps:[], commissionFaqs: Array.isArray(d.commissionFaqs)?d.commissionFaqs:[], practiceCards: Array.isArray(d.practiceCards)?d.practiceCards:[] }));
+      setSiteSettings({ ...defaultSettings, ...d, testimonials: Array.isArray(d.testimonials)?d.testimonials:[], socialLinks: Array.isArray(d.socialLinks)?d.socialLinks:[], commissionSteps: Array.isArray(d.commissionSteps)?d.commissionSteps:[], commissionFaqs: Array.isArray(d.commissionFaqs)?d.commissionFaqs:[], practiceCards: Array.isArray(d.practiceCards)?d.practiceCards:[] });
+      setSettingsDirty(false);
       flash('Site settings saved!');
     } catch (err) { flash(err.message, 'error'); }
   };
 
-  const addOrUpdateTestimonial = (e) => {
+  const saveSiteSettings = async (e) => {
+    e.preventDefault();
+    await persistSiteSettings(siteSettings);
+  };
+
+  const addOrUpdateTestimonial = async (e) => {
     e.preventDefault();
     if (!testimonialForm.name.trim() || !testimonialForm.text.trim()) { flash('Name and text required', 'error'); return; }
     const item = { id: editTestimonialIdx !== null ? (siteSettings.testimonials[editTestimonialIdx]?.id || Date.now()) : Date.now(), name: testimonialForm.name.trim(), title: testimonialForm.title.trim(), text: testimonialForm.text.trim(), rating: Number(testimonialForm.rating) || 5 };
     const updated = editTestimonialIdx !== null ? siteSettings.testimonials.map((t,i) => i===editTestimonialIdx ? item : t) : [...siteSettings.testimonials, item];
-    setSiteSettings(s => ({ ...s, testimonials: updated })); setTestimonialForm(emptyTestimonial); setEditTestimonialIdx(null);
-    flash('Done (save to apply)');
+    const newSettings = { ...siteSettings, testimonials: updated };
+    setSiteSettings(newSettings); setTestimonialForm(emptyTestimonial); setEditTestimonialIdx(null);
+    await persistSiteSettings(newSettings);
   };
-  const removeTestimonial = (idx) => { setSiteSettings(s => ({ ...s, testimonials: s.testimonials.filter((_,i)=>i!==idx) })); flash('Removed (save to apply)'); };
+  const removeTestimonial = async (idx) => {
+    const newSettings = { ...siteSettings, testimonials: siteSettings.testimonials.filter((_,i)=>i!==idx) };
+    setSiteSettings(newSettings);
+    await persistSiteSettings(newSettings);
+  };
 
-  const addOrUpdateSocialLink = (e) => {
+  const addOrUpdateSocialLink = async (e) => {
     e.preventDefault(); if (!socialLinkForm.url.trim()) { flash('URL required', 'error'); return; }
     const item = { platform: socialLinkForm.platform.trim(), url: socialLinkForm.url.trim(), label: socialLinkForm.label.trim() || socialLinkForm.platform.trim() };
     const updated = editSocialIdx !== null ? siteSettings.socialLinks.map((l,i) => i===editSocialIdx ? item : l) : [...siteSettings.socialLinks, item];
-    setSiteSettings(s => ({ ...s, socialLinks: updated })); setSocialLinkForm(emptySocialLink); setEditSocialIdx(null);
-    flash('Done (save to apply)');
+    const newSettings = { ...siteSettings, socialLinks: updated };
+    setSiteSettings(newSettings); setSocialLinkForm(emptySocialLink); setEditSocialIdx(null);
+    await persistSiteSettings(newSettings);
   };
-  const removeSocialLink = (idx) => { setSiteSettings(s => ({ ...s, socialLinks: s.socialLinks.filter((_,i)=>i!==idx) })); flash('Removed (save to apply)'); };
+  const removeSocialLink = async (idx) => {
+    const newSettings = { ...siteSettings, socialLinks: siteSettings.socialLinks.filter((_,i)=>i!==idx) };
+    setSiteSettings(newSettings);
+    await persistSiteSettings(newSettings);
+  };
 
-  const addOrUpdateStep = (e) => {
+  const addOrUpdateStep = async (e) => {
     e.preventDefault(); if (!stepForm.title.trim()) { flash('Title required', 'error'); return; }
     const item = { title: stepForm.title.trim(), description: stepForm.description.trim() };
     const updated = editStepIdx !== null ? siteSettings.commissionSteps.map((s,i) => i===editStepIdx ? item : s) : [...siteSettings.commissionSteps, item];
-    setSiteSettings(s => ({ ...s, commissionSteps: updated })); setStepForm(emptyStep); setEditStepIdx(null);
-    flash('Done (save to apply)');
+    const newSettings = { ...siteSettings, commissionSteps: updated };
+    setSiteSettings(newSettings); setStepForm(emptyStep); setEditStepIdx(null);
+    await persistSiteSettings(newSettings);
   };
-  const removeStep = (idx) => { setSiteSettings(s => ({ ...s, commissionSteps: s.commissionSteps.filter((_,i)=>i!==idx) })); flash('Removed (save to apply)'); };
+  const removeStep = async (idx) => {
+    const newSettings = { ...siteSettings, commissionSteps: siteSettings.commissionSteps.filter((_,i)=>i!==idx) };
+    setSiteSettings(newSettings);
+    await persistSiteSettings(newSettings);
+  };
 
-  const addOrUpdateFaq = (e) => {
+  const addOrUpdateFaq = async (e) => {
     e.preventDefault(); if (!faqForm.question.trim()) { flash('Question required', 'error'); return; }
     const item = { question: faqForm.question.trim(), answer: faqForm.answer.trim() };
     const updated = editFaqIdx !== null ? siteSettings.commissionFaqs.map((f,i) => i===editFaqIdx ? item : f) : [...siteSettings.commissionFaqs, item];
-    setSiteSettings(s => ({ ...s, commissionFaqs: updated })); setFaqForm(emptyFaq); setEditFaqIdx(null);
-    flash('Done (save to apply)');
+    const newSettings = { ...siteSettings, commissionFaqs: updated };
+    setSiteSettings(newSettings); setFaqForm(emptyFaq); setEditFaqIdx(null);
+    await persistSiteSettings(newSettings);
   };
-  const removeFaq = (idx) => { setSiteSettings(s => ({ ...s, commissionFaqs: s.commissionFaqs.filter((_,i)=>i!==idx) })); flash('Removed (save to apply)'); };
+  const removeFaq = async (idx) => {
+    const newSettings = { ...siteSettings, commissionFaqs: siteSettings.commissionFaqs.filter((_,i)=>i!==idx) };
+    setSiteSettings(newSettings);
+    await persistSiteSettings(newSettings);
+  };
 
-  const addOrUpdateCard = (e) => {
+  const addOrUpdateCard = async (e) => {
     e.preventDefault(); if (!cardForm.title.trim()) { flash('Title required', 'error'); return; }
     const item = { title: cardForm.title.trim(), description: cardForm.description.trim() };
     const updated = editCardIdx !== null ? siteSettings.practiceCards.map((c,i) => i===editCardIdx ? item : c) : [...siteSettings.practiceCards, item];
-    setSiteSettings(s => ({ ...s, practiceCards: updated })); setCardForm(emptyCard); setEditCardIdx(null);
-    flash('Done (save to apply)');
+    const newSettings = { ...siteSettings, practiceCards: updated };
+    setSiteSettings(newSettings); setCardForm(emptyCard); setEditCardIdx(null);
+    await persistSiteSettings(newSettings);
   };
-  const removeCard = (idx) => { setSiteSettings(s => ({ ...s, practiceCards: s.practiceCards.filter((_,i)=>i!==idx) })); flash('Removed (save to apply)'); };
+  const removeCard = async (idx) => {
+    const newSettings = { ...siteSettings, practiceCards: siteSettings.practiceCards.filter((_,i)=>i!==idx) };
+    setSiteSettings(newSettings);
+    await persistSiteSettings(newSettings);
+  };
 
   const statusCls = (status) => ({ new:'admin-status--pending', contacted:'admin-status--paid', completed:'admin-status--shipped', declined:'admin-status--cancelled' }[status] || '');
+
+  const handleTabChange = (newTab) => {
+    if (tab === 'settings' && settingsDirty && newTab !== 'settings') {
+      if (!window.confirm('You have unsaved changes in Site Settings. Discard them?')) return;
+      setSettingsDirty(false);
+    }
+    setTab(newTab);
+  };
 
   if (!auth) return (
     <main className="admin-page"><div className="admin-container"><div className="admin-login"><div className="admin-login__card">
@@ -285,7 +341,7 @@ export default function AdminPage() {
       </div>
       {msg && <div className={`admin-${msgType==='error'?'error':'success'}`}>{msg}</div>}
       <div className="admin-tabs">
-        {tabs.map(([k,l])=>(<button key={k} className={`admin-tab ${tab===k?'active':''}`} onClick={()=>setTab(k)}>{l}</button>))}
+        {tabs.map(([k,l])=>(<button key={k} className={`admin-tab ${tab===k?'active':''}`} onClick={()=>handleTabChange(k)}>{l}</button>))}
       </div>
 
       {tab==='paintings' && <>
@@ -339,7 +395,8 @@ export default function AdminPage() {
             </div>
             <div className="admin-form__actions">
               <button type="submit" className="btn btn--large">{editId ? 'Update Painting' : 'Add Painting'}</button>
-              {editId && <button type="button" className="btn btn--ghost" onClick={()=>{setForm(emptyForm);setEditId(null);}}>Cancel</button>}
+              {editId && <button type="button" className="btn btn--ghost" onClick={()=>{setForm(emptyForm);setEditId(null);setPaintingDirty(false);}}>Cancel</button>}
+              {paintingDirty && editId && <div style={{background:'#fff3cd',border:'1px solid #ffc107',borderRadius:'6px',padding:'10px 14px',color:'#856404',fontSize:'13px',width:'100%',marginTop:'4px'}}>⚠ You have unsaved image changes. Click 'Update Painting' to save.</div>}
             </div>
           </form>
         </section>
@@ -490,38 +547,38 @@ export default function AdminPage() {
           <CollapsibleSection title="Navigation" defaultOpen={false}>
             <div className="form-group">
               <label>Logo Sub-text (under "Dahlia Baasher" in the nav)</label>
-              <input value={siteSettings.navLogoSubtext} onChange={e=>setSiteSettings(s=>({...s,navLogoSubtext:e.target.value}))} placeholder="Studio" />
+              <input value={siteSettings.navLogoSubtext} onChange={settingsTextChange('navLogoSubtext')} placeholder="Studio" />
             </div>
           </CollapsibleSection>
 
           <CollapsibleSection title="Homepage Content" defaultOpen={true}>
             <div className="admin-form__row">
-              <div className="form-group"><label>Hero Title</label><input value={siteSettings.heroTitle} onChange={e=>setSiteSettings(s=>({...s,heroTitle:e.target.value}))} placeholder="Dahlia Baasher" /></div>
-              <div className="form-group"><label>Hero Subtitle</label><input value={siteSettings.heroSubtitle} onChange={e=>setSiteSettings(s=>({...s,heroSubtitle:e.target.value}))} placeholder="Contemporary Oil Paintings" /></div>
+              <div className="form-group"><label>Hero Title</label><input value={siteSettings.heroTitle} onChange={settingsTextChange('heroTitle')} placeholder="Dahlia Baasher" /></div>
+              <div className="form-group"><label>Hero Subtitle</label><input value={siteSettings.heroSubtitle} onChange={settingsTextChange('heroSubtitle')} placeholder="Contemporary Oil Paintings" /></div>
             </div>
-            <div className="form-group"><label>Hero Description</label><textarea rows="2" value={siteSettings.heroDescription} onChange={e=>setSiteSettings(s=>({...s,heroDescription:e.target.value}))} /></div>
+            <div className="form-group"><label>Hero Description</label><textarea rows="2" value={siteSettings.heroDescription} onChange={settingsTextChange('heroDescription')} /></div>
             <div className="admin-form__row">
-              <div className="form-group"><label>Featured Works Title</label><input value={siteSettings.featuredWorksTitle} onChange={e=>setSiteSettings(s=>({...s,featuredWorksTitle:e.target.value}))} /></div>
-              <div className="form-group"><label>Featured Works Subtitle</label><input value={siteSettings.featuredWorksSubtitle} onChange={e=>setSiteSettings(s=>({...s,featuredWorksSubtitle:e.target.value}))} /></div>
-            </div>
-            <div className="admin-form__row">
-              <div className="form-group"><label>Prints Title</label><input value={siteSettings.printsTitle} onChange={e=>setSiteSettings(s=>({...s,printsTitle:e.target.value}))} /></div>
-              <div className="form-group"><label>Prints Subtitle</label><input value={siteSettings.printsSubtitle} onChange={e=>setSiteSettings(s=>({...s,printsSubtitle:e.target.value}))} /></div>
+              <div className="form-group"><label>Featured Works Title</label><input value={siteSettings.featuredWorksTitle} onChange={settingsTextChange('featuredWorksTitle')} /></div>
+              <div className="form-group"><label>Featured Works Subtitle</label><input value={siteSettings.featuredWorksSubtitle} onChange={settingsTextChange('featuredWorksSubtitle')} /></div>
             </div>
             <div className="admin-form__row">
-              <div className="form-group"><label>CTA Title</label><input value={siteSettings.ctaTitle} onChange={e=>setSiteSettings(s=>({...s,ctaTitle:e.target.value}))} /></div>
+              <div className="form-group"><label>Prints Title</label><input value={siteSettings.printsTitle} onChange={settingsTextChange('printsTitle')} /></div>
+              <div className="form-group"><label>Prints Subtitle</label><input value={siteSettings.printsSubtitle} onChange={settingsTextChange('printsSubtitle')} /></div>
             </div>
-            <div className="form-group"><label>CTA Description</label><textarea rows="2" value={siteSettings.ctaDescription} onChange={e=>setSiteSettings(s=>({...s,ctaDescription:e.target.value}))} /></div>
             <div className="admin-form__row">
-              <div className="form-group"><label>Newsletter Section Title</label><input value={siteSettings.newsletterTitle} onChange={e=>setSiteSettings(s=>({...s,newsletterTitle:e.target.value}))} /></div>
+              <div className="form-group"><label>CTA Title</label><input value={siteSettings.ctaTitle} onChange={settingsTextChange('ctaTitle')} /></div>
             </div>
-            <div className="form-group"><label>Newsletter Subtitle</label><textarea rows="2" value={siteSettings.newsletterSubtitle} onChange={e=>setSiteSettings(s=>({...s,newsletterSubtitle:e.target.value}))} /></div>
+            <div className="form-group"><label>CTA Description</label><textarea rows="2" value={siteSettings.ctaDescription} onChange={settingsTextChange('ctaDescription')} /></div>
+            <div className="admin-form__row">
+              <div className="form-group"><label>Newsletter Section Title</label><input value={siteSettings.newsletterTitle} onChange={settingsTextChange('newsletterTitle')} /></div>
+            </div>
+            <div className="form-group"><label>Newsletter Subtitle</label><textarea rows="2" value={siteSettings.newsletterSubtitle} onChange={settingsTextChange('newsletterSubtitle')} /></div>
           </CollapsibleSection>
 
           <CollapsibleSection title="Footer and Social Links" defaultOpen={false}>
             <div className="form-group">
               <label>Footer Tagline</label>
-              <input value={siteSettings.footerTagline} onChange={e=>setSiteSettings(s=>({...s,footerTagline:e.target.value}))} placeholder="Contemporary Art, Toronto, Canada" />
+              <input value={siteSettings.footerTagline} onChange={settingsTextChange('footerTagline')} placeholder="Contemporary Art, Toronto, Canada" />
             </div>
             <h3 style={{fontSize:'15px',marginBottom:'12px',marginTop:'20px'}}>Social Links ({siteSettings.socialLinks.length})</h3>
             <div style={{background:'#f9f9f9',padding:'16px',borderRadius:'8px',marginBottom:'12px',border:'1px solid var(--color-border)'}}>
@@ -549,24 +606,24 @@ export default function AdminPage() {
 
           <CollapsibleSection title="Gallery Page Header" defaultOpen={false}>
             <div className="admin-form__row">
-              <div className="form-group"><label>Page Label (small text)</label><input value={siteSettings.galleryLabel} onChange={e=>setSiteSettings(s=>({...s,galleryLabel:e.target.value}))} placeholder="Portfolio" /></div>
-              <div className="form-group"><label>Page Title</label><input value={siteSettings.galleryTitle} onChange={e=>setSiteSettings(s=>({...s,galleryTitle:e.target.value}))} placeholder="Artworks" /></div>
+              <div className="form-group"><label>Page Label (small text)</label><input value={siteSettings.galleryLabel} onChange={settingsTextChange('galleryLabel')} placeholder="Portfolio" /></div>
+              <div className="form-group"><label>Page Title</label><input value={siteSettings.galleryTitle} onChange={settingsTextChange('galleryTitle')} placeholder="Artworks" /></div>
             </div>
-            <div className="form-group"><label>Page Subtitle</label><input value={siteSettings.gallerySubtitle} onChange={e=>setSiteSettings(s=>({...s,gallerySubtitle:e.target.value}))} /></div>
+            <div className="form-group"><label>Page Subtitle</label><input value={siteSettings.gallerySubtitle} onChange={settingsTextChange('gallerySubtitle')} /></div>
           </CollapsibleSection>
 
           <CollapsibleSection title="Portfolio Page" defaultOpen={false}>
             <div className="admin-form__row">
-              <div className="form-group"><label>Page Title</label><input value={siteSettings.portfolioTitle} onChange={e=>setSiteSettings(s=>({...s,portfolioTitle:e.target.value}))} placeholder="Portfolio" /></div>
-              <div className="form-group"><label>Page Subtitle</label><input value={siteSettings.portfolioSubtitle} onChange={e=>setSiteSettings(s=>({...s,portfolioSubtitle:e.target.value}))} /></div>
+              <div className="form-group"><label>Page Title</label><input value={siteSettings.portfolioTitle} onChange={settingsTextChange('portfolioTitle')} placeholder="Portfolio" /></div>
+              <div className="form-group"><label>Page Subtitle</label><input value={siteSettings.portfolioSubtitle} onChange={settingsTextChange('portfolioSubtitle')} /></div>
             </div>
-            <div className="form-group"><label>Artist Statement</label><textarea rows="4" value={siteSettings.portfolioStatement} onChange={e=>setSiteSettings(s=>({...s,portfolioStatement:e.target.value}))} /></div>
+            <div className="form-group"><label>Artist Statement</label><textarea rows="4" value={siteSettings.portfolioStatement} onChange={settingsTextChange('portfolioStatement')} /></div>
             <p style={{fontSize:'12px',color:'var(--color-text-secondary)'}}>Tip: Mark paintings as "Featured" in the Paintings tab to control which appear on the Portfolio page.</p>
           </CollapsibleSection>
 
           <CollapsibleSection title="Commissions Page" defaultOpen={false}>
-            <div className="form-group"><label>Page Subtitle</label><textarea rows="2" value={siteSettings.commissionsSubtitle} onChange={e=>setSiteSettings(s=>({...s,commissionsSubtitle:e.target.value}))} /></div>
-            <div className="form-group"><label>Form Help Text</label><input value={siteSettings.commissionFormHelpText} onChange={e=>setSiteSettings(s=>({...s,commissionFormHelpText:e.target.value}))} /></div>
+            <div className="form-group"><label>Page Subtitle</label><textarea rows="2" value={siteSettings.commissionsSubtitle} onChange={settingsTextChange('commissionsSubtitle')} /></div>
+            <div className="form-group"><label>Form Help Text</label><input value={siteSettings.commissionFormHelpText} onChange={settingsTextChange('commissionFormHelpText')} /></div>
 
             <h3 style={{fontSize:'15px',margin:'20px 0 10px'}}>Process Steps ({siteSettings.commissionSteps.length})</h3>
             <div style={{background:'#f9f9f9',padding:'16px',borderRadius:'8px',marginBottom:'12px',border:'1px solid var(--color-border)'}}>
@@ -610,13 +667,13 @@ export default function AdminPage() {
           </CollapsibleSection>
 
           <CollapsibleSection title="About Page Content" defaultOpen={false}>
-            <div className="form-group"><label>Hero Subtitle</label><input value={siteSettings.aboutHeroSubtitle} onChange={e=>setSiteSettings(s=>({...s,aboutHeroSubtitle:e.target.value}))} /></div>
-            <div className="form-group"><label>Bio Paragraph 1</label><textarea rows="3" value={siteSettings.aboutBio1} onChange={e=>setSiteSettings(s=>({...s,aboutBio1:e.target.value}))} /></div>
-            <div className="form-group"><label>Bio Paragraph 2</label><textarea rows="3" value={siteSettings.aboutBio2} onChange={e=>setSiteSettings(s=>({...s,aboutBio2:e.target.value}))} /></div>
-            <div className="form-group"><label>Bio Paragraph 3</label><textarea rows="3" value={siteSettings.aboutBio3} onChange={e=>setSiteSettings(s=>({...s,aboutBio3:e.target.value}))} /></div>
-            <div className="form-group"><label>Artist Statement 1</label><textarea rows="3" value={siteSettings.aboutStatement1} onChange={e=>setSiteSettings(s=>({...s,aboutStatement1:e.target.value}))} /></div>
-            <div className="form-group"><label>Artist Statement 2</label><textarea rows="3" value={siteSettings.aboutStatement2} onChange={e=>setSiteSettings(s=>({...s,aboutStatement2:e.target.value}))} /></div>
-            <div className="form-group"><label>Artist Statement 3</label><textarea rows="3" value={siteSettings.aboutStatement3} onChange={e=>setSiteSettings(s=>({...s,aboutStatement3:e.target.value}))} /></div>
+            <div className="form-group"><label>Hero Subtitle</label><input value={siteSettings.aboutHeroSubtitle} onChange={settingsTextChange('aboutHeroSubtitle')} /></div>
+            <div className="form-group"><label>Bio Paragraph 1</label><textarea rows="3" value={siteSettings.aboutBio1} onChange={settingsTextChange('aboutBio1')} /></div>
+            <div className="form-group"><label>Bio Paragraph 2</label><textarea rows="3" value={siteSettings.aboutBio2} onChange={settingsTextChange('aboutBio2')} /></div>
+            <div className="form-group"><label>Bio Paragraph 3</label><textarea rows="3" value={siteSettings.aboutBio3} onChange={settingsTextChange('aboutBio3')} /></div>
+            <div className="form-group"><label>Artist Statement 1</label><textarea rows="3" value={siteSettings.aboutStatement1} onChange={settingsTextChange('aboutStatement1')} /></div>
+            <div className="form-group"><label>Artist Statement 2</label><textarea rows="3" value={siteSettings.aboutStatement2} onChange={settingsTextChange('aboutStatement2')} /></div>
+            <div className="form-group"><label>Artist Statement 3</label><textarea rows="3" value={siteSettings.aboutStatement3} onChange={settingsTextChange('aboutStatement3')} /></div>
 
             <h3 style={{fontSize:'15px',margin:'20px 0 10px'}}>Practice Cards ({siteSettings.practiceCards.length})</h3>
             <div style={{background:'#f9f9f9',padding:'16px',borderRadius:'8px',marginBottom:'12px',border:'1px solid var(--color-border)'}}>
