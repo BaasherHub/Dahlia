@@ -3,21 +3,14 @@ import './Testimonials.css';
 
 const BASE = import.meta.env.VITE_API_URL || '';
 
-const FALLBACK_TESTIMONIALS = [
-  { id: 1, name: 'Sarah Mitchell', title: 'Art Collector', text: "Dahlia's work is absolutely mesmerizing. The attention to detail and emotional depth in each piece is extraordinary.", rating: 5 },
-  { id: 2, name: 'James Chen', title: 'Interior Designer', text: "I recommend Dahlia's art to all my clients. Her pieces add a sophisticated elegance to any space.", rating: 5 },
-  { id: 3, name: 'Emma Rodriguez', title: 'Gallery Owner', text: 'Working with Dahlia has been a pleasure. Her professionalism and artistic vision are unmatched.', rating: 5 },
-  { id: 4, name: 'Michael Thompson', title: 'Art Enthusiast', text: 'The commission I received exceeded all my expectations. Highly talented and truly professional.', rating: 5 },
-];
-
 export default function Testimonials() {
-  const [testimonials, setTestimonials] = useState(FALLBACK_TESTIMONIALS);
+  const [testimonials, setTestimonials] = useState([]);
 
   useEffect(() => {
     fetch(`${BASE}/api/site-settings`)
       .then(r => r.ok ? r.json() : null)
       .then(data => {
-        if (data?.testimonials && Array.isArray(data.testimonials) && data.testimonials.length > 0) {
+        if (data?.testimonials && Array.isArray(data.testimonials)) {
           setTestimonials(data.testimonials);
         }
       })
