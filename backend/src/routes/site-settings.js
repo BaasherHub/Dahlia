@@ -15,51 +15,109 @@ async function ensureSettings() {
   return settings;
 }
 
-// GET /api/site-settings — public (for About page + Testimonials)
+// Helper to safely parse a JSON field into an array
+function parseJson(value, fallback = []) {
+  try { return JSON.parse(value || JSON.stringify(fallback)); } catch { return fallback; }
+}
+
+// Build the full response object from a settings record
+function buildResponse(s) {
+  return {
+    // About page
+    aboutHeroSubtitle: s.aboutHeroSubtitle,
+    aboutBio1: s.aboutBio1,
+    aboutBio2: s.aboutBio2,
+    aboutBio3: s.aboutBio3,
+    aboutStatement1: s.aboutStatement1,
+    aboutStatement2: s.aboutStatement2,
+    aboutStatement3: s.aboutStatement3,
+    testimonials: parseJson(s.testimonials, []),
+
+    // Homepage
+    heroTitle: s.heroTitle,
+    heroSubtitle: s.heroSubtitle,
+    heroDescription: s.heroDescription,
+    featuredWorksTitle: s.featuredWorksTitle,
+    featuredWorksSubtitle: s.featuredWorksSubtitle,
+    printsTitle: s.printsTitle,
+    printsSubtitle: s.printsSubtitle,
+    ctaTitle: s.ctaTitle,
+    ctaDescription: s.ctaDescription,
+    newsletterTitle: s.newsletterTitle,
+    newsletterSubtitle: s.newsletterSubtitle,
+
+    // Footer
+    footerTagline: s.footerTagline,
+    socialLinks: parseJson(s.socialLinks, []),
+
+    // Commissions page
+    commissionsSubtitle: s.commissionsSubtitle,
+    commissionSteps: parseJson(s.commissionSteps, []),
+    commissionFaqs: parseJson(s.commissionFaqs, []),
+    commissionFormHelpText: s.commissionFormHelpText,
+
+    // About practice cards
+    practiceCards: parseJson(s.practiceCards, []),
+
+    // Gallery page
+    galleryLabel: s.galleryLabel,
+    galleryTitle: s.galleryTitle,
+    gallerySubtitle: s.gallerySubtitle,
+
+    // Navigation
+    navLogoSubtext: s.navLogoSubtext,
+
+    // Portfolio page
+    portfolioTitle: s.portfolioTitle,
+    portfolioSubtitle: s.portfolioSubtitle,
+    portfolioStatement: s.portfolioStatement,
+  };
+}
+
+// GET /api/site-settings — public
 router.get('/', async (req, res) => {
   try {
     const settings = await ensureSettings();
-    // Parse testimonials JSON
-    let testimonials = [];
-    try {
-      testimonials = JSON.parse(settings.testimonials || '[]');
-    } catch { testimonials = []; }
-
-    res.json({
-      aboutHeroSubtitle: settings.aboutHeroSubtitle,
-      aboutBio1: settings.aboutBio1,
-      aboutBio2: settings.aboutBio2,
-      aboutBio3: settings.aboutBio3,
-      aboutStatement1: settings.aboutStatement1,
-      aboutStatement2: settings.aboutStatement2,
-      aboutStatement3: settings.aboutStatement3,
-      testimonials,
-    });
+    res.json(buildResponse(settings));
   } catch (error) {
     logError({ message: 'Error fetching site settings', error: error.message });
     res.status(500).json({ error: 'Failed to fetch site settings' });
   }
 });
 
-// PUT /api/site-settings — admin only
+// PUT /api/site-settings — admin only (accepts partial updates)
 router.put('/', requireAdmin, async (req, res) => {
   try {
-    const {
-      aboutHeroSubtitle,
-      aboutBio1, aboutBio2, aboutBio3,
-      aboutStatement1, aboutStatement2, aboutStatement3,
-      testimonials,
-    } = req.body;
-
+    const body = req.body;
     const data = {};
-    if (aboutHeroSubtitle !== undefined) data.aboutHeroSubtitle = aboutHeroSubtitle;
-    if (aboutBio1 !== undefined) data.aboutBio1 = aboutBio1;
-    if (aboutBio2 !== undefined) data.aboutBio2 = aboutBio2;
-    if (aboutBio3 !== undefined) data.aboutBio3 = aboutBio3;
-    if (aboutStatement1 !== undefined) data.aboutStatement1 = aboutStatement1;
-    if (aboutStatement2 !== undefined) data.aboutStatement2 = aboutStatement2;
-    if (aboutStatement3 !== undefined) data.aboutStatement3 = aboutStatement3;
-    if (testimonials !== undefined) data.testimonials = JSON.stringify(testimonials);
+
+    // String fields (direct mapping)
+    const stringFields = [
+      'aboutHeroSubtitle', 'aboutBio1', 'aboutBio2', 'aboutBio3',
+      'aboutStatement1', 'aboutStatement2', 'aboutStatement3',
+      'heroTitle', 'heroSubtitle', 'heroDescription',
+      'featuredWorksTitle', 'featuredWorksSubtitle',
+      'printsTitle', 'printsSubtitle',
+      'ctaTitle', 'ctaDescription',
+      'newsletterTitle', 'newsletterSubtitle',
+      'footerTagline',
+      'commissionsSubtitle', 'commissionFormHelpText',
+      'galleryLabel', 'galleryTitle', 'gallerySubtitle',
+      'navLogoSubtext',
+      'portfolioTitle', 'portfolioSubtitle', 'portfolioStatement',
+    ];
+    for (const field of stringFields) {
+      if (body[field] !== undefined) data[field] = body[field];
+    }
+
+    // JSON array fields (serialised to string)
+    const jsonFields = [
+      'testimonials', 'socialLinks',
+      'commissionSteps', 'commissionFaqs', 'practiceCards',
+    ];
+    for (const field of jsonFields) {
+      if (body[field] !== undefined) data[field] = JSON.stringify(body[field]);
+    }
 
     await ensureSettings();
     const updated = await prisma.siteSettings.update({
@@ -67,21 +125,8 @@ router.put('/', requireAdmin, async (req, res) => {
       data,
     });
 
-    let parsedTestimonials = [];
-    try { parsedTestimonials = JSON.parse(updated.testimonials || '[]'); } catch {}
-
     logInfo('Site settings updated');
-
-    res.json({
-      aboutHeroSubtitle: updated.aboutHeroSubtitle,
-      aboutBio1: updated.aboutBio1,
-      aboutBio2: updated.aboutBio2,
-      aboutBio3: updated.aboutBio3,
-      aboutStatement1: updated.aboutStatement1,
-      aboutStatement2: updated.aboutStatement2,
-      aboutStatement3: updated.aboutStatement3,
-      testimonials: parsedTestimonials,
-    });
+    res.json(buildResponse(updated));
   } catch (error) {
     logError({ message: 'Error updating site settings', error: error.message });
     res.status(500).json({ error: 'Failed to update site settings' });

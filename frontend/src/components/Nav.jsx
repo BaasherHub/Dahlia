@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext.jsx';
+import { getSiteSettings } from '../api.js';
 import './Nav.css';
 
 export default function Nav() {
@@ -8,6 +9,7 @@ export default function Nav() {
   const { pathname } = useLocation();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [logoSubtext, setLogoSubtext] = useState('Studio');
 
   useEffect(() => {
     setMenuOpen(false);
@@ -29,6 +31,12 @@ export default function Nav() {
       document.body.style.overflow = '';
     };
   }, [menuOpen]);
+
+  useEffect(() => {
+    getSiteSettings()
+      .then(data => { if (data.navLogoSubtext) setLogoSubtext(data.navLogoSubtext); })
+      .catch(() => {});
+  }, []);
 
   const closeMenu = () => setMenuOpen(false);
 
@@ -70,7 +78,7 @@ export default function Nav() {
               <circle cx="20" cy="18" r="1.5" fill="currentColor"/>
             </svg>
             <span className="nav__logo-name">Dahlia Baasher</span>
-            <span className="nav__logo-sub">Studio</span>
+            <span className="nav__logo-sub">{logoSubtext}</span>
           </Link>
 
           <button
@@ -100,6 +108,13 @@ export default function Nav() {
           onClick={closeMenu}
         >
           Artworks
+        </NavLink>
+        <NavLink
+          to="/portfolio"
+          className={({ isActive }) => `nav__link ${isActive ? 'active' : ''}`}
+          onClick={closeMenu}
+        >
+          Portfolio
         </NavLink>
         <NavLink
           to="/about"

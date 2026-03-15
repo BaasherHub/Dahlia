@@ -1,5 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getSiteSettings, submitCommission } from '../api.js';
 import './CommissionsPage.css';
+
+const DEFAULT_STEPS = [
+  { title: 'Initial Consultation', description: 'We discuss your vision, space, preferences, and timeline.' },
+  { title: 'Concept Development', description: 'I create sketches and mock-ups for your approval.' },
+  { title: 'Execution', description: 'I create the artwork with regular progress updates.' },
+  { title: 'Installation', description: 'I provide guidance on proper installation and care.' },
+];
+
+const DEFAULT_FAQS = [
+  { question: "What's your typical timeline?", answer: 'Commission timelines vary from 4-12 weeks depending on size and complexity.' },
+  { question: 'Do you require a deposit?', answer: 'Yes, a 50% deposit is required to begin the project, with the balance due upon completion.' },
+  { question: 'Can I request specific colors or styles?', answer: 'Absolutely! I collaborate closely with clients to ensure the final piece matches their vision.' },
+  { question: 'Do you ship internationally?', answer: 'Yes, I ship worldwide. Shipping costs are calculated based on size and destination.' },
+];
 
 export default function CommissionsPage() {
   const [formData, setFormData] = useState({
@@ -13,6 +28,27 @@ export default function CommissionsPage() {
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [content, setContent] = useState({
+    commissionsSubtitle: 'I work with collectors and designers worldwide to create bespoke artwork tailored to your vision and space.',
+    commissionSteps: DEFAULT_STEPS,
+    commissionFaqs: DEFAULT_FAQS,
+    commissionFormHelpText: 'I typically respond within 48 hours. Looking forward to collaborating with you!',
+  });
+
+  useEffect(() => {
+    getSiteSettings()
+      .then(data => {
+        setContent({
+          commissionsSubtitle: data.commissionsSubtitle || content.commissionsSubtitle,
+          commissionSteps: Array.isArray(data.commissionSteps) && data.commissionSteps.length > 0
+            ? data.commissionSteps : DEFAULT_STEPS,
+          commissionFaqs: Array.isArray(data.commissionFaqs) && data.commissionFaqs.length > 0
+            ? data.commissionFaqs : DEFAULT_FAQS,
+          commissionFormHelpText: data.commissionFormHelpText || content.commissionFormHelpText,
+        });
+      })
+      .catch(() => {});
+  }, []);
 
   const validateForm = () => {
     const newErrors = {};
@@ -70,18 +106,7 @@ export default function CommissionsPage() {
     setLoading(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      // Store commission inquiry in localStorage
-      const inquiries = JSON.parse(localStorage.getItem('commissions') || '[]');
-      inquiries.push({
-        ...formData,
-        id: Date.now(),
-        date: new Date().toISOString()
-      });
-      localStorage.setItem('commissions', JSON.stringify(inquiries));
-
+      await submitCommission(formData);
       setSubmitted(true);
       setFormData({
         name: '',
@@ -96,7 +121,7 @@ export default function CommissionsPage() {
       }, 5000);
     } catch (error) {
       console.error('Error submitting form:', error);
-      setErrors({ submit: 'Failed to submit. Please try again.' });
+      setErrors({ submit: error.message || 'Failed to submit. Please try again.' });
     } finally {
       setLoading(false);
     }
@@ -109,7 +134,7 @@ export default function CommissionsPage() {
           <p className="label">Custom Work</p>
           <h1>Commission an Artwork</h1>
           <p className="commissions-page__subtitle">
-            I work with collectors and designers worldwide to create bespoke artwork tailored to your vision and space.
+            {content.commissionsSubtitle}
           </p>
         </div>
       </header>
@@ -120,34 +145,22 @@ export default function CommissionsPage() {
           <div className="commissions-page__info">
             <h2>The Commission Process</h2>
             <ol className="commissions-page__process">
-              <li>
-                <strong>Initial Consultation:</strong> We discuss your vision, space, preferences, and timeline.
-              </li>
-              <li>
-                <strong>Concept Development:</strong> I create sketches and mock-ups for your approval.
-              </li>
-              <li>
-                <strong>Execution:</strong> I create the artwork with regular progress updates.
-              </li>
-              <li>
-                <strong>Installation:</strong> I provide guidance on proper installation and care.
-              </li>
+              {content.commissionSteps.map((step, i) => (
+                <li key={i}>
+                  <strong>{step.title}:</strong> {step.description}
+                </li>
+              ))}
             </ol>
 
             <div className="commissions-page__faq">
               <h3>FAQ</h3>
               <dl className="commissions-page__dl">
-                <dt>What's your typical timeline?</dt>
-                <dd>Commission timelines vary from 4-12 weeks depending on size and complexity.</dd>
-
-                <dt>Do you require a deposit?</dt>
-                <dd>Yes, a 50% deposit is required to begin the project, with the balance due upon completion.</dd>
-
-                <dt>Can I request specific colors or styles?</dt>
-                <dd>Absolutely! I collaborate closely with clients to ensure the final piece matches their vision.</dd>
-
-                <dt>Do you ship internationally?</dt>
-                <dd>Yes, I ship worldwide. Shipping costs are calculated based on size and destination.</dd>
+                {content.commissionFaqs.map((faq, i) => (
+                  <div key={i}>
+                    <dt>{faq.question}</dt>
+                    <dd>{faq.answer}</dd>
+                  </div>
+                ))}
               </dl>
             </div>
           </div>
@@ -261,7 +274,7 @@ export default function CommissionsPage() {
               </button>
 
               <p className="form-help">
-                I typically respond within 48 hours. Looking forward to collaborating with you!
+                {content.commissionFormHelpText}
               </p>
             </form>
           </div>
@@ -270,3 +283,4 @@ export default function CommissionsPage() {
     </main>
   );
 }
+

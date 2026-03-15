@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { subscribeNewsletter } from '../api.js';
 import './NewsletterSignup.css';
 
-export default function NewsletterSignup() {
+export default function NewsletterSignup({ title, subtitle }) {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState(null);
   const [message, setMessage] = useState('');
@@ -11,18 +12,7 @@ export default function NewsletterSignup() {
     setStatus('loading');
 
     try {
-      const subscribers = JSON.parse(localStorage.getItem('newsletter_subscribers') || '[]');
-      
-      if (subscribers.includes(email)) {
-        setStatus('error');
-        setMessage('This email is already subscribed.');
-        setTimeout(() => setStatus(null), 5000);
-        return;
-      }
-
-      subscribers.push(email);
-      localStorage.setItem('newsletter_subscribers', JSON.stringify(subscribers));
-
+      await subscribeNewsletter(email);
       setStatus('success');
       setMessage('Thank you for subscribing! Check your email for updates.');
       setEmail('');
@@ -32,8 +22,10 @@ export default function NewsletterSignup() {
       }, 5000);
     } catch (err) {
       setStatus('error');
-      setMessage('Something went wrong. Please try again.');
-      setTimeout(() => setStatus(null), 5000);
+      setMessage(err.message === 'Already subscribed'
+        ? 'This email is already subscribed.'
+        : 'Something went wrong. Please try again.');
+      setTimeout(() => { setStatus(null); setMessage(''); }, 5000);
     }
   };
 
@@ -42,9 +34,9 @@ export default function NewsletterSignup() {
       <div className="container">
         <div className="newsletter__content">
           <div className="newsletter__text">
-            <h2 className="newsletter__title">Stay Updated</h2>
+            <h2 className="newsletter__title">{title || 'Stay Updated'}</h2>
             <p className="newsletter__subtitle">
-              Subscribe to receive updates about new artworks, exhibitions, and commission opportunities.
+              {subtitle || 'Subscribe to receive updates about new artworks, exhibitions, and commission opportunities.'}
             </p>
           </div>
 

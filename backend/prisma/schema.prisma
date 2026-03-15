@@ -106,6 +106,63 @@ model SiteSettings {
   
   // Testimonials (stored as JSON array)
   testimonials        String @default("[]")
-  
+
+  // Homepage content
+  heroTitle           String @default("Dahlia Baasher")
+  heroSubtitle        String @default("Contemporary Oil Paintings")
+  heroDescription     String @default("Refined works on premium linen canvas, defined by deliberate palette knife technique and expressive brushwork.")
+  featuredWorksTitle  String @default("Featured Works")
+  featuredWorksSubtitle String @default("Original Paintings")
+  printsTitle         String @default("Limited Edition Prints")
+  printsSubtitle      String @default("High-Quality Reproductions")
+  ctaTitle            String @default("Ready to Commission?")
+  ctaDescription      String @default("I work with collectors and designers worldwide to create bespoke artwork tailored to your vision and space.")
+  newsletterTitle     String @default("Stay Updated")
+  newsletterSubtitle  String @default("Subscribe to receive updates about new artworks, exhibitions, and commission opportunities.")
+
+  // Footer
+  footerTagline       String @default("Contemporary Art · Toronto, Canada")
+  socialLinks         String @default("[]")
+
+  // Commissions page
+  commissionsSubtitle   String @default("I work with collectors and designers worldwide to create bespoke artwork tailored to your vision and space.")
+  commissionSteps       String @default("[]")
+  commissionFaqs        String @default("[]")
+  commissionFormHelpText String @default("I typically respond within 48 hours. Looking forward to collaborating with you!")
+
+  // About page practice cards (JSON array)
+  practiceCards       String @default("[]")
+
+  // Gallery page
+  galleryLabel        String @default("Portfolio")
+  galleryTitle        String @default("Artworks")
+  gallerySubtitle     String @default("Explore original paintings and limited edition prints")
+
+  // Navigation
+  navLogoSubtext      String @default("Studio")
+
+  // Portfolio page
+  portfolioTitle      String @default("Portfolio")
+  portfolioSubtitle   String @default("A curated selection of original works")
+  portfolioStatement  String @default("Each painting is a meditation on color, form, and the expressive potential of oil on linen. These selected works represent the breadth of my practice — from intimate studies to large-scale statements.")
+
   updatedAt           DateTime @updatedAt
+}
+
+model CommissionInquiry {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  vision    String
+  size      String
+  budget    String
+  status    String   @default("new")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
 }
