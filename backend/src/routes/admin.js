@@ -1,10 +1,9 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
 import rateLimit from 'express-rate-limit';
 import { logInfo, logError } from '../services/logger.js';
+import prisma from '../lib/prisma.js';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Admin authentication middleware
 export function requireAdmin(req, res, next) {

@@ -1,10 +1,9 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { requireAdmin } from './admin.js';
 import { logInfo, logError } from '../services/logger.js';
+import prisma from '../lib/prisma.js';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Ensure the singleton row exists
 async function ensureSettings() {
