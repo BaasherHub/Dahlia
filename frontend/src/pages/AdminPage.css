@@ -46,6 +46,18 @@
 .admin-header h1 { margin-bottom: var(--space-md); }
 .admin-header p { color: var(--color-text-secondary); margin: 0; max-width: 52ch; line-height: 1.6; }
 
+/* Sign Out button — ensure accent text is visible in the admin header */
+.admin-header .btn--secondary {
+  background: transparent;
+  color: var(--color-accent);
+  border: 2px solid var(--color-accent);
+}
+
+.admin-header .btn--secondary:hover {
+  background: var(--color-accent);
+  color: #fff;
+}
+
 .admin-tabs {
   display: flex;
   gap: var(--space-lg);
