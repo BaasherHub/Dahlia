@@ -660,7 +660,7 @@ export default function AdminPage() {
               <div className="admin-collections-list">{siteSettings.testimonials.map((t,idx)=>(
                 <div key={t.id||idx} className="admin-collection-card">
                   <div className="admin-collection-card__info">
-                    <h3>{t.name} <span style={{fontSize:'12px',color:'var(--color-accent)',fontWeight:400}}>{Array.from({length:t.rating||5}).map(()=>'*').join('')}</span></h3>
+                    <h3>{t.name} <span style={{fontSize:'12px',color:'var(--color-accent)',fontWeight:400}}>{'★'.repeat(t.rating||5)}</span></h3>
                     {t.title && <p style={{fontSize:'11px',color:'var(--color-accent)',textTransform:'uppercase',letterSpacing:'0.05em'}}>{t.title}</p>}
                     <p style={{fontSize:'13px',fontStyle:'italic',color:'var(--color-text-secondary)'}}>{t.text}</p>
                   </div>
