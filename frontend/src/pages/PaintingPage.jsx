@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getPainting } from '../api.js';
 import { useCart } from '../context/CartContext.jsx';
-import ImageZoom from '../components/ImageZoom.jsx';
 import './PaintingPage.css';
 
 export default function PaintingPage() {
@@ -124,10 +123,11 @@ export default function PaintingPage() {
           <div className="painting-page__imgs">
             <div className="painting-page__main-img-wrap">
               {mainImage ? (
-                <ImageZoom 
-                  src={mainImage} 
+                <img
+                  src={mainImage}
                   alt={painting.title || 'Artwork'}
                   className="painting-page__main-img"
+                  loading="eager"
                 />
               ) : (
                 <div className="painting-page__img-placeholder">

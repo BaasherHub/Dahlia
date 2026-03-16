@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getPaintings, getHeroPainting, getSiteSettings } from '../api.js';
 import PaintingCard from '../components/PaintingCard.jsx';
-import Testimonials from '../components/Testimonials.jsx';
-import NewsletterSignup from '../components/NewsletterSignup.jsx';
 import './HomePage.css';
 
 const DEFAULTS = {
@@ -135,12 +133,6 @@ export default function HomePage() {
           </div>
         </section>
       )}
-
-      {/* ── TESTIMONIALS SECTION ── */}
-      <Testimonials />
-
-      {/* ── NEWSLETTER SIGNUP ── */}
-      <NewsletterSignup title={content.newsletterTitle} subtitle={content.newsletterSubtitle} />
 
       {/* ── CTA SECTION ── */}
       <section className="cta-section">

@@ -1,21 +1,21 @@
 import './Toast.css';
 
-export default function Toast({ toasts = [], onRemove = () => {} }) {
-  if (!Array.isArray(toasts) || toasts.length === 0) {
-    return null;
-  }
+export default function Toast({ toasts, removeToast }) {
+  if (!toasts?.length) return null;
 
   return (
-    <div className="toast-container">
+    <div className="toast-container" role="region" aria-label="Notifications" aria-live="polite">
       {toasts.map(toast => (
-        <div key={toast.id} className={`toast toast--${toast.type || 'info'}`}>
-          <div className="toast__content">
-            <p className="toast__message">{toast.message}</p>
-          </div>
+        <div
+          key={toast.id}
+          className={`toast toast-${toast.type || 'info'}`}
+          role="alert"
+        >
+          <span className="toast__message">{toast.message}</span>
           <button
-            className="toast__close"
-            onClick={() => onRemove(toast.id)}
-            aria-label="Close"
+            onClick={() => removeToast(toast.id)}
+            className="toast-close"
+            aria-label="Dismiss notification"
           >
             ×
           </button>
