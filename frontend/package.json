@@ -2,6 +2,11 @@
   "name": "dahlia-studio",
   "version": "2.0.0",
   "private": true,
+  "engines": {
+    "node": ">=20 <21",
+    "npm": ">=10"
+  },
+  "packageManager": "npm@10.8.2",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
