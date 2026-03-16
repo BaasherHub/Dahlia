@@ -1,772 +1,425 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import {
+  adminVerify,
+  adminGetPaintings,
+  adminCreatePainting,
+  adminUpdatePainting,
+  adminDeletePainting,
+  getSiteSettings,
+  adminUpdateSiteSettings,
+} from '../api.js';
 import './AdminPage.css';
 
-const BASE = import.meta.env.VITE_API_URL || '';
-const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || '';
-const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || '';
+const SESSION_KEY = 'dahlia-admin-key';
 
-const adminGet = () => ({ 'x-admin-key': sessionStorage.getItem('adminKey') || '' });
-const adminPost = () => ({ 'Content-Type': 'application/json', 'x-admin-key': sessionStorage.getItem('adminKey') || '' });
+const EMPTY_PAINTING = {
+  title: '',
+  description: '',
+  price: '',
+  imageUrl: '',
+  medium: '',
+  dimensions: '',
+  year: '',
+  status: 'available',
+};
 
-function CollapsibleSection({ title, defaultOpen = false, children }) {
-  const [open, setOpen] = useState(defaultOpen);
+const EMPTY_SETTINGS = {
+  siteName: '',
+  tagline: '',
+  heroTitle: '',
+  heroSubtitle: '',
+};
+
+/* ─────────────────────────────── */
+/*  Sub-components                 */
+/* ─────────────────────────────── */
+
+function StatusBadge({ status }) {
+  const cls = {
+    available: 'admin-badge admin-badge--green',
+    sold: 'admin-badge admin-badge--red',
+    reserved: 'admin-badge admin-badge--amber',
+  }[String(status).toLowerCase()] ?? 'admin-badge';
+  return <span className={cls}>{status}</span>;
+}
+
+/* ─────────────────────────────── */
+/*  Login Screen                   */
+/* ─────────────────────────────── */
+
+function LoginScreen({ onLogin }) {
+  const [key, setKey] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async e => {
+    e.preventDefault();
+    if (!key.trim()) { setError('Please enter your admin key.'); return; }
+    setLoading(true);
+    setError('');
+    try {
+      await adminVerify(key.trim());
+      sessionStorage.setItem(SESSION_KEY, key.trim());
+      onLogin(key.trim());
+    } catch {
+      setError('Invalid admin key. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="admin-collapsible">
-      <button
-        type="button"
-        className={`admin-collapsible__toggle ${open ? 'open' : ''}`}
-        onClick={() => setOpen(o => !o)}
-      >
-        <span>{title}</span>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d={open ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'} />
-        </svg>
-      </button>
-      {open && <div className="admin-collapsible__body">{children}</div>}
+    <main className="admin-login">
+      <div className="admin-login__inner">
+        <p className="admin-login__eyebrow">Dahlia</p>
+        <h1 className="admin-login__title">Admin Access</h1>
+        <form className="admin-login__form" onSubmit={handleSubmit}>
+          <div className="admin-field">
+            <label className="admin-label" htmlFor="admin-key">Admin Key</label>
+            <input
+              id="admin-key"
+              className="admin-input"
+              type="password"
+              value={key}
+              onChange={e => { setKey(e.target.value); setError(''); }}
+              placeholder="Enter your admin key"
+              autoComplete="current-password"
+              disabled={loading}
+            />
+            {error && <p className="admin-err" role="alert">{error}</p>}
+          </div>
+          <button className="admin-btn admin-btn--primary" type="submit" disabled={loading}>
+            {loading ? 'Verifying…' : 'Sign In'}
+          </button>
+        </form>
+      </div>
+    </main>
+  );
+}
+
+/* ─────────────────────────────── */
+/*  Paintings Tab                  */
+/* ─────────────────────────────── */
+
+function PaintingsTab({ adminKey, addToast }) {
+  const [paintings, setPaintings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [form, setForm] = useState(EMPTY_PAINTING);
+  const [editId, setEditId] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    adminGetPaintings(adminKey)
+      .then(data => { setPaintings(Array.isArray(data) ? data : (data?.data ?? [])); setLoading(false); })
+      .catch(() => { addToast?.('Failed to load paintings', 'error'); setLoading(false); });
+  }, [adminKey]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleChange = e => {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const resetForm = () => { setForm(EMPTY_PAINTING); setEditId(null); setShowForm(false); };
+
+  const startEdit = painting => {
+    setForm({
+      title: painting.title ?? '',
+      description: painting.description ?? '',
+      price: painting.price ?? '',
+      imageUrl: painting.imageUrl ?? painting.image_url ?? '',
+      medium: painting.medium ?? '',
+      dimensions: painting.dimensions ?? '',
+      year: painting.year ?? '',
+      status: painting.status ?? 'available',
+    });
+    setEditId(painting.id ?? painting._id);
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleSubmit = async e => {
+    e.preventDefault();
+    if (!form.title.trim()) { addToast?.('Title is required', 'error'); return; }
+    setSaving(true);
+    const payload = {
+      ...form,
+      price: form.price !== '' ? Number(form.price) : undefined,
+      year: form.year !== '' ? Number(form.year) : undefined,
+    };
+    try {
+      if (editId) {
+        await adminUpdatePainting(adminKey, editId, payload);
+        addToast?.('Painting updated', 'success');
+      } else {
+        await adminCreatePainting(adminKey, payload);
+        addToast?.('Painting created', 'success');
+      }
+      resetForm();
+      load();
+    } catch (err) {
+      addToast?.(err.message ?? 'Save failed', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (id, title) => {
+    if (!window.confirm(`Delete "${title}"? This cannot be undone.`)) return;
+    try {
+      await adminDeletePainting(adminKey, id);
+      addToast?.(`"${title}" deleted`, 'success');
+      load();
+    } catch (err) {
+      addToast?.(err.message ?? 'Delete failed', 'error');
+    }
+  };
+
+  return (
+    <div className="admin-tab-content">
+
+      {/* ── Form ── */}
+      <div className="admin-section">
+        <div className="admin-section__hd">
+          <h2 className="admin-section__title">{editId ? 'Edit Painting' : 'Add Painting'}</h2>
+          {!showForm && !editId && (
+            <button className="admin-btn admin-btn--secondary" onClick={() => setShowForm(true)}>
+              + New Painting
+            </button>
+          )}
+        </div>
+
+        {(showForm || editId) && (
+          <form className="admin-painting-form" onSubmit={handleSubmit}>
+            <div className="admin-form-grid">
+              <div className="admin-field">
+                <label className="admin-label" htmlFor="p-title">Title *</label>
+                <input id="p-title" className="admin-input" name="title" value={form.title} onChange={handleChange} placeholder="Painting title" disabled={saving} />
+              </div>
+              <div className="admin-field">
+                <label className="admin-label" htmlFor="p-price">Price (USD)</label>
+                <input id="p-price" className="admin-input" type="number" name="price" value={form.price} onChange={handleChange} placeholder="1200" min="0" disabled={saving} />
+              </div>
+              <div className="admin-field">
+                <label className="admin-label" htmlFor="p-medium">Medium</label>
+                <input id="p-medium" className="admin-input" name="medium" value={form.medium} onChange={handleChange} placeholder="Oil on linen" disabled={saving} />
+              </div>
+              <div className="admin-field">
+                <label className="admin-label" htmlFor="p-dims">Dimensions</label>
+                <input id="p-dims" className="admin-input" name="dimensions" value={form.dimensions} onChange={handleChange} placeholder="60 × 80 cm" disabled={saving} />
+              </div>
+              <div className="admin-field">
+                <label className="admin-label" htmlFor="p-year">Year</label>
+                <input id="p-year" className="admin-input" type="number" name="year" value={form.year} onChange={handleChange} placeholder="2024" min="1900" max="2099" disabled={saving} />
+              </div>
+              <div className="admin-field">
+                <label className="admin-label" htmlFor="p-status">Status</label>
+                <select id="p-status" className="admin-select" name="status" value={form.status} onChange={handleChange} disabled={saving}>
+                  <option value="available">Available</option>
+                  <option value="sold">Sold</option>
+                  <option value="reserved">Reserved</option>
+                </select>
+              </div>
+              <div className="admin-field admin-field--full">
+                <label className="admin-label" htmlFor="p-img">Image URL</label>
+                <input id="p-img" className="admin-input" name="imageUrl" value={form.imageUrl} onChange={handleChange} placeholder="https://…" type="url" disabled={saving} />
+              </div>
+              <div className="admin-field admin-field--full">
+                <label className="admin-label" htmlFor="p-desc">Description</label>
+                <textarea id="p-desc" className="admin-textarea" name="description" value={form.description} onChange={handleChange} placeholder="About this work…" rows={4} disabled={saving} />
+              </div>
+            </div>
+
+            <div className="admin-form-actions">
+              <button className="admin-btn admin-btn--primary" type="submit" disabled={saving}>
+                {saving ? 'Saving…' : editId ? 'Update Painting' : 'Create Painting'}
+              </button>
+              <button className="admin-btn admin-btn--ghost" type="button" onClick={resetForm} disabled={saving}>
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+
+      {/* ── List ── */}
+      <div className="admin-section">
+        <div className="admin-section__hd">
+          <h2 className="admin-section__title">All Paintings</h2>
+          <span className="admin-count">{paintings.length} works</span>
+        </div>
+
+        {loading ? (
+          <div className="admin-loading"><div className="admin-spinner" /></div>
+        ) : paintings.length === 0 ? (
+          <p className="admin-empty">No paintings yet.</p>
+        ) : (
+          <div className="admin-paintings-list">
+            {paintings.map(p => {
+              const img = p.imageUrl || p.image_url || p.images?.[0];
+              return (
+                <div key={p.id ?? p._id} className="admin-painting-row">
+                  <div className="admin-painting-row__thumb">
+                    {img
+                      ? <img src={img} alt="" aria-hidden="true" loading="lazy" />
+                      : <span className="admin-painting-row__thumb-ph" aria-hidden="true" />}
+                  </div>
+                  <div className="admin-painting-row__body">
+                    <p className="admin-painting-row__title">{p.title ?? 'Untitled'}</p>
+                    <p className="admin-painting-row__meta">
+                      {[p.year, p.medium, p.dimensions].filter(Boolean).join(' · ')}
+                    </p>
+                    {p.price != null && (
+                      <p className="admin-painting-row__price">${Number(p.price).toLocaleString()}</p>
+                    )}
+                  </div>
+                  <StatusBadge status={p.status ?? (p.sold ? 'sold' : 'available')} />
+                  <div className="admin-painting-row__actions">
+                    <button className="admin-row-btn" onClick={() => startEdit(p)}>Edit</button>
+                    <button className="admin-row-btn admin-row-btn--danger" onClick={() => handleDelete(p.id ?? p._id, p.title ?? 'Untitled')}>Delete</button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
-export default function AdminPage() {
-  const [auth, setAuth] = useState(false);
-  const [key, setKey] = useState('');
-  const [error, setError] = useState('');
-  const [tab, setTab] = useState('paintings');
-  const [paintings, setPaintings] = useState([]);
-  const [collections, setCollections] = useState([]);
-  const [orders, setOrders] = useState([]);
-  const [inquiries, setInquiries] = useState([]);
-  const [subscribers, setSubscribers] = useState([]);
-  const [uploading, setUploading] = useState(false);
-  const fileRef = useRef();
+/* ─────────────────────────────── */
+/*  Site Settings Tab              */
+/* ─────────────────────────────── */
 
-  const emptyForm = { title:'', year:'', medium:'Oil on canvas', dimensions:'', originalPrice:'', printPrice:'', description:'', images:[], category:'original', originalAvailable:true, printAvailable:false, featured:false, heroImage:false, collectionId:'' };
-  const [form, setForm] = useState(emptyForm);
-  const [editId, setEditId] = useState(null);
-  const [msg, setMsg] = useState('');
-  const [msgType, setMsgType] = useState('');
-
-  const emptyCol = { name:'', description:'' };
-  const [colForm, setColForm] = useState(emptyCol);
-  const [colEditId, setColEditId] = useState(null);
-
-  const defaultSettings = {
-    aboutHeroSubtitle: '', aboutBio1: '', aboutBio2: '', aboutBio3: '',
-    aboutStatement1: '', aboutStatement2: '', aboutStatement3: '',
-    testimonials: [],
-    heroTitle: '', heroSubtitle: '', heroDescription: '',
-    featuredWorksTitle: '', featuredWorksSubtitle: '',
-    printsTitle: '', printsSubtitle: '',
-    ctaTitle: '', ctaDescription: '',
-    newsletterTitle: '', newsletterSubtitle: '',
-    footerTagline: '', socialLinks: [],
-    commissionsSubtitle: '', commissionSteps: [], commissionFaqs: [], commissionFormHelpText: '',
-    practiceCards: [],
-    galleryLabel: '', galleryTitle: '', gallerySubtitle: '',
-    navLogoSubtext: '',
-    portfolioTitle: '', portfolioSubtitle: '', portfolioStatement: '',
-  };
-  const [siteSettings, setSiteSettings] = useState(defaultSettings);
-
-  const emptyTestimonial = { name: '', title: '', text: '', rating: 5 };
-  const [testimonialForm, setTestimonialForm] = useState(emptyTestimonial);
-  const [editTestimonialIdx, setEditTestimonialIdx] = useState(null);
-  const emptySocialLink = { platform: '', url: '', label: '' };
-  const [socialLinkForm, setSocialLinkForm] = useState(emptySocialLink);
-  const [editSocialIdx, setEditSocialIdx] = useState(null);
-  const emptyStep = { title: '', description: '' };
-  const [stepForm, setStepForm] = useState(emptyStep);
-  const [editStepIdx, setEditStepIdx] = useState(null);
-  const emptyFaq = { question: '', answer: '' };
-  const [faqForm, setFaqForm] = useState(emptyFaq);
-  const [editFaqIdx, setEditFaqIdx] = useState(null);
-  const emptyCard = { title: '', description: '' };
-  const [cardForm, setCardForm] = useState(emptyCard);
-  const [editCardIdx, setEditCardIdx] = useState(null);
-  const [settingsDirty, setSettingsDirty] = useState(false);
-  const [paintingDirty, setPaintingDirty] = useState(false);
-
-  const settingsTextChange = (field) => (e) => { setSiteSettings(s=>({...s,[field]:e.target.value})); setSettingsDirty(true); };
+function SettingsTab({ adminKey, addToast }) {
+  const [settings, setSettings] = useState(EMPTY_SETTINGS);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const saved = sessionStorage.getItem('adminKey');
-    if (saved) verify(saved);
+    getSiteSettings()
+      .then(data => {
+        setSettings({
+          siteName: data.siteName ?? '',
+          tagline: data.tagline ?? '',
+          heroTitle: data.heroTitle ?? '',
+          heroSubtitle: data.heroSubtitle ?? '',
+        });
+        setLoading(false);
+      })
+      .catch(() => { addToast?.('Failed to load settings', 'error'); setLoading(false); });
   }, []);
 
-  useEffect(() => {
-    const handleBeforeUnload = (e) => { if (settingsDirty) { e.preventDefault(); e.returnValue = ''; } };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [settingsDirty]);
-
-  const verify = async (k) => {
-    try {
-      const r = await fetch(`${BASE}/api/admin/verify`, { headers: { 'x-admin-key': k } });
-      if (r.ok) { sessionStorage.setItem('adminKey', k); setAuth(true); load(); }
-      else sessionStorage.removeItem('adminKey');
-    } catch {}
+  const handleChange = e => {
+    const { name, value } = e.target;
+    setSettings(prev => ({ ...prev, [name]: value }));
   };
 
-  const load = async () => {
-    try { const r = await fetch(`${BASE}/api/paintings/all`, { headers: adminGet() }); if (r.ok) { const d = await r.json(); setPaintings(Array.isArray(d.data||d) ? (d.data||d) : []); } } catch {}
-    try { const r = await fetch(`${BASE}/api/collections`, { headers: adminGet() }); if (r.ok) { const d = await r.json(); setCollections(Array.isArray(d) ? d : []); } } catch {}
-    try { const r = await fetch(`${BASE}/api/admin/orders`, { headers: adminGet() }); if (r.ok) { const d = await r.json(); setOrders(Array.isArray(d) ? d : []); } } catch {}
-    try { const r = await fetch(`${BASE}/api/commissions`, { headers: adminGet() }); if (r.ok) { const d = await r.json(); setInquiries(Array.isArray(d) ? d : []); } } catch {}
-    try { const r = await fetch(`${BASE}/api/newsletter`, { headers: adminGet() }); if (r.ok) { const d = await r.json(); setSubscribers(Array.isArray(d) ? d : []); } } catch {}
-    try {
-      const r = await fetch(`${BASE}/api/site-settings`);
-      if (r.ok) {
-        const d = await r.json();
-        setSiteSettings(prev => ({
-          ...defaultSettings, ...d,
-          testimonials: Array.isArray(d.testimonials) ? d.testimonials : [],
-          socialLinks: Array.isArray(d.socialLinks) ? d.socialLinks : [],
-          commissionSteps: Array.isArray(d.commissionSteps) ? d.commissionSteps : [],
-          commissionFaqs: Array.isArray(d.commissionFaqs) ? d.commissionFaqs : [],
-          practiceCards: Array.isArray(d.practiceCards) ? d.practiceCards : [],
-        }));
-      }
-    } catch {}
-  };
-
-  const flash = (m, t='success') => { setMsg(m); setMsgType(t); setTimeout(()=>setMsg(''), 3000); };
-
-  const login = async (e) => {
-    e.preventDefault(); setError('');
-    const k = key.trim();
-    sessionStorage.setItem('adminKey', k);
-    try {
-      const r = await fetch(`${BASE}/api/admin/verify`, { headers: { 'x-admin-key': k } });
-      if (r.ok) { setAuth(true); setKey(''); load(); }
-      else { sessionStorage.removeItem('adminKey'); setError('Invalid admin key.'); }
-    } catch { setError('Cannot connect to server.'); }
-  };
-
-  const handleUpload = async (e) => {
-    const file = e.target.files?.[0]; if (!file) return;
-    if (!CLOUD_NAME || !UPLOAD_PRESET) { flash('Cloudinary not configured.', 'error'); return; }
-    setUploading(true);
-    try {
-      const fd = new FormData(); fd.append('file', file); fd.append('upload_preset', UPLOAD_PRESET); fd.append('folder', 'dahlia-paintings');
-      const r = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: fd });
-      if (!r.ok) { const err = await r.json().catch(()=>({})); throw new Error(err?.error?.message || 'Upload failed'); }
-      const d = await r.json(); setForm(p => ({ ...p, images: [...p.images, d.secure_url] })); if (editId) setPaintingDirty(true); flash('Image uploaded!');
-    } catch (err) { flash(err.message, 'error'); }
-    setUploading(false); if (fileRef.current) fileRef.current.value = '';
-  };
-
-  const removeImage = (idx) => { setForm(p => ({ ...p, images: p.images.filter((_,i)=>i!==idx) })); if (editId) setPaintingDirty(true); };
-
-  const savePainting = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
-    if (!form.title.trim()) { flash('Title required', 'error'); return; }
-    if (form.images.length === 0 && !editId) { flash('Upload at least one image', 'error'); return; }
-    const payload = { title: form.title.trim(), description: form.description||'', medium: form.medium||'Oil on canvas', dimensions: form.dimensions||'', category: form.category||'original', originalAvailable: form.originalAvailable, printAvailable: form.printAvailable, featured: form.featured, heroImage: form.heroImage, images: form.images };
-    if (form.originalPrice) payload.originalPrice = Number(form.originalPrice);
-    if (form.printPrice) payload.printPrice = Number(form.printPrice);
-    if (form.year) payload.year = Number(form.year);
-    payload.collectionId = form.collectionId || null;
+    setSaving(true);
     try {
-      const url = editId ? `${BASE}/api/paintings/${editId}` : `${BASE}/api/paintings`;
-      const r = await fetch(url, { method: editId?'PUT':'POST', headers: adminPost(), body: JSON.stringify(payload) });
-      if (!r.ok) throw new Error('Failed');
-      flash(editId ? 'Updated!' : 'Added!'); setForm(emptyForm); setEditId(null); setPaintingDirty(false); load();
-    } catch (err) { flash(err.message, 'error'); }
-  };
-
-  const editPainting = (p) => {
-    setForm({ title:p.title||'', year:p.year||'', medium:p.medium||'', dimensions:p.dimensions||'', originalPrice:p.originalPrice||'', printPrice:p.printPrice||'', description:p.description||'', images:p.images||[], category:p.category||'original', originalAvailable:p.originalAvailable??true, printAvailable:p.printAvailable??false, featured:p.featured??false, heroImage:p.heroImage??false, collectionId:p.collectionId||'' });
-    setEditId(p.id); setTab('paintings'); window.scrollTo({top:0,behavior:'smooth'});
-  };
-
-  const deletePainting = async (id) => {
-    if (!confirm('Delete this painting?')) return;
-    try {
-      const r = await fetch(`${BASE}/api/paintings/${id}`, { method:'DELETE', headers:adminPost() });
-      if (!r.ok) throw new Error('Failed to delete painting');
-      flash('Deleted!'); load();
-    } catch (err) { flash(err.message, 'error'); }
-  };
-
-  const saveCollection = async (e) => {
-    e.preventDefault(); if (!colForm.name.trim()) { flash('Name required', 'error'); return; }
-    const url = colEditId ? `${BASE}/api/collections/${colEditId}` : `${BASE}/api/collections`;
-    await fetch(url, { method: colEditId?'PUT':'POST', headers: adminPost(), body: JSON.stringify(colForm) });
-    flash(colEditId ? 'Updated!' : 'Created!'); setColForm(emptyCol); setColEditId(null); load();
-  };
-
-  const deleteCollection = async (id) => {
-    if (!confirm('Delete this collection?')) return;
-    try {
-      const r = await fetch(`${BASE}/api/collections/${id}`, { method:'DELETE', headers:adminPost() });
-      if (!r.ok) throw new Error('Failed to delete collection');
-      flash('Deleted!'); load();
-    } catch (err) { flash(err.message, 'error'); }
-  };
-
-  const updateInquiryStatus = async (id, status) => {
-    try {
-      const r = await fetch(`${BASE}/api/commissions/${id}`, { method:'PUT', headers:adminPost(), body: JSON.stringify({ status }) });
-      if (!r.ok) throw new Error('Failed to update status');
-      setInquiries(prev => prev.map(i => i.id === id ? { ...i, status } : i));
-      flash('Status updated!');
-    } catch (err) { flash(err.message, 'error'); }
-  };
-
-  const updateOrderStatus = async (id, status, trackingCode, carrier) => {
-    try {
-      const payload = { status, trackingCode, carrier };
-      const r = await fetch(`${BASE}/api/admin/orders/${id}`, {
-        method: 'PUT',
-        headers: adminPost(),
-        body: JSON.stringify(payload),
-      });
-      if (!r.ok) throw new Error('Failed to update order');
-      setOrders(prev => prev.map(o =>
-        o.id === id
-          ? { ...o, status: status ?? o.status, trackingCode: trackingCode ?? o.trackingCode, carrier: carrier ?? o.carrier }
-          : o
-      ));
-      flash('Order updated!');
-    } catch (err) { flash(err.message, 'error'); }
-  };
-
-  const deleteSubscriber = async (id) => {
-    if (!confirm('Remove this subscriber?')) return;
-    try {
-      const r = await fetch(`${BASE}/api/newsletter/${id}`, { method:'DELETE', headers:adminPost() });
-      if (!r.ok) throw new Error('Failed to remove subscriber');
-      setSubscribers(prev => prev.filter(s => s.id !== id));
-      flash('Removed!');
-    } catch (err) { flash(err.message, 'error'); }
-  };
-
-  const persistSiteSettings = async (newSettings) => {
-    try {
-      const r = await fetch(`${BASE}/api/site-settings`, { method: 'PUT', headers: adminPost(), body: JSON.stringify(newSettings) });
-      if (!r.ok) throw new Error('Failed to save');
-      const d = await r.json();
-      setSiteSettings({ ...defaultSettings, ...d, testimonials: Array.isArray(d.testimonials)?d.testimonials:[], socialLinks: Array.isArray(d.socialLinks)?d.socialLinks:[], commissionSteps: Array.isArray(d.commissionSteps)?d.commissionSteps:[], commissionFaqs: Array.isArray(d.commissionFaqs)?d.commissionFaqs:[], practiceCards: Array.isArray(d.practiceCards)?d.practiceCards:[] });
-      setSettingsDirty(false);
-      flash('Site settings saved!');
-    } catch (err) { flash(err.message, 'error'); }
-  };
-
-  const saveSiteSettings = async (e) => {
-    e.preventDefault();
-    await persistSiteSettings(siteSettings);
-  };
-
-  const addOrUpdateTestimonial = async (e) => {
-    e.preventDefault();
-    if (!testimonialForm.name.trim() || !testimonialForm.text.trim()) { flash('Name and text required', 'error'); return; }
-    const item = { id: editTestimonialIdx !== null ? (siteSettings.testimonials[editTestimonialIdx]?.id || Date.now()) : Date.now(), name: testimonialForm.name.trim(), title: testimonialForm.title.trim(), text: testimonialForm.text.trim(), rating: Number(testimonialForm.rating) || 5 };
-    const updated = editTestimonialIdx !== null ? siteSettings.testimonials.map((t,i) => i===editTestimonialIdx ? item : t) : [...siteSettings.testimonials, item];
-    const newSettings = { ...siteSettings, testimonials: updated };
-    setSiteSettings(newSettings); setTestimonialForm(emptyTestimonial); setEditTestimonialIdx(null);
-    await persistSiteSettings(newSettings);
-  };
-  const removeTestimonial = async (idx) => {
-    const newSettings = { ...siteSettings, testimonials: siteSettings.testimonials.filter((_,i)=>i!==idx) };
-    setSiteSettings(newSettings);
-    await persistSiteSettings(newSettings);
-  };
-
-  const addOrUpdateSocialLink = async (e) => {
-    e.preventDefault(); if (!socialLinkForm.url.trim()) { flash('URL required', 'error'); return; }
-    const item = { platform: socialLinkForm.platform.trim(), url: socialLinkForm.url.trim(), label: socialLinkForm.label.trim() || socialLinkForm.platform.trim() };
-    const updated = editSocialIdx !== null ? siteSettings.socialLinks.map((l,i) => i===editSocialIdx ? item : l) : [...siteSettings.socialLinks, item];
-    const newSettings = { ...siteSettings, socialLinks: updated };
-    setSiteSettings(newSettings); setSocialLinkForm(emptySocialLink); setEditSocialIdx(null);
-    await persistSiteSettings(newSettings);
-  };
-  const removeSocialLink = async (idx) => {
-    const newSettings = { ...siteSettings, socialLinks: siteSettings.socialLinks.filter((_,i)=>i!==idx) };
-    setSiteSettings(newSettings);
-    await persistSiteSettings(newSettings);
-  };
-
-  const addOrUpdateStep = async (e) => {
-    e.preventDefault(); if (!stepForm.title.trim()) { flash('Title required', 'error'); return; }
-    const item = { title: stepForm.title.trim(), description: stepForm.description.trim() };
-    const updated = editStepIdx !== null ? siteSettings.commissionSteps.map((s,i) => i===editStepIdx ? item : s) : [...siteSettings.commissionSteps, item];
-    const newSettings = { ...siteSettings, commissionSteps: updated };
-    setSiteSettings(newSettings); setStepForm(emptyStep); setEditStepIdx(null);
-    await persistSiteSettings(newSettings);
-  };
-  const removeStep = async (idx) => {
-    const newSettings = { ...siteSettings, commissionSteps: siteSettings.commissionSteps.filter((_,i)=>i!==idx) };
-    setSiteSettings(newSettings);
-    await persistSiteSettings(newSettings);
-  };
-
-  const addOrUpdateFaq = async (e) => {
-    e.preventDefault(); if (!faqForm.question.trim()) { flash('Question required', 'error'); return; }
-    const item = { question: faqForm.question.trim(), answer: faqForm.answer.trim() };
-    const updated = editFaqIdx !== null ? siteSettings.commissionFaqs.map((f,i) => i===editFaqIdx ? item : f) : [...siteSettings.commissionFaqs, item];
-    const newSettings = { ...siteSettings, commissionFaqs: updated };
-    setSiteSettings(newSettings); setFaqForm(emptyFaq); setEditFaqIdx(null);
-    await persistSiteSettings(newSettings);
-  };
-  const removeFaq = async (idx) => {
-    const newSettings = { ...siteSettings, commissionFaqs: siteSettings.commissionFaqs.filter((_,i)=>i!==idx) };
-    setSiteSettings(newSettings);
-    await persistSiteSettings(newSettings);
-  };
-
-  const addOrUpdateCard = async (e) => {
-    e.preventDefault(); if (!cardForm.title.trim()) { flash('Title required', 'error'); return; }
-    const item = { title: cardForm.title.trim(), description: cardForm.description.trim() };
-    const updated = editCardIdx !== null ? siteSettings.practiceCards.map((c,i) => i===editCardIdx ? item : c) : [...siteSettings.practiceCards, item];
-    const newSettings = { ...siteSettings, practiceCards: updated };
-    setSiteSettings(newSettings); setCardForm(emptyCard); setEditCardIdx(null);
-    await persistSiteSettings(newSettings);
-  };
-  const removeCard = async (idx) => {
-    const newSettings = { ...siteSettings, practiceCards: siteSettings.practiceCards.filter((_,i)=>i!==idx) };
-    setSiteSettings(newSettings);
-    await persistSiteSettings(newSettings);
-  };
-
-  const statusCls = (status) => ({ new:'admin-status--pending', contacted:'admin-status--paid', completed:'admin-status--shipped', declined:'admin-status--cancelled' }[status] || '');
-
-  const handleTabChange = (newTab) => {
-    if (tab === 'settings' && settingsDirty && newTab !== 'settings') {
-      if (!window.confirm('You have unsaved changes in Site Settings. Discard them?')) return;
-      setSettingsDirty(false);
+      await adminUpdateSiteSettings(adminKey, settings);
+      addToast?.('Settings saved', 'success');
+    } catch (err) {
+      addToast?.(err.message ?? 'Save failed', 'error');
+    } finally {
+      setSaving(false);
     }
-    setTab(newTab);
   };
 
-  if (!auth) return (
-    <main className="admin-page"><div className="admin-container"><div className="admin-login"><div className="admin-login__card">
-      <div className="admin-login__header"><h1>Admin Dashboard</h1><p>Enter your admin key to continue</p></div>
-      <form className="admin-login__form" onSubmit={login}>
-        <div className="form-group"><label>Admin Key</label><input type="password" value={key} onChange={e=>setKey(e.target.value)} placeholder="Enter ADMIN_KEY" autoFocus /></div>
-        {error && <div className="admin-error">{error}</div>}
-        <button type="submit" className="btn btn--large">Sign In</button>
-      </form>
-    </div></div></div></main>
-  );
-
-  const tabs = [['paintings',`Paintings (${paintings.length})`],['collections',`Collections (${collections.length})`],['orders',`Orders (${orders.length})`],['inquiries',`Inquiries (${inquiries.length})`],['newsletter',`Newsletter (${subscribers.length})`],['settings','Site Settings']];
+  if (loading) return <div className="admin-loading"><div className="admin-spinner" /></div>;
 
   return (
-    <main className="admin-page"><div className="admin-container">
-      <div className="admin-header">
-        <div><h1>Admin Dashboard</h1><p>Manage all website content, paintings, and customer inquiries</p></div>
-        <button className="btn btn--secondary" onClick={()=>{sessionStorage.removeItem('adminKey');setAuth(false);}}>Sign Out</button>
-      </div>
-      {msg && <div className={`admin-${msgType==='error'?'error':'success'}`}>{msg}</div>}
-      <div className="admin-tabs">
-        {tabs.map(([k,l])=>(<button key={k} className={`admin-tab ${tab===k?'active':''}`} onClick={()=>handleTabChange(k)}>{l}</button>))}
-      </div>
-
-      {tab==='paintings' && <>
-        <section className="admin-section">
-          <h2>{editId ? 'Edit Painting' : 'Add New Painting'}</h2>
-          <form className="admin-form" onSubmit={savePainting}>
-            <div className="admin-form__row">
-              <div className="form-group"><label>Title *</label><input value={form.title} onChange={e=>setForm({...form,title:e.target.value})} required /></div>
-              <div className="form-group"><label>Year</label><input type="number" value={form.year} onChange={e=>setForm({...form,year:e.target.value})} /></div>
-              <div className="form-group"><label>Medium</label><input value={form.medium} onChange={e=>setForm({...form,medium:e.target.value})} /></div>
+    <div className="admin-tab-content">
+      <div className="admin-section">
+        <div className="admin-section__hd">
+          <h2 className="admin-section__title">Site Settings</h2>
+        </div>
+        <form className="admin-settings-form" onSubmit={handleSubmit}>
+          <div className="admin-form-grid">
+            <div className="admin-field">
+              <label className="admin-label" htmlFor="s-name">Site Name</label>
+              <input id="s-name" className="admin-input" name="siteName" value={settings.siteName} onChange={handleChange} placeholder="Dahlia" disabled={saving} />
             </div>
-            <div className="admin-form__row">
-              <div className="form-group"><label>Dimensions</label><input value={form.dimensions} onChange={e=>setForm({...form,dimensions:e.target.value})} /></div>
-              <div className="form-group"><label>Category</label>
-                <select value={form.category} onChange={e=>setForm({...form,category:e.target.value})}>
-                  <option value="original">Original Only</option><option value="print">Print Only</option><option value="both">Original + Print</option>
-                </select>
-              </div>
-              <div className="form-group"><label>Collection</label>
-                <select value={form.collectionId} onChange={e=>setForm({...form,collectionId:e.target.value})}>
-                  <option value="">No Collection</option>
-                  {collections.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-              </div>
+            <div className="admin-field">
+              <label className="admin-label" htmlFor="s-tagline">Tagline</label>
+              <input id="s-tagline" className="admin-input" name="tagline" value={settings.tagline} onChange={handleChange} placeholder="Fine art by Baasher" disabled={saving} />
             </div>
-            <div className="admin-form__row">
-              <div className="form-group"><label>Original Price ($)</label><input type="number" value={form.originalPrice} onChange={e=>setForm({...form,originalPrice:e.target.value})} /></div>
-              <div className="form-group"><label>Print Price ($)</label><input type="number" value={form.printPrice} onChange={e=>setForm({...form,printPrice:e.target.value})} /></div>
+            <div className="admin-field admin-field--full">
+              <label className="admin-label" htmlFor="s-hero-title">Hero Title</label>
+              <input id="s-hero-title" className="admin-input" name="heroTitle" value={settings.heroTitle} onChange={handleChange} placeholder="Original paintings" disabled={saving} />
             </div>
-            <div className="form-group"><label>Description</label><textarea value={form.description} onChange={e=>setForm({...form,description:e.target.value})} rows="3" /></div>
-            <div className="form-group">
-              <label>Images *</label>
-              <div className="admin-images">
-                {form.images.map((url,i) => (
-                  <div key={i} className="admin-images__item">
-                    <img src={url} alt="" />
-                    <button type="button" className="admin-images__remove" onClick={()=>removeImage(i)}>x</button>
-                  </div>
-                ))}
-                <label className="admin-images__upload">
-                  <input type="file" accept="image/*" onChange={handleUpload} ref={fileRef} hidden />
-                  <span>{uploading ? 'Uploading...' : '+ Upload'}</span>
-                </label>
-              </div>
+            <div className="admin-field admin-field--full">
+              <label className="admin-label" htmlFor="s-hero-sub">Hero Subtitle</label>
+              <textarea id="s-hero-sub" className="admin-textarea" name="heroSubtitle" value={settings.heroSubtitle} onChange={handleChange} placeholder="Hero subtitle text…" rows={3} disabled={saving} />
             </div>
-            <div className="admin-form__checkboxes">
-              <label className="checkbox-label"><input type="checkbox" checked={form.originalAvailable} onChange={e=>setForm({...form,originalAvailable:e.target.checked})} /> Original Available</label>
-              <label className="checkbox-label"><input type="checkbox" checked={form.printAvailable} onChange={e=>setForm({...form,printAvailable:e.target.checked})} /> Print Available</label>
-              <label className="checkbox-label"><input type="checkbox" checked={form.featured} onChange={e=>setForm({...form,featured:e.target.checked})} /> Featured (Portfolio page)</label>
-              <label className="checkbox-label"><input type="checkbox" checked={form.heroImage} onChange={e=>setForm({...form,heroImage:e.target.checked})} /> Hero Image (homepage)</label>
-            </div>
-            <div className="admin-form__actions">
-              <button type="submit" className="btn btn--large">{editId ? 'Update Painting' : 'Add Painting'}</button>
-              {editId && <button type="button" className="btn btn--ghost" onClick={()=>{setForm(emptyForm);setEditId(null);setPaintingDirty(false);}}>Cancel</button>}
-              {paintingDirty && editId && <div style={{background:'#fff3cd',border:'1px solid #ffc107',borderRadius:'6px',padding:'10px 14px',color:'#856404',fontSize:'13px',width:'100%',marginTop:'4px'}}>⚠ You have unsaved image changes. Click 'Update Painting' to save.</div>}
-            </div>
-          </form>
-        </section>
-        <section className="admin-section">
-          <h2>All Paintings ({paintings.length})</h2>
-          {paintings.length===0 ? <div className="admin-empty">No paintings yet</div> : (
-            <div className="admin-paintings-grid">{paintings.map(p=>(
-              <div key={p.id} className="admin-painting-card">
-                {p.images?.[0] && <img src={p.images[0]} alt={p.title} />}
-                <div className="admin-painting-card__content">
-                  <h3>{p.title}</h3>
-                  <p className="admin-painting-card__meta">{[p.year, p.medium].filter(Boolean).join(' · ')}</p>
-                  {p.dimensions && <p className="admin-painting-card__meta">{p.dimensions}</p>}
-                  {p.collection && <p className="admin-painting-card__meta" style={{color:'var(--color-accent)'}}>Collection: {p.collection.name}</p>}
-                  <div className="admin-painting-card__prices">
-                    {p.originalPrice && <p>Original: ${p.originalPrice}</p>}
-                    {p.printPrice && <p>Print: ${p.printPrice}</p>}
-                  </div>
-                  <div className="admin-painting-card__tags">
-                    {p.featured && <span className="admin-tag">Featured</span>}
-                    {p.heroImage && <span className="admin-tag admin-tag--hero">Hero</span>}
-                    {p.printAvailable && <span className="admin-tag admin-tag--print">Print</span>}
-                    {!p.originalAvailable && <span className="admin-tag admin-tag--sold">Sold</span>}
-                  </div>
-                  <div className="admin-painting-card__actions">
-                    <button className="admin-btn admin-btn--edit" onClick={()=>editPainting(p)}>Edit</button>
-                    <button className="admin-btn admin-btn--delete" onClick={()=>deletePainting(p.id)}>Delete</button>
-                  </div>
-                </div>
-              </div>
-            ))}</div>
-          )}
-        </section>
-      </>}
-
-      {tab==='collections' && <>
-        <section className="admin-section">
-          <h2>{colEditId ? 'Edit Collection' : 'Create Collection'}</h2>
-          <form className="admin-form" onSubmit={saveCollection}>
-            <div className="admin-form__row">
-              <div className="form-group"><label>Name *</label><input value={colForm.name} onChange={e=>setColForm({...colForm,name:e.target.value})} required /></div>
-              <div className="form-group"><label>Description</label><input value={colForm.description} onChange={e=>setColForm({...colForm,description:e.target.value})} /></div>
-            </div>
-            <div className="admin-form__actions">
-              <button type="submit" className="btn btn--large">{colEditId ? 'Update' : 'Create'}</button>
-              {colEditId && <button type="button" className="btn btn--ghost" onClick={()=>{setColForm(emptyCol);setColEditId(null);}}>Cancel</button>}
-            </div>
-          </form>
-        </section>
-        <section className="admin-section">
-          <h2>All Collections ({collections.length})</h2>
-          {collections.length===0 ? <div className="admin-empty">No collections yet.</div> : (
-            <div className="admin-collections-list">{collections.map(c=>(
-              <div key={c.id} className="admin-collection-card">
-                <div className="admin-collection-card__info">
-                  <h3>{c.name}</h3>
-                  {c.description && <p>{c.description}</p>}
-                  <p className="admin-collection-card__count">{c._count?.paintings||c.paintings?.length||0} paintings</p>
-                </div>
-                <div className="admin-collection-card__actions">
-                  <button className="admin-btn admin-btn--edit" onClick={()=>{setColForm({name:c.name,description:c.description||''});setColEditId(c.id);}}>Edit</button>
-                  <button className="admin-btn admin-btn--delete" onClick={()=>deleteCollection(c.id)}>Delete</button>
-                </div>
-              </div>
-            ))}</div>
-          )}
-        </section>
-      </>}
-
-      {tab==='orders' && (
-        <section className="admin-section">
-          <h2>Orders ({orders.length})</h2>
-          {orders.length===0 ? <div className="admin-empty">No orders yet</div> : (
-            <div className="admin-orders">{orders.map(o=>(
-              <div key={o.id} className="admin-order-card">
-                <div><strong>{o.customerName}</strong></div>
-                <div>{o.customerEmail}</div>
-                <div>${o.total?.toFixed(2)}</div>
-                <div className={`admin-status admin-status--${o.status?.toLowerCase()}`}>{o.status}</div>
-                <div>{new Date(o.createdAt).toLocaleDateString()}</div>
-                <div className="admin-order-card__actions">
-                  <select
-                    className="admin-select"
-                    value={o.status}
-                    onChange={(e) => updateOrderStatus(o.id, e.target.value, undefined, undefined)}
-                  >
-                    {['PENDING','PAID','SHIPPED','DELIVERED','CANCELLED'].map(s => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
-                  {o.trackingCode && (
-                    <span className="admin-order-card__tracking">📦 {o.carrier}: {o.trackingCode}</span>
-                  )}
-                </div>
-              </div>
-            ))}</div>
-          )}
-        </section>
-      )}
-
-      {tab==='inquiries' && (
-        <section className="admin-section">
-          <h2>Commission Inquiries ({inquiries.length})</h2>
-          {inquiries.length===0 ? (
-            <div className="admin-empty">No inquiries yet. They will appear here when someone submits the commission form.</div>
-          ) : (
-            <div className="admin-inquiries">{inquiries.map(inq=>(
-              <div key={inq.id} className="admin-inquiry-card">
-                <div className="admin-inquiry-card__header">
-                  <div>
-                    <strong>{inq.name}</strong>
-                    <a href={`mailto:${inq.email}`} className="admin-inquiry-card__email"> ({inq.email})</a>
-                  </div>
-                  <div className="admin-inquiry-card__meta">
-                    <span className={`admin-status ${statusCls(inq.status)}`}>{inq.status}</span>
-                    <span className="admin-inquiry-card__date">{new Date(inq.createdAt).toLocaleDateString()}</span>
-                  </div>
-                </div>
-                <div className="admin-inquiry-card__body">
-                  <div className="admin-inquiry-card__field"><span className="admin-inquiry-card__label">Budget:</span> {inq.budget}</div>
-                  <div className="admin-inquiry-card__field"><span className="admin-inquiry-card__label">Size:</span> {inq.size}</div>
-                  <div className="admin-inquiry-card__field" style={{gridColumn:'1/-1'}}>
-                    <span className="admin-inquiry-card__label">Vision:</span>
-                    <p style={{marginTop:'4px',whiteSpace:'pre-wrap'}}>{inq.vision}</p>
-                  </div>
-                </div>
-                <div className="admin-inquiry-card__actions">
-                  <span style={{fontSize:'12px',color:'var(--color-text-secondary)',alignSelf:'center'}}>Status:</span>
-                  {['new','contacted','completed','declined'].map(s=>(
-                    <button key={s} className={`admin-btn ${inq.status===s?'admin-btn--edit':'admin-btn--status'}`} onClick={()=>updateInquiryStatus(inq.id,s)} disabled={inq.status===s}>{s}</button>
-                  ))}
-                </div>
-              </div>
-            ))}</div>
-          )}
-        </section>
-      )}
-
-      {tab==='newsletter' && (
-        <section className="admin-section">
-          <h2>Newsletter Subscribers ({subscribers.length})</h2>
-          {subscribers.length===0 ? (
-            <div className="admin-empty">No subscribers yet.</div>
-          ) : (
-            <div className="admin-subscribers">
-              <div className="admin-subscribers__header"><span>Email</span><span>Date Subscribed</span><span>Action</span></div>
-              {subscribers.map(s=>(
-                <div key={s.id} className="admin-subscriber-row">
-                  <span>{s.email}</span>
-                  <span>{new Date(s.createdAt).toLocaleDateString()}</span>
-                  <button className="admin-btn admin-btn--delete" onClick={()=>deleteSubscriber(s.id)}>Remove</button>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-      )}
-
-      {tab==='settings' && (
-        <form onSubmit={saveSiteSettings}>
-
-          <CollapsibleSection title="Navigation" defaultOpen={false}>
-            <div className="form-group">
-              <label>Logo Sub-text (under "Dahlia Baasher" in the nav)</label>
-              <input value={siteSettings.navLogoSubtext} onChange={settingsTextChange('navLogoSubtext')} placeholder="Studio" />
-            </div>
-          </CollapsibleSection>
-
-          <CollapsibleSection title="Homepage Content" defaultOpen={true}>
-            <div className="admin-form__row">
-              <div className="form-group"><label>Hero Title</label><input value={siteSettings.heroTitle} onChange={settingsTextChange('heroTitle')} placeholder="Dahlia Baasher" /></div>
-              <div className="form-group"><label>Hero Subtitle</label><input value={siteSettings.heroSubtitle} onChange={settingsTextChange('heroSubtitle')} placeholder="Contemporary Oil Paintings" /></div>
-            </div>
-            <div className="form-group"><label>Hero Description</label><textarea rows="2" value={siteSettings.heroDescription} onChange={settingsTextChange('heroDescription')} /></div>
-            <div className="admin-form__row">
-              <div className="form-group"><label>Featured Works Title</label><input value={siteSettings.featuredWorksTitle} onChange={settingsTextChange('featuredWorksTitle')} /></div>
-              <div className="form-group"><label>Featured Works Subtitle</label><input value={siteSettings.featuredWorksSubtitle} onChange={settingsTextChange('featuredWorksSubtitle')} /></div>
-            </div>
-            <div className="admin-form__row">
-              <div className="form-group"><label>Prints Title</label><input value={siteSettings.printsTitle} onChange={settingsTextChange('printsTitle')} /></div>
-              <div className="form-group"><label>Prints Subtitle</label><input value={siteSettings.printsSubtitle} onChange={settingsTextChange('printsSubtitle')} /></div>
-            </div>
-            <div className="admin-form__row">
-              <div className="form-group"><label>CTA Title</label><input value={siteSettings.ctaTitle} onChange={settingsTextChange('ctaTitle')} /></div>
-            </div>
-            <div className="form-group"><label>CTA Description</label><textarea rows="2" value={siteSettings.ctaDescription} onChange={settingsTextChange('ctaDescription')} /></div>
-            <div className="admin-form__row">
-              <div className="form-group"><label>Newsletter Section Title</label><input value={siteSettings.newsletterTitle} onChange={settingsTextChange('newsletterTitle')} /></div>
-            </div>
-            <div className="form-group"><label>Newsletter Subtitle</label><textarea rows="2" value={siteSettings.newsletterSubtitle} onChange={settingsTextChange('newsletterSubtitle')} /></div>
-          </CollapsibleSection>
-
-          <CollapsibleSection title="Footer and Social Links" defaultOpen={false}>
-            <div className="form-group">
-              <label>Footer Tagline</label>
-              <input value={siteSettings.footerTagline} onChange={settingsTextChange('footerTagline')} placeholder="Contemporary Art, Toronto, Canada" />
-            </div>
-            <h3 style={{fontSize:'15px',marginBottom:'12px',marginTop:'20px'}}>Social Links ({siteSettings.socialLinks.length})</h3>
-            <div style={{background:'#f9f9f9',padding:'16px',borderRadius:'8px',marginBottom:'12px',border:'1px solid var(--color-border)'}}>
-              <h4 style={{fontSize:'13px',marginBottom:'10px'}}>{editSocialIdx!==null?'Edit':'Add'} Social Link</h4>
-              <div className="admin-form__row">
-                <div className="form-group"><label>Platform</label><input value={socialLinkForm.platform} onChange={e=>setSocialLinkForm(f=>({...f,platform:e.target.value}))} placeholder="Instagram" /></div>
-                <div className="form-group"><label>Display Label</label><input value={socialLinkForm.label} onChange={e=>setSocialLinkForm(f=>({...f,label:e.target.value}))} placeholder="Instagram" /></div>
-                <div className="form-group"><label>URL *</label><input value={socialLinkForm.url} onChange={e=>setSocialLinkForm(f=>({...f,url:e.target.value}))} placeholder="https://..." /></div>
-              </div>
-              <div style={{display:'flex',gap:'8px'}}>
-                <button type="button" className="btn" style={{flex:'none'}} onClick={addOrUpdateSocialLink}>{editSocialIdx!==null?'Update':'Add Link'}</button>
-                {editSocialIdx!==null && <button type="button" className="btn btn--ghost" style={{flex:'none'}} onClick={()=>{setSocialLinkForm(emptySocialLink);setEditSocialIdx(null);}}>Cancel</button>}
-              </div>
-            </div>
-            {siteSettings.socialLinks.map((l,i)=>(
-              <div key={i} className="admin-collection-card" style={{marginBottom:'8px'}}>
-                <div className="admin-collection-card__info"><h3>{l.label||l.platform}</h3><p style={{wordBreak:'break-all',fontSize:'12px'}}>{l.url}</p></div>
-                <div className="admin-collection-card__actions">
-                  <button type="button" className="admin-btn admin-btn--edit" onClick={()=>{setSocialLinkForm({platform:l.platform||'',url:l.url||'',label:l.label||''});setEditSocialIdx(i);}}>Edit</button>
-                  <button type="button" className="admin-btn admin-btn--delete" onClick={()=>removeSocialLink(i)}>Remove</button>
-                </div>
-              </div>
-            ))}
-          </CollapsibleSection>
-
-          <CollapsibleSection title="Gallery Page Header" defaultOpen={false}>
-            <div className="admin-form__row">
-              <div className="form-group"><label>Page Label (small text)</label><input value={siteSettings.galleryLabel} onChange={settingsTextChange('galleryLabel')} placeholder="Portfolio" /></div>
-              <div className="form-group"><label>Page Title</label><input value={siteSettings.galleryTitle} onChange={settingsTextChange('galleryTitle')} placeholder="Artworks" /></div>
-            </div>
-            <div className="form-group"><label>Page Subtitle</label><input value={siteSettings.gallerySubtitle} onChange={settingsTextChange('gallerySubtitle')} /></div>
-          </CollapsibleSection>
-
-          <CollapsibleSection title="Portfolio Page" defaultOpen={false}>
-            <div className="admin-form__row">
-              <div className="form-group"><label>Page Title</label><input value={siteSettings.portfolioTitle} onChange={settingsTextChange('portfolioTitle')} placeholder="Portfolio" /></div>
-              <div className="form-group"><label>Page Subtitle</label><input value={siteSettings.portfolioSubtitle} onChange={settingsTextChange('portfolioSubtitle')} /></div>
-            </div>
-            <div className="form-group"><label>Artist Statement</label><textarea rows="4" value={siteSettings.portfolioStatement} onChange={settingsTextChange('portfolioStatement')} /></div>
-            <p style={{fontSize:'12px',color:'var(--color-text-secondary)'}}>Tip: Mark paintings as "Featured" in the Paintings tab to control which appear on the Portfolio page.</p>
-          </CollapsibleSection>
-
-          <CollapsibleSection title="Commissions Page" defaultOpen={false}>
-            <div className="form-group"><label>Page Subtitle</label><textarea rows="2" value={siteSettings.commissionsSubtitle} onChange={settingsTextChange('commissionsSubtitle')} /></div>
-            <div className="form-group"><label>Form Help Text</label><input value={siteSettings.commissionFormHelpText} onChange={settingsTextChange('commissionFormHelpText')} /></div>
-
-            <h3 style={{fontSize:'15px',margin:'20px 0 10px'}}>Process Steps ({siteSettings.commissionSteps.length})</h3>
-            <div style={{background:'#f9f9f9',padding:'16px',borderRadius:'8px',marginBottom:'12px',border:'1px solid var(--color-border)'}}>
-              <div className="admin-form__row">
-                <div className="form-group"><label>Title *</label><input value={stepForm.title} onChange={e=>setStepForm(f=>({...f,title:e.target.value}))} placeholder="Initial Consultation" /></div>
-                <div className="form-group"><label>Description</label><input value={stepForm.description} onChange={e=>setStepForm(f=>({...f,description:e.target.value}))} /></div>
-              </div>
-              <div style={{display:'flex',gap:'8px'}}>
-                <button type="button" className="btn" style={{flex:'none'}} onClick={addOrUpdateStep}>{editStepIdx!==null?'Update':'Add Step'}</button>
-                {editStepIdx!==null && <button type="button" className="btn btn--ghost" style={{flex:'none'}} onClick={()=>{setStepForm(emptyStep);setEditStepIdx(null);}}>Cancel</button>}
-              </div>
-            </div>
-            {siteSettings.commissionSteps.length===0 ? <p style={{fontSize:'13px',color:'var(--color-text-secondary)'}}>No steps yet. Page uses built-in defaults.</p> : siteSettings.commissionSteps.map((s,i)=>(
-              <div key={i} className="admin-collection-card" style={{marginBottom:'8px'}}>
-                <div className="admin-collection-card__info"><h3>{i+1}. {s.title}</h3><p>{s.description}</p></div>
-                <div className="admin-collection-card__actions">
-                  <button type="button" className="admin-btn admin-btn--edit" onClick={()=>{setStepForm({title:s.title,description:s.description||''});setEditStepIdx(i);}}>Edit</button>
-                  <button type="button" className="admin-btn admin-btn--delete" onClick={()=>removeStep(i)}>Remove</button>
-                </div>
-              </div>
-            ))}
-
-            <h3 style={{fontSize:'15px',margin:'20px 0 10px'}}>FAQs ({siteSettings.commissionFaqs.length})</h3>
-            <div style={{background:'#f9f9f9',padding:'16px',borderRadius:'8px',marginBottom:'12px',border:'1px solid var(--color-border)'}}>
-              <div className="form-group"><label>Question *</label><input value={faqForm.question} onChange={e=>setFaqForm(f=>({...f,question:e.target.value}))} /></div>
-              <div className="form-group"><label>Answer</label><textarea rows="2" value={faqForm.answer} onChange={e=>setFaqForm(f=>({...f,answer:e.target.value}))} /></div>
-              <div style={{display:'flex',gap:'8px'}}>
-                <button type="button" className="btn" style={{flex:'none'}} onClick={addOrUpdateFaq}>{editFaqIdx!==null?'Update':'Add FAQ'}</button>
-                {editFaqIdx!==null && <button type="button" className="btn btn--ghost" style={{flex:'none'}} onClick={()=>{setFaqForm(emptyFaq);setEditFaqIdx(null);}}>Cancel</button>}
-              </div>
-            </div>
-            {siteSettings.commissionFaqs.length===0 ? <p style={{fontSize:'13px',color:'var(--color-text-secondary)'}}>No FAQs yet. Page uses built-in defaults.</p> : siteSettings.commissionFaqs.map((f,i)=>(
-              <div key={i} className="admin-collection-card" style={{marginBottom:'8px'}}>
-                <div className="admin-collection-card__info"><h3>{f.question}</h3><p>{f.answer}</p></div>
-                <div className="admin-collection-card__actions">
-                  <button type="button" className="admin-btn admin-btn--edit" onClick={()=>{setFaqForm({question:f.question,answer:f.answer||''});setEditFaqIdx(i);}}>Edit</button>
-                  <button type="button" className="admin-btn admin-btn--delete" onClick={()=>removeFaq(i)}>Remove</button>
-                </div>
-              </div>
-            ))}
-          </CollapsibleSection>
-
-          <CollapsibleSection title="About Page Content" defaultOpen={false}>
-            <div className="form-group"><label>Hero Subtitle</label><input value={siteSettings.aboutHeroSubtitle} onChange={settingsTextChange('aboutHeroSubtitle')} /></div>
-            <div className="form-group"><label>Bio Paragraph 1</label><textarea rows="3" value={siteSettings.aboutBio1} onChange={settingsTextChange('aboutBio1')} /></div>
-            <div className="form-group"><label>Bio Paragraph 2</label><textarea rows="3" value={siteSettings.aboutBio2} onChange={settingsTextChange('aboutBio2')} /></div>
-            <div className="form-group"><label>Bio Paragraph 3</label><textarea rows="3" value={siteSettings.aboutBio3} onChange={settingsTextChange('aboutBio3')} /></div>
-            <div className="form-group"><label>Artist Statement 1</label><textarea rows="3" value={siteSettings.aboutStatement1} onChange={settingsTextChange('aboutStatement1')} /></div>
-            <div className="form-group"><label>Artist Statement 2</label><textarea rows="3" value={siteSettings.aboutStatement2} onChange={settingsTextChange('aboutStatement2')} /></div>
-            <div className="form-group"><label>Artist Statement 3</label><textarea rows="3" value={siteSettings.aboutStatement3} onChange={settingsTextChange('aboutStatement3')} /></div>
-
-            <h3 style={{fontSize:'15px',margin:'20px 0 10px'}}>Practice Cards ({siteSettings.practiceCards.length})</h3>
-            <div style={{background:'#f9f9f9',padding:'16px',borderRadius:'8px',marginBottom:'12px',border:'1px solid var(--color-border)'}}>
-              <div className="form-group"><label>Title *</label><input value={cardForm.title} onChange={e=>setCardForm(f=>({...f,title:e.target.value}))} placeholder="Materials and Technique" /></div>
-              <div className="form-group"><label>Description</label><textarea rows="2" value={cardForm.description} onChange={e=>setCardForm(f=>({...f,description:e.target.value}))} /></div>
-              <div style={{display:'flex',gap:'8px'}}>
-                <button type="button" className="btn" style={{flex:'none'}} onClick={addOrUpdateCard}>{editCardIdx!==null?'Update':'Add Card'}</button>
-                {editCardIdx!==null && <button type="button" className="btn btn--ghost" style={{flex:'none'}} onClick={()=>{setCardForm(emptyCard);setEditCardIdx(null);}}>Cancel</button>}
-              </div>
-            </div>
-            {siteSettings.practiceCards.length===0 ? <p style={{fontSize:'13px',color:'var(--color-text-secondary)'}}>No custom cards. Page uses built-in defaults.</p> : siteSettings.practiceCards.map((c,i)=>(
-              <div key={i} className="admin-collection-card" style={{marginBottom:'8px'}}>
-                <div className="admin-collection-card__info"><h3>{c.title}</h3><p>{c.description}</p></div>
-                <div className="admin-collection-card__actions">
-                  <button type="button" className="admin-btn admin-btn--edit" onClick={()=>{setCardForm({title:c.title,description:c.description||''});setEditCardIdx(i);}}>Edit</button>
-                  <button type="button" className="admin-btn admin-btn--delete" onClick={()=>removeCard(i)}>Remove</button>
-                </div>
-              </div>
-            ))}
-          </CollapsibleSection>
-
-          <CollapsibleSection title="Testimonials" defaultOpen={false}>
-            <div style={{background:'#f9f9f9',padding:'16px',borderRadius:'8px',marginBottom:'12px',border:'1px solid var(--color-border)'}}>
-              <h3 style={{fontSize:'13px',marginBottom:'10px'}}>{editTestimonialIdx!==null?'Edit':'Add'} Testimonial</h3>
-              <div className="admin-form__row">
-                <div className="form-group"><label>Name *</label><input value={testimonialForm.name} onChange={e=>setTestimonialForm(f=>({...f,name:e.target.value}))} placeholder="Sarah Mitchell" /></div>
-                <div className="form-group"><label>Title/Role</label><input value={testimonialForm.title} onChange={e=>setTestimonialForm(f=>({...f,title:e.target.value}))} placeholder="Art Collector" /></div>
-                <div className="form-group"><label>Rating</label>
-                  <select value={testimonialForm.rating} onChange={e=>setTestimonialForm(f=>({...f,rating:Number(e.target.value)}))}>
-                    {[5,4,3,2,1].map(n=><option key={n} value={n}>{n} Star{n>1?'s':''}</option>)}
-                  </select>
-                </div>
-              </div>
-              <div className="form-group"><label>Testimonial Text *</label><textarea rows="2" value={testimonialForm.text} onChange={e=>setTestimonialForm(f=>({...f,text:e.target.value}))} /></div>
-              <div style={{display:'flex',gap:'8px'}}>
-                <button type="button" className="btn" style={{flex:'none'}} onClick={addOrUpdateTestimonial}>{editTestimonialIdx!==null?'Update':'Add'}</button>
-                {editTestimonialIdx!==null && <button type="button" className="btn btn--ghost" style={{flex:'none'}} onClick={()=>{setTestimonialForm(emptyTestimonial);setEditTestimonialIdx(null);}}>Cancel</button>}
-              </div>
-            </div>
-            {siteSettings.testimonials.length===0 ? <div className="admin-empty">No testimonials yet.</div> : (
-              <div className="admin-collections-list">{siteSettings.testimonials.map((t,idx)=>(
-                <div key={t.id||idx} className="admin-collection-card">
-                  <div className="admin-collection-card__info">
-                    <h3>{t.name} <span style={{fontSize:'12px',color:'var(--color-accent)',fontWeight:400}}>{'★'.repeat(t.rating||5)}</span></h3>
-                    {t.title && <p style={{fontSize:'11px',color:'var(--color-accent)',textTransform:'uppercase',letterSpacing:'0.05em'}}>{t.title}</p>}
-                    <p style={{fontSize:'13px',fontStyle:'italic',color:'var(--color-text-secondary)'}}>{t.text}</p>
-                  </div>
-                  <div className="admin-collection-card__actions">
-                    <button type="button" className="admin-btn admin-btn--edit" onClick={()=>{setTestimonialForm({name:t.name,title:t.title||'',text:t.text,rating:t.rating||5});setEditTestimonialIdx(idx);}}>Edit</button>
-                    <button type="button" className="admin-btn admin-btn--delete" onClick={()=>removeTestimonial(idx)}>Remove</button>
-                  </div>
-                </div>
-              ))}</div>
-            )}
-          </CollapsibleSection>
-
-          <div className="admin-form__actions" style={{marginTop:'24px'}}>
-            <button type="submit" className="btn btn--large">Save All Site Settings</button>
+          </div>
+          <div className="admin-form-actions">
+            <button className="admin-btn admin-btn--primary" type="submit" disabled={saving}>
+              {saving ? 'Saving…' : 'Save Settings'}
+            </button>
           </div>
         </form>
-      )}
-    </div></main>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────── */
+/*  Main Admin Page                */
+/* ─────────────────────────────── */
+
+export default function AdminPage({ addToast }) {
+  const [adminKey, setAdminKey] = useState(() => sessionStorage.getItem(SESSION_KEY) ?? null);
+  const [tab, setTab] = useState('paintings');
+
+  const handleLogin = key => setAdminKey(key);
+
+  const handleLogout = () => {
+    sessionStorage.removeItem(SESSION_KEY);
+    setAdminKey(null);
+  };
+
+  if (!adminKey) return <LoginScreen onLogin={handleLogin} />;
+
+  return (
+    <main className="admin-page">
+      <div className="admin-page__topbar">
+        <div className="container admin-page__topbar-inner">
+          <div className="admin-page__brand">
+            <span className="admin-page__brand-name">Dahlia</span>
+            <span className="admin-page__brand-label">Admin</span>
+          </div>
+          <button className="admin-btn admin-btn--ghost admin-btn--sm" onClick={handleLogout}>
+            Sign Out
+          </button>
+        </div>
+      </div>
+
+      <div className="container admin-page__body">
+        <nav className="admin-tabs" aria-label="Admin sections">
+          <button
+            className={`admin-tab${tab === 'paintings' ? ' admin-tab--active' : ''}`}
+            onClick={() => setTab('paintings')}
+          >
+            Paintings
+          </button>
+          <button
+            className={`admin-tab${tab === 'settings' ? ' admin-tab--active' : ''}`}
+            onClick={() => setTab('settings')}
+          >
+            Site Settings
+          </button>
+        </nav>
+
+        {tab === 'paintings' && <PaintingsTab adminKey={adminKey} addToast={addToast} />}
+        {tab === 'settings' && <SettingsTab adminKey={adminKey} addToast={addToast} />}
+      </div>
+    </main>
   );
 }

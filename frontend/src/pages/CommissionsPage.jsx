@@ -1,286 +1,309 @@
-import { useState, useEffect } from 'react';
-import { getSiteSettings, submitCommission } from '../api.js';
+import { useState } from 'react';
+import { submitCommission } from '../api.js';
 import './CommissionsPage.css';
 
-const DEFAULT_STEPS = [
-  { title: 'Initial Consultation', description: 'We discuss your vision, space, preferences, and timeline.' },
-  { title: 'Concept Development', description: 'I create sketches and mock-ups for your approval.' },
-  { title: 'Execution', description: 'I create the artwork with regular progress updates.' },
-  { title: 'Installation', description: 'I provide guidance on proper installation and care.' },
+const STEPS = [
+  {
+    num: '01',
+    title: 'Consultation',
+    desc: 'We begin with a conversation about your vision, the space the work will inhabit, your aesthetic preferences, and your timeline.',
+  },
+  {
+    num: '02',
+    title: 'Creation',
+    desc: 'Once terms are agreed, Baasher begins work on your piece, sharing progress photographs at key stages of development.',
+  },
+  {
+    num: '03',
+    title: 'Delivery',
+    desc: 'Your finished work is professionally packed and shipped with full insurance, accompanied by a certificate of authenticity.',
+  },
 ];
 
-const DEFAULT_FAQS = [
-  { question: "What's your typical timeline?", answer: 'Commission timelines vary from 4-12 weeks depending on size and complexity.' },
-  { question: 'Do you require a deposit?', answer: 'Yes, a 50% deposit is required to begin the project, with the balance due upon completion.' },
-  { question: 'Can I request specific colors or styles?', answer: 'Absolutely! I collaborate closely with clients to ensure the final piece matches their vision.' },
-  { question: 'Do you ship internationally?', answer: 'Yes, I ship worldwide. Shipping costs are calculated based on size and destination.' },
+const TYPES = [
+  {
+    title: 'Portrait',
+    desc: 'Intimate, expressive studies of the human form — painted from life or reference with a characteristic emphasis on light and psychological depth.',
+  },
+  {
+    title: 'Landscape',
+    desc: "Atmospheric interpretations of the natural world. Large or intimate, each landscape carries Baasher's distinct tonal vocabulary.",
+  },
+  {
+    title: 'Abstract',
+    desc: 'Works guided by form, colour, and emotion rather than representation. Ideal for collectors seeking something wholly singular.',
+  },
 ];
 
-export default function CommissionsPage() {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    vision: '',
-    size: '',
-    budget: '',
-  });
+const INITIAL_FORM = {
+  name: '',
+  email: '',
+  commissionType: '',
+  size: '',
+  description: '',
+  budget: '',
+};
 
-  const [submitted, setSubmitted] = useState(false);
+export default function CommissionsPage({ addToast }) {
+  const [form, setForm] = useState(INITIAL_FORM);
   const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [content, setContent] = useState({
-    commissionsSubtitle: 'I work with collectors and designers worldwide to create bespoke artwork tailored to your vision and space.',
-    commissionSteps: DEFAULT_STEPS,
-    commissionFaqs: DEFAULT_FAQS,
-    commissionFormHelpText: 'I typically respond within 48 hours. Looking forward to collaborating with you!',
-  });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
-  useEffect(() => {
-    getSiteSettings()
-      .then(data => {
-        setContent({
-          commissionsSubtitle: data.commissionsSubtitle || content.commissionsSubtitle,
-          commissionSteps: Array.isArray(data.commissionSteps) && data.commissionSteps.length > 0
-            ? data.commissionSteps : DEFAULT_STEPS,
-          commissionFaqs: Array.isArray(data.commissionFaqs) && data.commissionFaqs.length > 0
-            ? data.commissionFaqs : DEFAULT_FAQS,
-          commissionFormHelpText: data.commissionFormHelpText || content.commissionFormHelpText,
-        });
-      })
-      .catch(() => {});
-  }, []);
-
-  const validateForm = () => {
-    const newErrors = {};
-
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email';
-    }
-
-    if (!formData.vision.trim()) {
-      newErrors.vision = 'Please describe your vision';
-    } else if (formData.vision.length < 20) {
-      newErrors.vision = 'Please provide at least 20 characters';
-    }
-
-    if (!formData.size.trim()) {
-      newErrors.size = 'Please specify approximate size';
-    }
-
-    if (!formData.budget) {
-      newErrors.budget = 'Please select a budget range';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const validate = () => {
+    const e = {};
+    if (!form.name.trim()) e.name = 'Please enter your name.';
+    if (!form.email.trim()) e.email = 'Please enter your email.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = 'Please enter a valid email address.';
+    if (!form.commissionType) e.commissionType = 'Please select a commission type.';
+    if (!form.size) e.size = 'Please select a size.';
+    if (!form.description.trim()) e.description = 'Please describe your vision.';
+    if (!form.budget) e.budget = 'Please select a budget range.';
+    return e;
   };
 
-  const handleChange = (e) => {
+  const handleChange = e => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
+    setForm(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
+    const errs = validate();
+    if (Object.keys(errs).length) { setErrors(errs); return; }
 
-    if (!validateForm()) {
-      return;
-    }
-
-    setLoading(true);
-
+    setSubmitting(true);
     try {
-      await submitCommission(formData);
+      await submitCommission(form);
       setSubmitted(true);
-      setFormData({
-        name: '',
-        email: '',
-        vision: '',
-        size: '',
-        budget: '',
-      });
-
-      setTimeout(() => {
-        setSubmitted(false);
-      }, 5000);
-    } catch (error) {
-      console.error('Error submitting form:', error);
-      setErrors({ submit: error.message || 'Failed to submit. Please try again.' });
+      setForm(INITIAL_FORM);
+      addToast?.("Inquiry sent — we'll be in touch soon.", 'success');
+    } catch (err) {
+      console.error('Commission submission error:', err);
+      setErrors({ submit: 'There was a problem sending your inquiry. Please try again.' });
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
   return (
-    <main className="commissions-page">
-      <header className="commissions-page__header">
+    <main className="commissions">
+
+      {/* ── HERO ── */}
+      <header className="commissions__hero">
         <div className="container">
-          <p className="label">Custom Work</p>
-          <h1>Commission an Artwork</h1>
-          <p className="commissions-page__subtitle">
-            {content.commissionsSubtitle}
+          <p className="commissions__eyebrow">Bespoke Artworks</p>
+          <h1 className="commissions__title">Commission a Piece</h1>
+          <p className="commissions__subtitle">
+            Work directly with Baasher to create an original painting conceived entirely around your vision, space, and sensibility.
           </p>
         </div>
       </header>
 
-      <div className="container">
-        <div className="commissions-page__content">
-          {/* Left Column - Info */}
-          <div className="commissions-page__info">
-            <h2>The Commission Process</h2>
-            <ol className="commissions-page__process">
-              {content.commissionSteps.map((step, i) => (
-                <li key={i}>
-                  <strong>{step.title}:</strong> {step.description}
-                </li>
-              ))}
-            </ol>
-
-            <div className="commissions-page__faq">
-              <h3>FAQ</h3>
-              <dl className="commissions-page__dl">
-                {content.commissionFaqs.map((faq, i) => (
-                  <div key={i}>
-                    <dt>{faq.question}</dt>
-                    <dd>{faq.answer}</dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-          </div>
-
-          {/* Right Column - Form */}
-          <div className="commissions-page__form-container">
-            {submitted && (
-              <div className="form-success-message">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-                <div>
-                  <h3>Thank you!</h3>
-                  <p>Your inquiry has been received. I'll contact you within 48 hours.</p>
+      {/* ── HOW IT WORKS ── */}
+      <section className="commissions__process">
+        <div className="container">
+          <p className="commissions__section-eyebrow">The Process</p>
+          <h2 className="commissions__section-title">How It Works</h2>
+          <ol className="commissions__steps" aria-label="Commission process steps">
+            {STEPS.map(step => (
+              <li key={step.num} className="commissions__step">
+                <span className="commissions__step-num" aria-hidden="true">{step.num}</span>
+                <div className="commissions__step-body">
+                  <h3 className="commissions__step-title">{step.title}</h3>
+                  <p className="commissions__step-desc">{step.desc}</p>
                 </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      {/* ── COMMISSION TYPES ── */}
+      <section className="commissions__types">
+        <div className="container">
+          <p className="commissions__section-eyebrow">What We Offer</p>
+          <h2 className="commissions__section-title">Commission Types</h2>
+          <div className="commissions__types-grid">
+            {TYPES.map(t => (
+              <div key={t.title} className="commissions__type-card">
+                <h3 className="commissions__type-title">{t.title}</h3>
+                <p className="commissions__type-desc">{t.desc}</p>
               </div>
-            )}
-
-            <form className="commissions-form" onSubmit={handleSubmit}>
-              <h2>Commission Inquiry Form</h2>
-
-              <div className="form-group">
-                <label htmlFor="name" className="required">Your Name</label>
-                <input
-                  id="name"
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  placeholder="Jane Smith"
-                  disabled={loading}
-                  required
-                />
-                {errors.name && <span className="form-error">{errors.name}</span>}
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="email" className="required">Email Address</label>
-                <input
-                  id="email"
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="jane@example.com"
-                  disabled={loading}
-                  required
-                />
-                {errors.email && <span className="form-error">{errors.email}</span>}
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="vision" className="required">Describe Your Vision</label>
-                <textarea
-                  id="vision"
-                  name="vision"
-                  value={formData.vision}
-                  onChange={handleChange}
-                  placeholder="Tell me about your ideas, themes, and inspiration..."
-                  disabled={loading}
-                  required
-                />
-                {errors.vision && <span className="form-error">{errors.vision}</span>}
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="size" className="required">Approximate Size</label>
-                <input
-                  id="size"
-                  type="text"
-                  name="size"
-                  value={formData.size}
-                  onChange={handleChange}
-                  placeholder="e.g., 24x36 inches"
-                  disabled={loading}
-                  required
-                />
-                {errors.size && <span className="form-error">{errors.size}</span>}
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="budget" className="required">Budget Range (USD)</label>
-                <select
-                  id="budget"
-                  name="budget"
-                  value={formData.budget}
-                  onChange={handleChange}
-                  disabled={loading}
-                  required
-                >
-                  <option value="">Select a budget range</option>
-                  <option value="under-1000">Under $1,000</option>
-                  <option value="1000-3000">$1,000 - $3,000</option>
-                  <option value="3000-5000">$3,000 - $5,000</option>
-                  <option value="5000-10000">$5,000 - $10,000</option>
-                  <option value="10000plus">$10,000+</option>
-                </select>
-                {errors.budget && <span className="form-error">{errors.budget}</span>}
-              </div>
-
-              {errors.submit && (
-                <div className="form-error">{errors.submit}</div>
-              )}
-
-              <button
-                type="submit"
-                className="btn btn--large"
-                disabled={loading}
-              >
-                {loading ? 'Sending...' : 'Send Inquiry'}
-              </button>
-
-              <p className="form-help">
-                {content.commissionFormHelpText}
-              </p>
-            </form>
+            ))}
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* ── PRICING ── */}
+      <section className="commissions__pricing">
+        <div className="container">
+          <div className="commissions__pricing-inner">
+            <div className="commissions__pricing-text">
+              <p className="commissions__section-eyebrow">Investment</p>
+              <h2 className="commissions__section-title">Pricing</h2>
+              <p className="commissions__pricing-body">
+                Commission prices are determined by size, complexity, and timeline. Baasher works with a limited number of commissions each year to ensure each piece receives the care it deserves.
+              </p>
+            </div>
+            <div className="commissions__pricing-from">
+              <span className="commissions__pricing-label">Starting from</span>
+              <span className="commissions__pricing-amount">$1,200</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── INQUIRY FORM ── */}
+      <section className="commissions__form-section">
+        <div className="container">
+          <div className="commissions__form-wrap">
+            <div className="commissions__form-intro">
+              <p className="commissions__section-eyebrow">Get in Touch</p>
+              <h2 className="commissions__section-title">Commission Inquiry</h2>
+              <p className="commissions__form-intro-text">
+                Fill in the form and Baasher will respond within 48 hours to discuss your project. All enquiries are treated with complete confidentiality.
+              </p>
+            </div>
+
+            {submitted ? (
+              <div className="commissions__success" role="alert">
+                <div className="commissions__success-check" aria-hidden="true">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+                <h3 className="commissions__success-title">Inquiry Received</h3>
+                <p className="commissions__success-msg">
+                  Thank you for reaching out. Baasher will be in touch within 48 hours to begin the conversation.
+                </p>
+                <button className="commissions__success-reset" onClick={() => setSubmitted(false)}>
+                  Submit another inquiry
+                </button>
+              </div>
+            ) : (
+              <form className="commissions__form" onSubmit={handleSubmit} noValidate>
+                <div className="commissions__fields">
+                  <div className="commissions__field">
+                    <label className="commissions__label" htmlFor="c-name">Your Name <span aria-hidden="true">*</span></label>
+                    <input
+                      id="c-name"
+                      className={`commissions__input${errors.name ? ' commissions__input--err' : ''}`}
+                      type="text"
+                      name="name"
+                      value={form.name}
+                      onChange={handleChange}
+                      placeholder="Full name"
+                      autoComplete="name"
+                      disabled={submitting}
+                    />
+                    {errors.name && <p className="commissions__err" role="alert">{errors.name}</p>}
+                  </div>
+
+                  <div className="commissions__field">
+                    <label className="commissions__label" htmlFor="c-email">Email Address <span aria-hidden="true">*</span></label>
+                    <input
+                      id="c-email"
+                      className={`commissions__input${errors.email ? ' commissions__input--err' : ''}`}
+                      type="email"
+                      name="email"
+                      value={form.email}
+                      onChange={handleChange}
+                      placeholder="your@email.com"
+                      autoComplete="email"
+                      disabled={submitting}
+                    />
+                    {errors.email && <p className="commissions__err" role="alert">{errors.email}</p>}
+                  </div>
+
+                  <div className="commissions__field">
+                    <label className="commissions__label" htmlFor="c-type">Commission Type <span aria-hidden="true">*</span></label>
+                    <select
+                      id="c-type"
+                      className={`commissions__select${errors.commissionType ? ' commissions__input--err' : ''}`}
+                      name="commissionType"
+                      value={form.commissionType}
+                      onChange={handleChange}
+                      disabled={submitting}
+                    >
+                      <option value="">Select a type…</option>
+                      <option value="portrait">Portrait</option>
+                      <option value="landscape">Landscape</option>
+                      <option value="abstract">Abstract</option>
+                      <option value="other">Other / Discuss</option>
+                    </select>
+                    {errors.commissionType && <p className="commissions__err" role="alert">{errors.commissionType}</p>}
+                  </div>
+
+                  <div className="commissions__field">
+                    <label className="commissions__label" htmlFor="c-size">Approximate Size <span aria-hidden="true">*</span></label>
+                    <select
+                      id="c-size"
+                      className={`commissions__select${errors.size ? ' commissions__input--err' : ''}`}
+                      name="size"
+                      value={form.size}
+                      onChange={handleChange}
+                      disabled={submitting}
+                    >
+                      <option value="">Select a size…</option>
+                      <option value="small">Small — up to 40 × 50 cm</option>
+                      <option value="medium">Medium — 50 × 70 cm to 80 × 100 cm</option>
+                      <option value="large">Large — 100 × 120 cm to 120 × 150 cm</option>
+                      <option value="xl">Extra Large — over 150 cm</option>
+                      <option value="discuss">To be discussed</option>
+                    </select>
+                    {errors.size && <p className="commissions__err" role="alert">{errors.size}</p>}
+                  </div>
+
+                  <div className="commissions__field commissions__field--full">
+                    <label className="commissions__label" htmlFor="c-desc">Your Vision <span aria-hidden="true">*</span></label>
+                    <textarea
+                      id="c-desc"
+                      className={`commissions__textarea${errors.description ? ' commissions__input--err' : ''}`}
+                      name="description"
+                      value={form.description}
+                      onChange={handleChange}
+                      placeholder="Describe the work you have in mind — subject matter, mood, colours, the space it will occupy, any references…"
+                      rows={6}
+                      disabled={submitting}
+                    />
+                    {errors.description && <p className="commissions__err" role="alert">{errors.description}</p>}
+                  </div>
+
+                  <div className="commissions__field">
+                    <label className="commissions__label" htmlFor="c-budget">Budget Range <span aria-hidden="true">*</span></label>
+                    <select
+                      id="c-budget"
+                      className={`commissions__select${errors.budget ? ' commissions__input--err' : ''}`}
+                      name="budget"
+                      value={form.budget}
+                      onChange={handleChange}
+                      disabled={submitting}
+                    >
+                      <option value="">Select a range…</option>
+                      <option value="1200-3000">$1,200 – $3,000</option>
+                      <option value="3000-6000">$3,000 – $6,000</option>
+                      <option value="6000-12000">$6,000 – $12,000</option>
+                      <option value="12000+">$12,000+</option>
+                    </select>
+                    {errors.budget && <p className="commissions__err" role="alert">{errors.budget}</p>}
+                  </div>
+                </div>
+
+                {errors.submit && (
+                  <p className="commissions__err commissions__err--submit" role="alert">{errors.submit}</p>
+                )}
+
+                <button className="commissions__submit" type="submit" disabled={submitting}>
+                  {submitting ? 'Sending…' : 'Send Inquiry'}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      </section>
+
     </main>
   );
 }
-

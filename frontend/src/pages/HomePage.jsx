@@ -1,158 +1,181 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getPaintings, getHeroPainting, getSiteSettings } from '../api.js';
+import { getPaintings, getHeroPainting, getCollections } from '../api.js';
 import PaintingCard from '../components/PaintingCard.jsx';
-import Testimonials from '../components/Testimonials.jsx';
-import NewsletterSignup from '../components/NewsletterSignup.jsx';
+import CollectionCard from '../components/CollectionCard.jsx';
+import { useCart } from '../context/CartContext.jsx';
 import './HomePage.css';
-
-const DEFAULTS = {
-  heroTitle: 'Dahlia Baasher',
-  heroSubtitle: 'Contemporary Oil Paintings',
-  heroDescription: 'Refined works on premium linen canvas, defined by deliberate palette knife technique and expressive brushwork.',
-  featuredWorksTitle: 'Featured Works',
-  featuredWorksSubtitle: 'Original Paintings',
-  printsTitle: 'Limited Edition Prints',
-  printsSubtitle: 'High-Quality Reproductions',
-  ctaTitle: 'Ready to Commission?',
-  ctaDescription: 'I work with collectors and designers worldwide to create bespoke artwork tailored to your vision and space.',
-  newsletterTitle: 'Stay Updated',
-  newsletterSubtitle: 'Subscribe to receive updates about new artworks, exhibitions, and commission opportunities.',
-};
 
 export default function HomePage() {
   const [heroPainting, setHeroPainting] = useState(null);
-  const [originals, setOriginals] = useState([]);
-  const [prints, setPrints] = useState([]);
+  const [paintings, setPaintings] = useState([]);
+  const [collections, setCollections] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [content, setContent] = useState(DEFAULTS);
+  const { addItem } = useCart();
 
   useEffect(() => {
     getHeroPainting()
       .then(p => p && setHeroPainting(p))
-      .catch(err => console.error('Failed to load hero:', err));
-    
+      .catch(() => {});
+
     getPaintings()
-      .then(all => {
-        const paintingArray = Array.isArray(all) ? all : (all.data || []);
-        setOriginals(paintingArray.filter(p => !p.sold && p.originalAvailable !== false && p.category !== 'print').slice(0, 6));
-        setPrints(paintingArray.filter(p => p.printAvailable === true).slice(0, 3));
+      .then(data => {
+        const arr = Array.isArray(data) ? data : (data?.data ?? []);
+        setPaintings(arr.slice(0, 6));
         setLoading(false);
       })
-      .catch(err => {
-        console.error('Failed to load paintings:', err);
-        setLoading(false);
-      });
+      .catch(() => setLoading(false));
 
-    getSiteSettings()
-      .then(data => setContent({ ...DEFAULTS, ...data }))
+    getCollections()
+      .then(data => {
+        const arr = Array.isArray(data) ? data : (data?.data ?? []);
+        setCollections(arr);
+      })
       .catch(() => {});
   }, []);
 
+  const heroImg = heroPainting?.images?.[0] ?? heroPainting?.image ?? null;
+
   return (
     <main className="home">
-      {/* ── HERO SECTION ── */}
-      <section className={`hero${heroPainting?.images?.[0] ? '' : ' hero--fallback'}`}>
-        {heroPainting?.images?.[0] ? (
-          <div className="hero__painting">
-            <img 
-              src={heroPainting.images[0]} 
-              alt={heroPainting.title} 
-              className="hero__painting-img" 
-              decoding="async"
-            />
-            <div className="hero__overlay" />
-          </div>
-        ) : (
-          <div className="hero__bg-fallback" />
-        )}
 
-        <div className="hero__content container">
-          <div className="hero__text">
-            <h1 className="hero__title">{content.heroTitle}</h1>
-            <p className="hero__subtitle">{content.heroSubtitle}</p>
-            <p className="hero__description">{content.heroDescription}</p>
-            <div className="hero__actions">
-              <Link to="/gallery" className="btn">
-                Explore Collection
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      {/* ── HERO ── */}
+      <section className="hero">
+        {heroImg && (
+          <>
+            <img
+              src={heroImg}
+              alt={heroPainting?.title ?? 'Hero painting'}
+              className="hero__bg"
+              decoding="async"
+              fetchpriority="high"
+            />
+            <div className="hero__vignette" />
+          </>
+        )}
+        {!heroImg && <div className="hero__fallback" />}
+
+        <div className="hero__body">
+          <p className="hero__eyebrow">Fine Art Collection</p>
+          <h1 className="hero__title">BAASHER</h1>
+          <p className="hero__subtitle">Original Paintings — Fine Art Collection</p>
+          <div className="hero__ctas">
+            <Link to="/gallery" className="hero__cta hero__cta--primary">
+              Explore Gallery
+            </Link>
+            <Link to="/commissions" className="hero__cta hero__cta--ghost">
+              Commission a Piece
+            </Link>
+          </div>
+        </div>
+
+        <div className="hero__scroll">
+          <span>Scroll</span>
+          <div className="hero__scroll-line" />
+        </div>
+      </section>
+
+      {/* ── SELECTED WORKS ── */}
+      <section className="section works-section">
+        <div className="container">
+          <header className="section__header">
+            <div className="section__header-text">
+              <p className="section__eyebrow">Portfolio</p>
+              <h2 className="section__title">Selected Works</h2>
+            </div>
+            <Link to="/gallery" className="section__link">
+              View Complete Gallery
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </Link>
+          </header>
+
+          {loading ? (
+            <div className="home__loading">
+              <div className="home__spinner" />
+            </div>
+          ) : paintings.length > 0 ? (
+            <div className="works-grid">
+              {paintings.map(p => (
+                <PaintingCard
+                  key={p.id ?? p._id}
+                  painting={p}
+                  onAddToCart={addItem}
+                  showWishlist
+                />
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </section>
+
+      {/* ── ABOUT TEASER ── */}
+      <section className="section about-teaser">
+        <div className="container">
+          <div className="about-teaser__inner">
+            <p className="section__eyebrow">The Artist</p>
+            <h2 className="about-teaser__heading">About the Artist</h2>
+            <p className="about-teaser__body">
+              Baasher is a contemporary painter whose work occupies the quiet space between
+              restraint and expression. Working primarily in oils on linen, each canvas is
+              built through layers of carefully considered mark-making — palette knife,
+              brush, and time. His practice is rooted in observation, memory, and a lifelong
+              dialogue with colour.
+            </p>
+            <Link to="/about" className="about-teaser__link">
+              Read More
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── COLLECTIONS ── */}
+      {collections.length > 0 && (
+        <section className="section collections-section">
+          <div className="container">
+            <header className="section__header">
+              <div className="section__header-text">
+                <p className="section__eyebrow">Curated Series</p>
+                <h2 className="section__title">Collections</h2>
+              </div>
+              <Link to="/collections" className="section__link">
+                All Collections
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
                   <path d="M5 12h14M12 5l7 7-7 7"/>
                 </svg>
               </Link>
-            </div>
-          </div>
-        </div>
+            </header>
 
-        <div className="hero__scroll-hint">
-          <span>Scroll to explore</span>
-          <svg width="16" height="24" viewBox="0 0 16 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <rect x="4" y="2" width="8" height="14" rx="4"/>
-            <path d="M8 18v4"/>
-          </svg>
-        </div>
-      </section>
-
-      {/* ── FEATURED WORKS ── */}
-      {!loading && originals.length > 0 && (
-        <section className="featured-works">
-          <div className="container">
-            <div className="section-header">
-              <div>
-                <h2 className="section-title">{content.featuredWorksTitle}</h2>
-                <p className="section-subtitle">{content.featuredWorksSubtitle}</p>
-              </div>
-              <Link to="/gallery" className="btn btn--ghost">
-                View All
-              </Link>
-            </div>
-            <div className="gallery-grid">
-              {originals.map(painting => (
-                <PaintingCard key={painting.id} painting={painting} />
+            <div className="collections-grid">
+              {collections.slice(0, 3).map(c => (
+                <CollectionCard key={c.id ?? c._id} collection={c} />
               ))}
             </div>
           </div>
         </section>
       )}
 
-      {/* ── PRINTS SECTION ── */}
-      {!loading && prints.length > 0 && (
-        <section className="featured-works" style={{ background: 'var(--color-surface)' }}>
-          <div className="container">
-            <div className="section-header">
-              <div>
-                <h2 className="section-title">{content.printsTitle}</h2>
-                <p className="section-subtitle">{content.printsSubtitle}</p>
-              </div>
-              <Link to="/gallery?type=print" className="btn btn--ghost">
-                View All Prints
-              </Link>
-            </div>
-            <div className="gallery-grid">
-              {prints.map(printing => (
-                <PaintingCard key={printing.id} painting={printing} />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ── TESTIMONIALS SECTION ── */}
-      <Testimonials />
-
-      {/* ── NEWSLETTER SIGNUP ── */}
-      <NewsletterSignup title={content.newsletterTitle} subtitle={content.newsletterSubtitle} />
-
-      {/* ── CTA SECTION ── */}
-      <section className="cta-section">
+      {/* ── COMMISSION CTA ── */}
+      <section className="commission-cta">
         <div className="container">
-          <h2 className="cta-section__title">{content.ctaTitle}</h2>
-          <p className="cta-section__desc">{content.ctaDescription}</p>
-          <Link to="/commissions" className="btn btn--large">
-            Start a Commission
-          </Link>
+          <div className="commission-cta__inner">
+            <p className="section__eyebrow">Bespoke Work</p>
+            <h2 className="commission-cta__title">Commission a Piece</h2>
+            <p className="commission-cta__body">
+              Work directly with Baasher to create a painting made entirely for you —
+              tailored to your space, palette, and vision.
+            </p>
+            <Link to="/commissions" className="commission-cta__btn">
+              Begin a Commission
+            </Link>
+          </div>
         </div>
       </section>
+
     </main>
   );
 }
-

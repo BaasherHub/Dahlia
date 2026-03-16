@@ -1,121 +1,162 @@
-import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import './AboutPage.css';
 
-const BASE = import.meta.env.VITE_API_URL || '';
-
-const DEFAULT_PRACTICE_CARDS = [
-  {
-    title: 'Materials & Technique',
-    description: 'I work exclusively with premium materials: linen canvas, oil pigments, and professional-grade mediums. My technique emphasizes the palette knife for texture and expressive mark-making.',
-  },
-  {
-    title: 'Creative Process',
-    description: 'Each piece begins with careful composition planning, followed by multiple layers of paint application. I allow each layer to inform the next, creating depth and visual interest.',
-  },
-  {
-    title: 'Commissions & Collaborations',
-    description: 'I welcome commission inquiries from collectors and designers. I work closely with clients to bring their vision to life, creating bespoke artwork for homes and commercial spaces.',
-  },
-  {
-    title: 'Exhibition History',
-    description: 'My work has been featured in contemporary galleries and private collections. I continue to exhibit regularly and participate in art fairs and curated shows.',
-  },
-];
-
-const DEFAULTS = {
-  aboutHeroSubtitle: 'Contemporary artist creating refined works on premium linen canvas',
-  aboutBio1: 'I am a contemporary artist specializing in oil paintings on premium linen canvas. My work is defined by deliberate palette knife technique and expressive brushwork, creating pieces that resonate with collectors and designers worldwide.',
-  aboutBio2: 'Each painting begins with careful consideration of color, composition, and emotional resonance. I work exclusively with the finest materials to ensure longevity and visual impact that endures through time.',
-  aboutBio3: 'My practice combines technical precision with spontaneous creativity, resulting in works that are both carefully considered and intuitively executed.',
-  aboutStatement1: 'My practice is rooted in a deep engagement with color, form, and the physical materiality of paint. I create work that exists in conversation with contemporary art practice while maintaining a reverence for the traditions of painting.',
-  aboutStatement2: 'Through careful observation and intuitive response, I build paintings that invite contemplation and emotional engagement. Each piece is an attempt to capture a moment of synthesis between intention and spontaneity, between control and surrender.',
-  aboutStatement3: 'I am committed to creating work of lasting value\u2014both visually and materially. My practice is defined by a pursuit of excellence and a dedication to the craft of painting.',
-  practiceCards: DEFAULT_PRACTICE_CARDS,
-};
-
 export default function AboutPage() {
-  const [content, setContent] = useState(DEFAULTS);
-
-  useEffect(() => {
-    fetch(`${BASE}/api/site-settings`)
-      .then(r => r.ok ? r.json() : DEFAULTS)
-      .then(data => {
-        setContent({
-          ...DEFAULTS,
-          ...data,
-          practiceCards: Array.isArray(data.practiceCards) && data.practiceCards.length > 0
-            ? data.practiceCards : DEFAULT_PRACTICE_CARDS,
-        });
-      })
-      .catch(() => setContent(DEFAULTS));
-  }, []);
-
   return (
     <main className="about-page">
+
+      {/* ── HERO ── */}
       <section className="about-hero">
+        <div className="about-hero__decor" aria-hidden="true">
+          <div className="about-hero__decor-line" />
+          <div className="about-hero__decor-circle" />
+        </div>
         <div className="container">
-          <p className="label">About</p>
-          <h1>About Dahlia Baasher</h1>
-          <p className="about-hero__subtitle">{content.aboutHeroSubtitle}</p>
+          <p className="about-hero__eyebrow">The Artist</p>
+          <h1 className="about-hero__title">About the Artist</h1>
+          <p className="about-hero__subtitle">
+            Baasher — contemporary painter working in oils on linen
+          </p>
         </div>
       </section>
 
-      <section className="about-section">
+      {/* ── BIO ── */}
+      <section className="about-bio section">
         <div className="container">
-          <div className="about-content">
-            <div className="about-text">
-              <h2>My Artistic Journey</h2>
-              <p>{content.aboutBio1}</p>
-              <p>{content.aboutBio2}</p>
-              <p>{content.aboutBio3}</p>
+          <div className="about-bio__grid">
+            <div className="about-bio__text">
+              <h2 className="about-bio__heading">The Work</h2>
+              <p>
+                Baasher is a contemporary painter whose practice is rooted in the materiality
+                of oil on linen. His work is quiet and deliberate — each canvas built through
+                accumulated layers of mark-making that are at once disciplined and intuitive.
+                He works slowly, allowing each layer to speak before the next is applied,
+                giving his paintings a depth that rewards sustained looking.
+              </p>
+              <p>
+                His palette tends toward the muted and complex: ochres, ash whites,
+                deep umbers, and occasional flashes of warmth. Colour for Baasher is not
+                decorative but structural — the way hues sit against one another determines
+                the emotional temperature of the whole. He draws from observation, memory,
+                and the visual residue of everyday life, though his works resist easy
+                narrative or literal description.
+              </p>
+              <p>
+                Trained in classical technique and later self-directed through years of
+                sustained studio practice, Baasher is largely self-taught in the broader
+                art-historical sense — his education arriving through looking: at the
+                great masters in museum storerooms, at light on linen early in the morning,
+                at the way certain colours become other colours when placed in proximity
+                to one another.
+              </p>
             </div>
-            <div className="about-image">
-              <div className="about-image__placeholder">
-                <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
-                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                  <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                </svg>
-                <p>Studio Portrait</p>
+            <div className="about-bio__portrait">
+              <div className="about-bio__portrait-frame">
+                <div className="about-bio__portrait-placeholder">
+                  <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.75" aria-hidden="true">
+                    <circle cx="12" cy="8" r="4"/>
+                    <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+                  </svg>
+                  <span>Portrait</span>
+                </div>
               </div>
+              <p className="about-bio__portrait-caption">Baasher in his studio, 2024</p>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="about-section about-section--alt">
+      {/* ── PRACTICE CARDS ── */}
+      <section className="about-practice section">
         <div className="container">
-          <h2>My Practice</h2>
-          <div className="about-grid">
-            {content.practiceCards.map((card, i) => (
-              <div key={i} className="about-card">
-                <h3>{card.title}</h3>
-                <p>{card.description}</p>
-              </div>
-            ))}
+          <h2 className="about-practice__heading">The Practice</h2>
+          <div className="about-practice__grid">
+            <div className="about-practice__card">
+              <div className="about-practice__card-num">01</div>
+              <h3>Materials & Medium</h3>
+              <p>
+                All works are executed in professional-grade oils on Belgian linen.
+                Baasher uses a restricted range of pigments — favouring permanence and
+                archival quality — and works with both brush and palette knife to
+                achieve the characteristic texture of his surfaces.
+              </p>
+            </div>
+            <div className="about-practice__card">
+              <div className="about-practice__card-num">02</div>
+              <h3>Process</h3>
+              <p>
+                Each painting begins in observation: a composition sketched loosely
+                in charcoal, then built in thin washes before thicker impasto passages
+                arrive in later stages. Drying time is built into the process — some
+                works take months to complete.
+              </p>
+            </div>
+            <div className="about-practice__card">
+              <div className="about-practice__card-num">03</div>
+              <h3>Commissions</h3>
+              <p>
+                Baasher works with private collectors and interior designers worldwide
+                on bespoke commissions. The process is collaborative and unhurried —
+                beginning with conversation, moving through preliminary studies, and
+                arriving at a work made entirely for you.
+              </p>
+            </div>
+            <div className="about-practice__card">
+              <div className="about-practice__card-num">04</div>
+              <h3>Exhibitions</h3>
+              <p>
+                His work has been shown in solo and group exhibitions across the United
+                Kingdom, the Gulf, and North America. Works are held in private
+                collections in over fifteen countries. He continues to exhibit
+                regularly and accepts applications for studio visits by appointment.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="about-section">
+      {/* ── ARTIST STATEMENT ── */}
+      <section className="about-statement section">
         <div className="container">
-          <div className="about-statement">
-            <h2>Artist Statement</h2>
-            <p>{content.aboutStatement1}</p>
-            <p>{content.aboutStatement2}</p>
-            <p>{content.aboutStatement3}</p>
+          <div className="about-statement__inner">
+            <div className="about-statement__rule" aria-hidden="true" />
+            <p className="about-statement__label">Artist Statement</p>
+            <blockquote className="about-statement__quote">
+              <p>
+                "I am interested in the moment just before a painting becomes legible —
+                when it is still pure colour, pure surface, pure material. I try to
+                extend that moment as long as possible. The work is an attempt to slow
+                the eye, to insist on presence, to resist the speed at which we
+                ordinarily move through visual experience."
+              </p>
+              <p>
+                "My practice is a negotiation between intention and accident. I plan
+                carefully and then I try to forget the plan. The best paintings are
+                the ones that surprise me — that arrive at something I did not know
+                I was looking for."
+              </p>
+              <footer>— Baasher, 2024</footer>
+            </blockquote>
           </div>
         </div>
       </section>
 
-      <section className="cta-section">
+      {/* ── COMMISSION CTA ── */}
+      <section className="about-cta">
         <div className="container">
-          <h2 className="cta-section__title">Ready to Start a Collaboration?</h2>
-          <p className="cta-section__desc">I'm always open to discussing new projects, exhibitions, and commissions.</p>
-          <Link to="/commissions" className="btn btn--large">Start a Commission</Link>
+          <div className="about-cta__inner">
+            <h2 className="about-cta__title">Commission a Piece</h2>
+            <p className="about-cta__body">
+              Work directly with Baasher to create an original painting made for your
+              space and your story.
+            </p>
+            <Link to="/commissions" className="btn btn--large about-cta__btn">
+              Begin a Commission
+            </Link>
+          </div>
         </div>
       </section>
+
     </main>
   );
 }
-

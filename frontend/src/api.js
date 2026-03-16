@@ -1,241 +1,117 @@
-const BASE = import.meta.env.VITE_API_URL || '';
+const BASE_URL = import.meta.env.VITE_API_URL || ''
 
-// ── Public API ──────────────────────────────────────────────
-
-export async function getPaintings(params = {}) {
-  const qs = new URLSearchParams(params).toString();
-  const res = await fetch(`${BASE}/api/paintings${qs ? '?' + qs : ''}`);
-  if (!res.ok) throw new Error('Failed to fetch paintings');
-  return res.json();
-}
-export const fetchPaintings = getPaintings;
-
-export async function getPainting(id) {
-  const res = await fetch(`${BASE}/api/paintings/${id}`);
-  if (!res.ok) throw new Error('Painting not found');
-  return res.json();
-}
-export const fetchPainting = getPainting;
-
-export async function getHeroPainting() {
-  const res = await fetch(`${BASE}/api/paintings/hero`);
-  if (!res.ok) return null;
-  return res.json();
+async function request(url, options = {}) {
+  const res = await fetch(url, options)
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.error || 'Request failed')
+  return data
 }
 
-export async function getCollections() {
-  const res = await fetch(`${BASE}/api/collections`);
-  if (!res.ok) throw new Error('Failed to fetch collections');
-  return res.json();
+export function getPaintings() {
+  return request(`${BASE_URL}/api/paintings`)
 }
 
-export async function getCollection(id) {
-  const res = await fetch(`${BASE}/api/collections/${id}`);
-  if (!res.ok) throw new Error('Collection not found');
-  return res.json();
+export function getHeroPainting() {
+  return request(`${BASE_URL}/api/paintings/hero`)
 }
 
-export async function createCheckout(payload) {
-  const res = await fetch(`${BASE}/api/orders/checkout`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Checkout failed');
-  return data;
+export function getPainting(id) {
+  return request(`${BASE_URL}/api/paintings/${id}`)
 }
 
-export async function fetchOrderBySession(sessionId) {
-  const res = await fetch(`${BASE}/api/orders/session/${sessionId}`);
-  if (!res.ok) throw new Error('Order not found');
-  return res.json();
+export function getCollections() {
+  return request(`${BASE_URL}/api/collections`)
 }
 
-// ── Admin API ─────────────────────────────────────────────
-
-const adminGetHeaders = () => ({
-  'x-admin-key': sessionStorage.getItem('adminKey') || '',
-});
-
-const adminPostHeaders = () => ({
-  'Content-Type': 'application/json',
-  'x-admin-key': sessionStorage.getItem('adminKey') || '',
-});
-
-export async function adminVerify() {
-  try {
-    const res = await fetch(`${BASE}/api/admin/verify`, { headers: adminGetHeaders() });
-    return res.ok;
-  } catch { return false; }
+export function getCollection(id) {
+  return request(`${BASE_URL}/api/collections/${id}`)
 }
 
-export async function adminGetPaintings() {
-  const res = await fetch(`${BASE}/api/paintings/all`, { headers: adminGetHeaders() });
-  if (!res.ok) throw new Error('Unauthorized');
-  return res.json();
-}
-
-export async function adminCreatePainting(data) {
-  const res = await fetch(`${BASE}/api/paintings`, {
-    method: 'POST', headers: adminPostHeaders(), body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error('Failed to create');
-  return res.json();
-}
-
-export async function adminUpdatePainting(id, data) {
-  const res = await fetch(`${BASE}/api/paintings/${id}`, {
-    method: 'PUT', headers: adminPostHeaders(), body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error('Failed to update');
-  return res.json();
-}
-
-export async function adminDeletePainting(id) {
-  const res = await fetch(`${BASE}/api/paintings/${id}`, {
-    method: 'DELETE', headers: adminPostHeaders(),
-  });
-  if (!res.ok) throw new Error('Failed to delete');
-  return res.json();
-}
-
-export async function adminGetCollections() {
-  const res = await fetch(`${BASE}/api/collections`, { headers: adminGetHeaders() });
-  if (!res.ok) throw new Error('Failed to fetch');
-  return res.json();
-}
-
-export async function adminCreateCollection(data) {
-  const res = await fetch(`${BASE}/api/collections`, {
-    method: 'POST', headers: adminPostHeaders(), body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error('Failed to create');
-  return res.json();
-}
-
-export async function adminUpdateCollection(id, data) {
-  const res = await fetch(`${BASE}/api/collections/${id}`, {
-    method: 'PUT', headers: adminPostHeaders(), body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error('Failed to update');
-  return res.json();
-}
-
-export async function adminDeleteCollection(id) {
-  const res = await fetch(`${BASE}/api/collections/${id}`, {
-    method: 'DELETE', headers: adminPostHeaders(),
-  });
-  if (!res.ok) throw new Error('Failed to delete');
-  return res.json();
-}
-
-export async function adminGetOrders() {
-  const res = await fetch(`${BASE}/api/admin/orders`, { headers: adminGetHeaders() });
-  if (!res.ok) throw new Error('Unauthorized');
-  return res.json();
-}
-
-export async function adminUploadImage(file) {
-  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-  const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-
-  if (!cloudName || !uploadPreset) {
-    throw new Error('Cloudinary not configured. Set VITE_CLOUDINARY_CLOUD_NAME and VITE_CLOUDINARY_UPLOAD_PRESET.');
-  }
-
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('upload_preset', uploadPreset);
-  formData.append('folder', 'dahlia-paintings');
-
-  const res = await fetch(
-    `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-    { method: 'POST', body: formData }
-  );
-  if (!res.ok) {
-    const errData = await res.json().catch(() => ({}));
-    throw new Error(errData?.error?.message || 'Upload failed');
-  }
-  const data = await res.json();
-  return {
-    url: data.secure_url,
-    publicId: data.public_id,
-    width: data.width,
-    height: data.height,
-  };
-}
-
-// ── Site Settings API ─────────────────────────────────────
-
-export async function getSiteSettings() {
-  const res = await fetch(`${BASE}/api/site-settings`);
-  if (!res.ok) throw new Error('Failed to fetch site settings');
-  return res.json();
-}
-
-export async function adminUpdateSiteSettings(data) {
-  const res = await fetch(`${BASE}/api/site-settings`, {
-    method: 'PUT', headers: adminPostHeaders(), body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error('Failed to update site settings');
-  return res.json();
-}
-
-// ── Commission Inquiries (Admin) ──────────────────────────
-
-export async function adminGetCommissionInquiries() {
-  const res = await fetch(`${BASE}/api/commissions`, { headers: adminGetHeaders() });
-  if (!res.ok) throw new Error('Failed to fetch inquiries');
-  return res.json();
-}
-
-export async function adminUpdateCommissionStatus(id, status) {
-  const res = await fetch(`${BASE}/api/commissions/${id}`, {
-    method: 'PUT', headers: adminPostHeaders(), body: JSON.stringify({ status }),
-  });
-  if (!res.ok) throw new Error('Failed to update status');
-  return res.json();
-}
-
-// ── Newsletter Subscribers (Admin) ────────────────────────
-
-export async function adminGetNewsletterSubscribers() {
-  const res = await fetch(`${BASE}/api/newsletter`, { headers: adminGetHeaders() });
-  if (!res.ok) throw new Error('Failed to fetch subscribers');
-  return res.json();
-}
-
-export async function adminDeleteNewsletterSubscriber(id) {
-  const res = await fetch(`${BASE}/api/newsletter/${id}`, {
-    method: 'DELETE', headers: adminPostHeaders(),
-  });
-  if (!res.ok) throw new Error('Failed to delete subscriber');
-  return res.json();
-}
-
-// ── Public Newsletter Subscribe ───────────────────────────
-
-export async function subscribeNewsletter(email) {
-  const res = await fetch(`${BASE}/api/newsletter/subscribe`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Failed to subscribe');
-  return data;
-}
-
-// ── Public Commission Submit ──────────────────────────────
-
-export async function submitCommission(data) {
-  const res = await fetch(`${BASE}/api/commissions`, {
+export function createCheckout(data) {
+  return request(`${BASE_URL}/api/orders/checkout`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
-  });
-  const json = await res.json();
-  if (!res.ok) throw new Error(json.error || 'Failed to submit inquiry');
-  return json;
+  })
 }
+
+export function getOrderBySession(sessionId) {
+  return request(`${BASE_URL}/api/orders/session/${sessionId}`)
+}
+
+export function getSiteSettings() {
+  return request(`${BASE_URL}/api/site-settings`)
+}
+
+// Admin functions
+
+export function adminVerify(adminKey) {
+  return request(`${BASE_URL}/api/admin/verify`, {
+    headers: { 'x-admin-key': adminKey },
+  })
+}
+
+export function adminGetPaintings(adminKey) {
+  return request(`${BASE_URL}/api/paintings/all`, {
+    headers: { 'x-admin-key': adminKey },
+  })
+}
+
+export function adminCreatePainting(adminKey, data) {
+  return request(`${BASE_URL}/api/paintings`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-admin-key': adminKey,
+    },
+    body: JSON.stringify(data),
+  })
+}
+
+export function adminUpdatePainting(adminKey, id, data) {
+  return request(`${BASE_URL}/api/paintings/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-admin-key': adminKey,
+    },
+    body: JSON.stringify(data),
+  })
+}
+
+export function adminDeletePainting(adminKey, id) {
+  return request(`${BASE_URL}/api/paintings/${id}`, {
+    method: 'DELETE',
+    headers: { 'x-admin-key': adminKey },
+  })
+}
+
+export function adminUpdateSiteSettings(adminKey, data) {
+  return request(`${BASE_URL}/api/site-settings`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-admin-key': adminKey,
+    },
+    body: JSON.stringify(data),
+  })
+}
+
+export function subscribeNewsletter(email) {
+  return request(`${BASE_URL}/api/newsletter/subscribe`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  })
+}
+
+export function submitCommission(data) {
+  return request(`${BASE_URL}/api/commissions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+}
+
+// Alias for backward compatibility
+export const fetchOrderBySession = getOrderBySession

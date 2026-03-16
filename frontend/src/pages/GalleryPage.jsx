@@ -1,160 +1,193 @@
-import { useEffect, useState } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
-import { getPaintings, getCollections, getSiteSettings } from '../api.js';
+import { useEffect, useState, useRef, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { getPaintings, getCollections } from '../api.js';
 import PaintingCard from '../components/PaintingCard.jsx';
+import CollectionCard from '../components/CollectionCard.jsx';
+import { useCart } from '../context/CartContext.jsx';
 import './GalleryPage.css';
 
-const HEADER_DEFAULTS = {
-  galleryLabel: 'Portfolio',
-  galleryTitle: 'Artworks',
-  gallerySubtitle: 'Explore original paintings and limited edition prints',
-};
-
-function CollectionsView({ collections }) {
-  return (
-    <div className="gallery-grid gallery-grid--3">
-      {collections.map(collection => (
-        <Link 
-          key={collection.id} 
-          to={`/collection/${collection.id}`}
-          className="collection-card"
-        >
-          <div className="collection-card__img">
-            {collection.paintings?.[0]?.images?.[0] && (
-              <img 
-                src={collection.paintings[0].images[0]} 
-                alt={collection.name} 
-                decoding="async"
-                loading="lazy"
-              />
-            )}
-          </div>
-          <h3 className="collection-card__name">{collection.name}</h3>
-          <p className="collection-card__count">
-            {collection.paintings?.length || 0} Painting{collection.paintings?.length !== 1 ? 's' : ''}
-          </p>
-        </Link>
-      ))}
-    </div>
-  );
-}
+const FILTERS = [
+  { value: 'all', label: 'All Works' },
+  { value: 'available', label: 'Available' },
+  { value: 'sold', label: 'Sold' },
+  { value: 'collections', label: 'Collections' },
+];
 
 export default function GalleryPage() {
   const [paintings, setPaintings] = useState([]);
   const [collections, setCollections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const debounceTimer = useRef(null);
   const [searchParams, setSearchParams] = useSearchParams();
-  const [header, setHeader] = useState(HEADER_DEFAULTS);
-  const type = searchParams.get('type') || 'all';
+  const { addItem } = useCart();
+
+  const filter = searchParams.get('filter') ?? 'all';
 
   useEffect(() => {
     setLoading(true);
     setError(null);
-    
+
     Promise.all([getPaintings(), getCollections()])
-      .then(([paintingsData, collectionsData]) => {
-        try {
-          const pData = paintingsData.data || paintingsData;
-          const cData = collectionsData.data || collectionsData;
-          setPaintings(Array.isArray(pData) ? pData : []);
-          setCollections(Array.isArray(cData) ? cData : []);
-        } catch (e) {
-          console.error('Error processing data:', e);
-          setPaintings([]);
-          setCollections([]);
-        }
+      .then(([pData, cData]) => {
+        setPaintings(Array.isArray(pData) ? pData : (pData?.data ?? []));
+        setCollections(Array.isArray(cData) ? cData : (cData?.data ?? []));
         setLoading(false);
       })
-      .catch((err) => {
-        console.error('Failed to load data:', err);
-        setError('Failed to load artworks. Please try again.');
+      .catch(err => {
+        setError('Unable to load the gallery. Please try again.');
         setLoading(false);
       });
-
-    getSiteSettings()
-      .then(data => setHeader({ ...HEADER_DEFAULTS, ...data }))
-      .catch(() => {});
   }, []);
 
-  useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-  }, [type]);
+  /* debounce search */
+  const handleSearch = useCallback(e => {
+    const val = e.target.value;
+    setSearchQuery(val);
+    clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => setDebouncedQuery(val), 350);
+  }, []);
 
-  const originals = paintings.filter(p => 
-    !p.sold && (p.originalAvailable !== false) && (p.category !== 'print')
-  );
-  const prints = paintings.filter(p => p.printAvailable === true);
+  const setFilter = val => {
+    setSearchParams(val === 'all' ? {} : { filter: val });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
-  let displayPaintings = [];
-  if (type === 'original') {
-    displayPaintings = originals;
-  } else if (type === 'print') {
-    displayPaintings = prints;
-  } else {
-    displayPaintings = paintings;
-  }
+  /* derive visible paintings */
+  const filteredPaintings = paintings
+    .filter(p => {
+      if (filter === 'available') return !p.sold && p.originalAvailable !== false;
+      if (filter === 'sold') return !!p.sold;
+      return true;
+    })
+    .filter(p => {
+      if (!debouncedQuery) return true;
+      const q = debouncedQuery.toLowerCase();
+      return (
+        p.title?.toLowerCase().includes(q) ||
+        p.medium?.toLowerCase().includes(q) ||
+        p.year?.toString().includes(q) ||
+        p.description?.toLowerCase().includes(q)
+      );
+    });
 
   return (
     <main className="gallery-page">
-      <div className="gallery-page__header">
+
+      {/* ── PAGE HEADER ── */}
+      <header className="gallery-header">
         <div className="container">
-          <p className="label">{header.galleryLabel}</p>
-          <h1 className="gallery-page__title">{header.galleryTitle}</h1>
-          <p className="gallery-page__subtitle">{header.gallerySubtitle}</p>
+          <p className="gallery-header__eyebrow">Fine Art</p>
+          <h1 className="gallery-header__title">The Gallery</h1>
+          <p className="gallery-header__subtitle">
+            Original paintings by Baasher — each a unique work on linen canvas
+          </p>
         </div>
-      </div>
+      </header>
 
-      <div className="container">
-        <div className="gallery-page__filters">
-          {[
-            ['all', 'All Works'],
-            ['original', 'Original Paintings'],
-            ['print', 'Limited Edition Prints'],
-            ['collections', 'Collections']
-          ].map(([val, label]) => (
-            <button
-              key={val}
-              className={`gallery-filter ${type === val ? 'active' : ''}`}
-              onClick={() => {
-                setSearchParams(val === 'all' ? {} : { type: val });
-                window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-              }}
-            >
-              {label}
-            </button>
-          ))}
+      <div className="container gallery-body">
+
+        {/* ── CONTROLS ── */}
+        <div className="gallery-controls">
+          <nav className="gallery-filters" role="tablist" aria-label="Filter artworks">
+            {FILTERS.map(({ value, label }) => (
+              <button
+                key={value}
+                role="tab"
+                aria-selected={filter === value}
+                className={`gallery-filter-tab${filter === value ? ' active' : ''}`}
+                onClick={() => setFilter(value)}
+              >
+                {label}
+              </button>
+            ))}
+          </nav>
+
+          {filter !== 'collections' && (
+            <div className="gallery-search">
+              <svg className="gallery-search__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+              </svg>
+              <input
+                type="search"
+                className="gallery-search__input"
+                placeholder="Search by title, medium, year…"
+                value={searchQuery}
+                onChange={handleSearch}
+                aria-label="Search artworks"
+              />
+            </div>
+          )}
         </div>
 
+        {/* ── CONTENT ── */}
         {error && (
           <div className="gallery-error">
             <p>{error}</p>
+            <button className="btn btn--ghost" onClick={() => window.location.reload()}>
+              Retry
+            </button>
           </div>
         )}
 
         {loading ? (
-          <div className="gallery-page--loading">
-            <div className="spinner" />
-            <p>Loading gallery...</p>
+          <div className="gallery-loading">
+            <div className="gallery-spinner" />
+            <p>Loading the gallery…</p>
           </div>
-        ) : type === 'collections' ? (
+        ) : filter === 'collections' ? (
           collections.length > 0 ? (
-            <CollectionsView collections={collections} />
-          ) : (
-            <p style={{ textAlign: 'center', padding: '60px 0' }}>No collections available.</p>
-          )
-        ) : (
-          displayPaintings.length > 0 ? (
-            <div className="gallery-grid">
-              {displayPaintings.map(painting => (
-                <PaintingCard key={painting.id} painting={painting} />
+            <div className="gallery-collections-grid">
+              {collections.map(c => (
+                <CollectionCard key={c.id ?? c._id} collection={c} />
               ))}
             </div>
           ) : (
-            <div style={{ textAlign: 'center', padding: '60px 0' }}>
-              <h3>No artworks found</h3>
+            <div className="gallery-empty">
+              <p className="gallery-empty__text">No collections available.</p>
             </div>
           )
+        ) : filteredPaintings.length > 0 ? (
+          <>
+            <p className="gallery-count">
+              {filteredPaintings.length} {filteredPaintings.length === 1 ? 'work' : 'works'}
+              {debouncedQuery ? ` for "${debouncedQuery}"` : ''}
+            </p>
+            <div className="gallery-grid">
+              {filteredPaintings.map(p => (
+                <PaintingCard
+                  key={p.id ?? p._id}
+                  painting={p}
+                  onAddToCart={addItem}
+                  showWishlist
+                />
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className="gallery-empty">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" aria-hidden="true">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <p className="gallery-empty__title">No works found</p>
+            <p className="gallery-empty__text">
+              {debouncedQuery
+                ? `No artworks match "${debouncedQuery}"`
+                : 'No artworks in this category yet.'}
+            </p>
+            {debouncedQuery && (
+              <button
+                className="btn btn--ghost"
+                onClick={() => { setSearchQuery(''); setDebouncedQuery(''); }}
+              >
+                Clear search
+              </button>
+            )}
+          </div>
         )}
       </div>
     </main>
