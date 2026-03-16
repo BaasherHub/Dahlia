@@ -1,4 +1,4 @@
-// v3 - major update
+// v4 - force rebuild 2026-03-16
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
