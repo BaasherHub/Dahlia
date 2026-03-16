@@ -1,115 +1,152 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getPaintings, getSiteSettings } from '../api.js';
+import { getPaintings } from '../api.js';
 import './PortfolioPage.css';
-
-const DEFAULTS = {
-  portfolioTitle: 'Portfolio',
-  portfolioSubtitle: 'A curated selection of original works',
-  portfolioStatement:
-    'Each painting is a meditation on color, form, and the expressive potential of oil on linen. These selected works represent the breadth of my practice — from intimate studies to large-scale statements.',
-};
 
 export default function PortfolioPage() {
   const [paintings, setPaintings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [content, setContent] = useState(DEFAULTS);
 
   useEffect(() => {
     getPaintings()
-      .then(all => {
-        const arr = Array.isArray(all) ? all : (all.data || []);
-        // Show featured paintings; if none, show all available originals (up to 12)
-        const featured = arr.filter(p => p.featured && !p.sold);
-        setPaintings(featured.length > 0 ? featured : arr.filter(p => !p.sold).slice(0, 12));
+      .then(data => {
+        const all = Array.isArray(data) ? data : (data?.data ?? []);
+        const featured = all.filter(p => p.featured);
+        setPaintings(featured.length > 0 ? featured : all.slice(0, 16));
         setLoading(false);
       })
       .catch(() => setLoading(false));
-
-    getSiteSettings()
-      .then(data => setContent({ ...DEFAULTS, ...data }))
-      .catch(() => {});
   }, []);
 
   return (
-    <main className="portfolio-page">
+    <main className="portfolio">
+
       {/* ── HEADER ── */}
-      <header className="portfolio-page__header">
+      <header className="portfolio__header">
         <div className="container">
-          <p className="label">Selected Works</p>
-          <h1 className="portfolio-page__title">{content.portfolioTitle}</h1>
-          <p className="portfolio-page__subtitle">{content.portfolioSubtitle}</p>
+          <p className="portfolio__eyebrow">Selected Works</p>
+          <h1 className="portfolio__title">Portfolio</h1>
+          <p className="portfolio__subtitle">
+            An ongoing body of work exploring the intersection of light, material, and memory.
+          </p>
         </div>
       </header>
 
-      {/* ── ARTIST STATEMENT ── */}
-      <section className="portfolio-statement">
+      {/* ── STATEMENT ── */}
+      <section className="portfolio__statement">
         <div className="container">
-          <div className="portfolio-statement__inner">
-            <svg className="portfolio-statement__quote" width="40" height="32" viewBox="0 0 40 32" fill="none" aria-hidden="true">
-              <path d="M0 32V20C0 13.3 2.7 7.7 8 3L11 6C7.7 9 5.7 12.3 5 16H10V32H0ZM22 32V20C22 13.3 24.7 7.7 30 3L33 6C29.7 9 27.7 12.3 27 16H32V32H22Z" fill="currentColor" opacity="0.15"/>
-            </svg>
-            <p className="portfolio-statement__text">{content.portfolioStatement}</p>
+          <div className="portfolio__statement-inner">
+            <div className="portfolio__statement-rule" aria-hidden="true" />
+            <blockquote className="portfolio__statement-text">
+              Each painting begins as a question — about colour, about duration, about what it means for an image to persist. These works are the record of that enquiry.
+            </blockquote>
+            <p className="portfolio__statement-attr">— Baasher</p>
           </div>
         </div>
       </section>
 
       {/* ── GRID ── */}
-      <section className="portfolio-grid-section">
+      <section className="portfolio__grid-section">
         <div className="container">
           {loading ? (
-            <div className="portfolio-loading">
-              <div className="spinner" />
-              <p>Loading portfolio...</p>
+            <div className="portfolio__loading">
+              <div className="portfolio__spinner" aria-label="Loading portfolio…" />
+              <p>Loading works…</p>
             </div>
           ) : paintings.length === 0 ? (
-            <div className="portfolio-empty">
-              <p>No works available yet. Check back soon.</p>
+            <div className="portfolio__empty">
+              <p>No works available at this time. Please check back soon.</p>
             </div>
           ) : (
-            <div className="portfolio-masonry">
-              {paintings.map((painting, i) => (
-                <Link
-                  key={painting.id}
-                  to={`/paintings/${painting.id}`}
-                  className={`portfolio-item portfolio-item--${(i % 5 === 0 || i % 5 === 3) ? 'tall' : 'normal'}`}
-                  aria-label={`View ${painting.title}`}
-                >
-                  <div className="portfolio-item__img-wrap">
-                    {painting.images?.[0] && (
-                      <img
-                        src={painting.images[0]}
-                        alt={painting.title}
-                        loading="lazy"
-                        decoding="async"
-                      />
-                    )}
-                    <div className="portfolio-item__overlay">
-                      <div className="portfolio-item__info">
-                        <h3 className="portfolio-item__title">{painting.title}</h3>
-                        {painting.year && <p className="portfolio-item__year">{painting.year}</p>}
-                        {painting.medium && <p className="portfolio-item__medium">{painting.medium}</p>}
+            <div className="portfolio__grid">
+              {paintings.map((painting, i) => {
+                const imageUrl = painting.imageUrl || painting.image_url || painting.images?.[0];
+                const isTall = i % 5 === 0 || i % 5 === 3;
+                return (
+                  <Link
+                    key={painting.id ?? painting._id}
+                    to={`/gallery/${painting.id ?? painting._id}`}
+                    className={`portfolio__item${isTall ? ' portfolio__item--tall' : ''}`}
+                    aria-label={`View "${painting.title ?? 'Untitled'}" — ${painting.year ?? ''}`}
+                  >
+                    <div className="portfolio__item-img-wrap">
+                      {imageUrl ? (
+                        <img
+                          src={imageUrl}
+                          alt=""
+                          aria-hidden="true"
+                          className="portfolio__item-img"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      ) : (
+                        <div className="portfolio__item-placeholder" aria-hidden="true" />
+                      )}
+                      <div className="portfolio__item-overlay" aria-hidden="true">
+                        <div className="portfolio__item-meta">
+                          <h3 className="portfolio__item-title">{painting.title ?? 'Untitled'}</h3>
+                          <p className="portfolio__item-details">
+                            {[painting.year, painting.medium].filter(Boolean).join(' · ')}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                );
+              })}
             </div>
           )}
         </div>
       </section>
 
-      {/* ── CTA ── */}
-      <section className="portfolio-cta">
+      {/* ── PROCESS ── */}
+      <section className="portfolio__process">
         <div className="container">
-          <h2>Interested in a Work?</h2>
-          <p>View the full gallery for availability and pricing, or get in touch to commission a bespoke piece.</p>
-          <div className="portfolio-cta__actions">
-            <Link to="/gallery" className="btn btn--large">View Full Gallery</Link>
-            <Link to="/commissions" className="btn btn--ghost btn--large">Commission a Piece</Link>
+          <div className="portfolio__process-inner">
+            <div className="portfolio__process-text">
+              <p className="portfolio__eyebrow">The Practice</p>
+              <h2 className="portfolio__process-title">On Making</h2>
+              <p className="portfolio__process-body">
+                Baasher works primarily in oil on linen, drawn to the medium's capacity for luminosity and its deep historical resonance. Each canvas is built up over weeks — layers of underpainting, glazing, and direct mark-making accumulating into images that hold time within them.
+              </p>
+              <p className="portfolio__process-body">
+                The studio is a place of sustained enquiry rather than production. A painting may rest for months before it is resolved, its final state arrived at through dialogue between intention and material circumstance.
+              </p>
+            </div>
+            <div className="portfolio__process-aside">
+              <div className="portfolio__process-stat">
+                <span className="portfolio__process-stat-num">Oil</span>
+                <span className="portfolio__process-stat-label">Primary medium</span>
+              </div>
+              <div className="portfolio__process-stat">
+                <span className="portfolio__process-stat-num">Linen</span>
+                <span className="portfolio__process-stat-label">Support surface</span>
+              </div>
+              <div className="portfolio__process-stat">
+                <span className="portfolio__process-stat-num">Weeks</span>
+                <span className="portfolio__process-stat-label">Per painting</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
+
+      {/* ── CTA ── */}
+      <section className="portfolio__cta">
+        <div className="container portfolio__cta-inner">
+          <div>
+            <h2 className="portfolio__cta-title">Interested in a Work?</h2>
+            <p className="portfolio__cta-text">
+              Browse available paintings in the gallery, or get in touch to commission an original piece.
+            </p>
+          </div>
+          <div className="portfolio__cta-actions">
+            <Link to="/gallery" className="portfolio__cta-btn portfolio__cta-btn--primary">View Gallery</Link>
+            <Link to="/commissions" className="portfolio__cta-btn portfolio__cta-btn--ghost">Commission a Piece</Link>
+          </div>
+        </div>
+      </section>
+
     </main>
   );
 }

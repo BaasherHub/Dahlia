@@ -1,108 +1,65 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { getCollections } from '../api.js';
+import CollectionCard from '../components/CollectionCard.jsx';
+import './CollectionsPage.css';
 
 export default function CollectionsPage() {
   const [collections, setCollections] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     getCollections()
-      .then((data) => { setCollections(Array.isArray(data) ? data : []); setLoading(false); })
-      .catch(() => setLoading(false));
+      .then(data => {
+        setCollections(Array.isArray(data) ? data : (data?.data ?? []));
+        setLoading(false);
+      })
+      .catch(() => {
+        setError('Unable to load collections. Please try again.');
+        setLoading(false);
+      });
   }, []);
 
-  if (loading) {
-    return (
-      <main className="collection-page collection-page--loading">
-        <div className="container"><p>Loading collections…</p></div>
-      </main>
-    );
-  }
-
   return (
-    <main className="collection-page">
-      <div className="collection-page__header">
+    <main className="collections-page">
+      <header className="collections-page__header">
         <div className="container">
-          <p className="label">Browse</p>
-          <h1 className="collection-page__title">Collections</h1>
-          <p className="collection-page__desc">
-            Explore Dahlia&rsquo;s curated series of original oil paintings.
+          <p className="collections-page__eyebrow">Browse</p>
+          <h1 className="collections-page__title">Collections</h1>
+          <p className="collections-page__subtitle">
+            Curated series of original works, each collection tracing a distinct thread of exploration in Baasher's practice.
           </p>
         </div>
-      </div>
+      </header>
 
-      <div className="container">
-        {collections.length === 0 ? (
-          <p className="collection-page__empty">No collections yet. Check back soon.</p>
+      <div className="container collections-page__body">
+        {loading ? (
+          <div className="collections-page__loading">
+            <div className="collections-spinner" aria-label="Loading collections…" />
+            <p>Loading collections…</p>
+          </div>
+        ) : error ? (
+          <div className="collections-page__error">
+            <p>{error}</p>
+            <button className="collections-page__retry" onClick={() => window.location.reload()}>
+              Try Again
+            </button>
+          </div>
+        ) : collections.length === 0 ? (
+          <div className="collections-page__empty">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" aria-hidden="true">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" />
+              <polyline points="21 15 16 10 5 21" />
+            </svg>
+            <p className="collections-page__empty-title">No collections yet</p>
+            <p className="collections-page__empty-text">New collections will be announced soon. Check back later.</p>
+          </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '40px', paddingBottom: '80px' }}>
-            {collections.map((col) => {
-              const coverImg = col.coverImage || col.paintings?.[0]?.images?.[0];
-              return (
-                <Link
-                  key={col.id}
-                  to={`/collection/${col.id}`}
-                  style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
-                >
-                  <article style={{ overflow: 'hidden' }}>
-                    <div style={{
-                      position: 'relative',
-                      aspectRatio: '4/3',
-                      overflow: 'hidden',
-                      background: 'var(--color-surface)',
-                    }}>
-                      {coverImg ? (
-                        <img
-                          src={coverImg}
-                          alt={col.name}
-                          style={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover',
-                            transition: 'transform 0.6s cubic-bezier(0.25, 0.1, 0.25, 1)',
-                          }}
-                          onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.03)'; }}
-                          onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
-                        />
-                      ) : (
-                        <div style={{
-                          width: '100%',
-                          height: '100%',
-                          background: 'var(--color-surface2)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: 'var(--color-text-tertiary)',
-                          fontSize: '14px',
-                        }}>
-                          No image
-                        </div>
-                      )}
-                    </div>
-                    <div style={{ paddingTop: '16px' }}>
-                      <h2 style={{
-                        fontFamily: 'var(--font-display)',
-                        fontSize: 'clamp(20px, 2vw, 26px)',
-                        fontWeight: 400,
-                        marginBottom: '8px',
-                        letterSpacing: '-0.01em',
-                      }}>
-                        {col.name}
-                      </h2>
-                      {col.description && (
-                        <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', lineHeight: 1.6, marginBottom: '12px' }}>
-                          {col.description}
-                        </p>
-                      )}
-                      <p style={{ fontSize: '13px', color: 'var(--color-accent)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-                        {col._count?.paintings ?? col.paintings?.length ?? 0} works →
-                      </p>
-                    </div>
-                  </article>
-                </Link>
-              );
-            })}
+          <div className="collections-page__grid">
+            {collections.map(c => (
+              <CollectionCard key={c.id ?? c._id} collection={c} />
+            ))}
           </div>
         )}
       </div>
