@@ -1,121 +1,69 @@
-import { useState, useEffect } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
-import ErrorBoundary from './components/ErrorBoundary';
-import Toast from './components/Toast';
-import Breadcrumbs from './components/Breadcrumbs';
-import SEOSchema, { artistSchema, gallerySchema } from './components/SEOSchema';
-import useToast from './hooks/useToast';
+import React, { Suspense, useEffect } from 'react'
+import { Routes, Route, useLocation } from 'react-router-dom'
+import Nav from './components/Nav'
+import Footer from './components/Footer'
+import ErrorBoundary from './components/ErrorBoundary'
+import Toast from './components/Toast'
+import { useToast } from './hooks/useToast'
 
-// ✅ Scroll to top on route change
+const HomePage = React.lazy(() => import('./pages/HomePage'))
+const GalleryPage = React.lazy(() => import('./pages/GalleryPage'))
+const PaintingPage = React.lazy(() => import('./pages/PaintingPage'))
+const AboutPage = React.lazy(() => import('./pages/AboutPage'))
+const CartPage = React.lazy(() => import('./pages/CartPage'))
+const CheckoutPage = React.lazy(() => import('./pages/CheckoutPage'))
+const OrderSuccessPage = React.lazy(() => import('./pages/OrderSuccessPage'))
+const CommissionsPage = React.lazy(() => import('./pages/CommissionsPage'))
+const CollectionsPage = React.lazy(() => import('./pages/CollectionsPage'))
+const CollectionPage = React.lazy(() => import('./pages/CollectionPage'))
+const WishlistPage = React.lazy(() => import('./pages/WishlistPage'))
+const AdminPage = React.lazy(() => import('./pages/AdminPage'))
+const PortfolioPage = React.lazy(() => import('./pages/PortfolioPage'))
+const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'))
+
 function ScrollToTop() {
-  const { pathname } = useLocation();
-
-  useEffect(() => {
-    window.scrollTo({
-      top: 0,
-      left: 0,
-      behavior: 'instant'
-    });
-  }, [pathname]);
-
-  return null;
+  const { pathname } = useLocation()
+  useEffect(() => { window.scrollTo(0, 0) }, [pathname])
+  return null
 }
 
-// Pages
-import HomePage from './pages/HomePage';
-import GalleryPage from './pages/GalleryPage';
-import PaintingPage from './pages/PaintingPage';
-import AboutPage from './pages/AboutPage';
-import CartPage from './pages/CartPage';
-import CheckoutPage from './pages/CheckoutPage';
-import OrderSuccessPage from './pages/OrderSuccessPage';
-import CommissionsPage from './pages/CommissionsPage';
-import CollectionPage from './pages/CollectionPage';
-import CollectionsPage from './pages/CollectionsPage';
-import WishlistPage from './pages/WishlistPage';
-import AdminPage from './pages/AdminPage';
-import NotFoundPage from './pages/NotFoundPage';
-import PortfolioPage from './pages/PortfolioPage';
-
-// Components
-import Nav from './components/Nav';
-import Footer from './components/Footer';
-
-function AppContent() {
-  const { toasts, removeToast } = useToast();
-  const [isReady, setIsReady] = useState(false);
-
-  useEffect(() => {
-    setIsReady(true);
-  }, []);
-
-  if (!isReady) {
-    return (
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '100vh',
-        backgroundColor: '#fefdfb'
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            border: '3px solid #e8e3db',
-            borderRadius: '50%',
-            borderTopColor: '#a89968',
-            animation: 'spin 1s linear infinite',
-            margin: '0 auto 16px'
-          }} />
-          <p style={{ color: '#4a4540', fontFamily: "'DM Sans', sans-serif" }}>Loading...</p>
-        </div>
-        <style>{`
-          @keyframes spin {
-            to { transform: rotate(360deg); }
-          }
-        `}</style>
-      </div>
-    );
-  }
-
+function PageLoader() {
   return (
-    <>
-      <ScrollToTop />
-      <SEOSchema type="artist" data={artistSchema} />
-      <SEOSchema type="gallery" data={gallerySchema} />
-      <Nav />
-      <Breadcrumbs />
-      <Toast toasts={toasts} onRemove={removeToast} />
-      <main style={{ minHeight: '100vh' }} id="main-content">
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/gallery" element={<GalleryPage />} />
-          <Route path="/paintings/:id" element={<PaintingPage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/cart" element={<CartPage />} />
-          <Route path="/checkout" element={<CheckoutPage />} />
-          <Route path="/order-success" element={<OrderSuccessPage />} />
-          <Route path="/commissions" element={<CommissionsPage />} />
-          <Route path="/collection/:id" element={<CollectionPage />} />
-          <Route path="/collections" element={<CollectionsPage />} />
-          <Route path="/wishlist" element={<WishlistPage />} />
-          <Route path="/portfolio" element={<PortfolioPage />} />
-          <Route path="/admin" element={<AdminPage />} />
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-      </main>
-      <Footer />
-    </>
-  );
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+      <div className="spinner" />
+    </div>
+  )
 }
 
-function App() {
+export default function App() {
+  const { toasts, addToast, removeToast } = useToast()
+
   return (
     <ErrorBoundary>
-      <AppContent />
+      <ScrollToTop />
+      <Nav />
+      <main id="main-content">
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/" element={<HomePage addToast={addToast} />} />
+            <Route path="/gallery" element={<GalleryPage addToast={addToast} />} />
+            <Route path="/gallery/:id" element={<PaintingPage addToast={addToast} />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/cart" element={<CartPage addToast={addToast} />} />
+            <Route path="/checkout" element={<CheckoutPage addToast={addToast} />} />
+            <Route path="/order-success" element={<OrderSuccessPage />} />
+            <Route path="/commissions" element={<CommissionsPage addToast={addToast} />} />
+            <Route path="/collections" element={<CollectionsPage />} />
+            <Route path="/collections/:id" element={<CollectionPage addToast={addToast} />} />
+            <Route path="/wishlist" element={<WishlistPage addToast={addToast} />} />
+            <Route path="/admin" element={<AdminPage addToast={addToast} />} />
+            <Route path="/portfolio" element={<PortfolioPage />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </Suspense>
+      </main>
+      <Footer />
+      <Toast toasts={toasts} removeToast={removeToast} />
     </ErrorBoundary>
-  );
+  )
 }
-
-export default App;
