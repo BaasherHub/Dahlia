@@ -3,11 +3,12 @@ import { notFound } from "next/navigation";
 import { fetchCollection } from "@/lib/api";
 import { PaintingCard } from "@/components/store/painting-card";
 
-type Props = { params: { id: string } };
+type Props = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
   try {
-    const collection = await fetchCollection(params.id);
+    const collection = await fetchCollection(id);
     return {
       title: collection.name,
       description: collection.description,
@@ -18,6 +19,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function CollectionDetailPage({ params }: Props) {
+  const { id } = await params;
   let collection: {
     id: string;
     name: string;
@@ -25,7 +27,7 @@ export default async function CollectionDetailPage({ params }: Props) {
     paintings: Parameters<typeof PaintingCard>[0]['painting'][];
   };
   try {
-    collection = await fetchCollection(params.id);
+    collection = await fetchCollection(id);
   } catch {
     notFound();
   }

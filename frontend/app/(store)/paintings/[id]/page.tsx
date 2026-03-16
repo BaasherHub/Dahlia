@@ -4,11 +4,12 @@ import { fetchPainting } from "@/lib/api";
 import { PaintingGallery } from "@/components/store/painting-gallery";
 import { PaintingInfo } from "@/components/store/painting-info";
 
-type Props = { params: { id: string } };
+type Props = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
   try {
-    const painting = await fetchPainting(params.id);
+    const painting = await fetchPainting(id);
     return {
       title: painting.title,
       description: painting.description?.slice(0, 160),
@@ -19,9 +20,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function PaintingDetailPage({ params }: Props) {
+  const { id } = await params;
   let painting;
   try {
-    painting = await fetchPainting(params.id);
+    painting = await fetchPainting(id);
   } catch {
     notFound();
   }

@@ -11,12 +11,13 @@ export const metadata: Metadata = {
 export default async function GalleryPage({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | undefined };
+  searchParams: Promise<{ [key: string]: string | undefined }>;
 }) {
+  const sp = await searchParams;
   const params: Record<string, string> = {};
-  if (searchParams.category) params.category = searchParams.category;
-  if (searchParams.collectionId) params.collectionId = searchParams.collectionId;
-  if (searchParams.available) params.available = searchParams.available;
+  if (sp.category) params.category = sp.category;
+  if (sp.collectionId) params.collectionId = sp.collectionId;
+  if (sp.available) params.available = sp.available;
 
   let paintings: Parameters<typeof PaintingCard>[0]['painting'][] = [];
   try {

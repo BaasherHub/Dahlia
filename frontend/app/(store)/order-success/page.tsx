@@ -4,11 +4,12 @@ import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = { title: "Order Confirmed" };
 
-export default function OrderSuccessPage({
+export default async function OrderSuccessPage({
   searchParams,
 }: {
-  searchParams: { session_id?: string };
+  searchParams: Promise<{ session_id?: string }>;
 }) {
+  const { session_id } = await searchParams;
   return (
     <div className="section-padding container-narrow text-center">
       <div className="max-w-lg mx-auto">
@@ -21,9 +22,9 @@ export default function OrderSuccessPage({
           Your order has been confirmed and payment has been processed
           successfully. You&apos;ll receive a confirmation email shortly.
         </p>
-        {searchParams.session_id && (
+        {session_id && (
           <p className="text-xs text-graphite/60 mb-8">
-            Order reference: {searchParams.session_id.slice(0, 20)}…
+            Order reference: {session_id.slice(0, 20)}…
           </p>
         )}
         <div className="flex gap-4 justify-center flex-wrap">
