@@ -1,38 +1,29 @@
-import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext.jsx';
 import './CartPage.css';
 
 export default function CartPage() {
-  const { items, removeItem, updateQuantity, clearCart } = useCart();
+  const { items, removeItem, updateQuantity, total } = useCart();
   const navigate = useNavigate();
-  const [checkoutStep, setCheckoutStep] = useState('review');
-
-  const total = items.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0);
-  const tax = total * 0.08;
-  const shipping = total > 0 ? (total > 500 ? 0 : 25) : 0;
-  const grandTotal = total + tax + shipping;
-
-  const handleProceedToCheckout = () => {
-    if (items.length === 0) {
-      alert('Please add items to your cart');
-      return;
-    }
-    navigate('/checkout');
-  };
 
   if (items.length === 0) {
     return (
       <main className="cart-page">
         <div className="container">
           <div className="cart-empty">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0" />
-            </svg>
-            <h1>Your Cart is Empty</h1>
-            <p>Add artworks to your cart to get started</p>
-            <Link to="/gallery" className="btn">
-              Continue Shopping
+            <div className="cart-empty__icon" aria-hidden="true">
+              <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
+                <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <path d="M16 10a4 4 0 01-8 0"/>
+              </svg>
+            </div>
+            <h1 className="cart-empty__title">Your cart is empty</h1>
+            <p className="cart-empty__body">
+              Browse the gallery and add works that speak to you.
+            </p>
+            <Link to="/gallery" className="btn btn--large">
+              Explore the Gallery
             </Link>
           </div>
         </div>
@@ -43,128 +34,134 @@ export default function CartPage() {
   return (
     <main className="cart-page">
       <div className="container">
-        <h1>Shopping Cart</h1>
+
+        <header className="cart-header">
+          <h1 className="cart-header__title">Your Cart</h1>
+          <p className="cart-header__count">
+            {items.length} {items.length === 1 ? 'item' : 'items'}
+          </p>
+        </header>
 
         <div className="cart-layout">
-          {/* Cart Items */}
-          <div className="cart-items">
-            <div className="cart-items__header">
-              <h2>{items.length} Item{items.length !== 1 ? 's' : ''} in Cart</h2>
-              <button 
-                className="cart-items__clear"
-                onClick={() => {
-                  if (window.confirm('Clear entire cart?')) {
-                    clearCart();
-                  }
-                }}
-              >
-                Clear Cart
-              </button>
-            </div>
 
-            <div className="cart-items__list">
-              {items.map(item => {
-                const imageUrl = item.image || item.images?.[0];
-                
-                return (
-                  <div key={item.id} className="cart-item">
-                    <div className="cart-item__img">
-                      {imageUrl ? (
-                        <img src={imageUrl} alt={item.title} />
-                      ) : (
-                        <div className="cart-item__img-placeholder">
-                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                            <circle cx="8.5" cy="8.5" r="1.5"/>
-                            <polyline points="21 15 16 10 5 21"/>
-                          </svg>
-                        </div>
-                      )}
+          {/* ── ITEMS ── */}
+          <div className="cart-items">
+            {items.map(item => {
+              const imgSrc = item.images?.[0] ?? item.image ?? null;
+              const qty = item.quantity ?? 1;
+              const itemTotal = (item.price ?? 0) * qty;
+
+              return (
+                <article key={item.id ?? item._id} className="cart-item">
+                  <div className="cart-item__img">
+                    {imgSrc ? (
+                      <img src={imgSrc} alt={item.title} loading="lazy" />
+                    ) : (
+                      <div className="cart-item__img-placeholder" aria-hidden="true">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
+                          <rect x="3" y="3" width="18" height="18" rx="2"/>
+                          <circle cx="8.5" cy="8.5" r="1.5"/>
+                          <polyline points="21 15 16 10 5 21"/>
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="cart-item__body">
+                    <div className="cart-item__top">
+                      <div>
+                        <p className="cart-item__artist">BAASHER</p>
+                        <h2 className="cart-item__title">{item.title ?? 'Untitled'}</h2>
+                        {(item.year || item.medium) && (
+                          <p className="cart-item__meta">
+                            {[item.year, item.medium].filter(Boolean).join(' · ')}
+                          </p>
+                        )}
+                        {item.selectedVersion && (
+                          <p className="cart-item__version">
+                            {item.selectedVersion === 'print' ? 'Limited Edition Print' : 'Original'}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        className="cart-item__remove"
+                        onClick={() => removeItem(item.id ?? item._id)}
+                        aria-label={`Remove ${item.title} from cart`}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+                          <line x1="18" y1="6" x2="6" y2="18"/>
+                          <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                      </button>
                     </div>
 
-                    <div className="cart-item__details">
-                      <h3 className="cart-item__title">{item.title}</h3>
-                      <p className="cart-item__meta">
-                        {item.year} • {item.medium}
-                      </p>
-                      <p className="cart-item__price">
-                        ${item.price?.toLocaleString() || '0'}
-                      </p>
-                      
-                      <div className="cart-item__actions">
-                        <div className="cart-item__quantity">
-                          <button 
-                            className="quantity-btn"
-                            onClick={() => updateQuantity(item.id, Math.max(1, (item.quantity || 1) - 1))}
-                            aria-label="Decrease quantity"
-                          >
-                            −
-                          </button>
-                          <span className="quantity-value">{item.quantity || 1}</span>
-                          <button 
-                            className="quantity-btn"
-                            onClick={() => updateQuantity(item.id, (item.quantity || 1) + 1)}
-                            aria-label="Increase quantity"
-                          >
-                            +
-                          </button>
-                        </div>
+                    <div className="cart-item__bottom">
+                      <div className="cart-item__qty">
                         <button
-                          className="cart-item__remove"
-                          onClick={() => removeItem(item.id)}
-                          aria-label="Remove item"
+                          className="cart-item__qty-btn"
+                          onClick={() => updateQuantity(item.id ?? item._id, Math.max(1, qty - 1))}
+                          aria-label="Decrease quantity"
                         >
-                          Remove
+                          −
+                        </button>
+                        <span className="cart-item__qty-val">{qty}</span>
+                        <button
+                          className="cart-item__qty-btn"
+                          onClick={() => updateQuantity(item.id ?? item._id, qty + 1)}
+                          aria-label="Increase quantity"
+                        >
+                          +
                         </button>
                       </div>
+                      <p className="cart-item__price">
+                        ${itemTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                      </p>
                     </div>
                   </div>
-                );
-              })}
-            </div>
+                </article>
+              );
+            })}
           </div>
 
-          {/* Cart Summary */}
+          {/* ── SUMMARY ── */}
           <aside className="cart-summary">
             <h2 className="cart-summary__title">Order Summary</h2>
-            
+
             <div className="cart-summary__lines">
               <div className="cart-summary__line">
                 <span>Subtotal</span>
-                <span>${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span>${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
               </div>
-              <div className="cart-summary__line">
-                <span>Tax (8%)</span>
-                <span>${tax.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-              </div>
-              <div className="cart-summary__line">
+              <div className="cart-summary__line cart-summary__line--muted">
                 <span>Shipping</span>
-                <span>{shipping === 0 ? 'Free' : `$${shipping.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
-              </div>
-              
-              <div className="cart-summary__divider"></div>
-              
-              <div className="cart-summary__total">
-                <span>Total</span>
-                <span>${grandTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span>Calculated at checkout</span>
               </div>
             </div>
 
-            <button 
+            <div className="cart-summary__divider" />
+
+            <div className="cart-summary__total">
+              <span>Estimated Total</span>
+              <span>${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+            </div>
+
+            <button
               className="btn btn--large cart-summary__checkout"
-              onClick={handleProceedToCheckout}
+              onClick={() => navigate('/checkout')}
             >
               Proceed to Checkout
             </button>
 
-            <Link to="/gallery" className="btn btn--ghost cart-summary__continue">
-              Continue Shopping
+            <Link to="/gallery" className="cart-summary__continue">
+              Continue Browsing
             </Link>
 
             <p className="cart-summary__note">
-              You'll be taken to our secure checkout page where you can enter your shipping address and payment information.
+              Shipping and any applicable taxes are calculated during checkout.
+              All works are professionally packaged and insured.
             </p>
           </aside>
+
         </div>
       </div>
     </main>

@@ -4,135 +4,129 @@ import { getPainting } from '../api.js';
 import { useCart } from '../context/CartContext.jsx';
 import './PaintingPage.css';
 
+const WISHLIST_KEY = 'dahlia-wishlist';
+
+function getWishlist() {
+  try { return JSON.parse(localStorage.getItem(WISHLIST_KEY) ?? '[]'); }
+  catch { return []; }
+}
+
+function toggleWishlist(id) {
+  const list = getWishlist();
+  const updated = list.includes(id) ? list.filter(x => x !== id) : [...list, id];
+  localStorage.setItem(WISHLIST_KEY, JSON.stringify(updated));
+  return updated.includes(id);
+}
+
 export default function PaintingPage() {
   const { id } = useParams();
+  const { addItem } = useCart();
   const [painting, setPainting] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeImg, setActiveImg] = useState(0);
-  const [version, setVersion] = useState('original');
-  const [added, setAdded] = useState(false);
-  const { addItem } = useCart();
+  const [wished, setWished] = useState(false);
+  const [addedToCart, setAddedToCart] = useState(false);
 
   useEffect(() => {
-    if (!id) {
-      setError('Invalid artwork ID');
-      setLoading(false);
-      return;
-    }
-
-    const loadPainting = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await getPainting(id);
-        if (!data) {
-          setError('Artwork not found');
-          setLoading(false);
-          return;
+    if (!id) { setError('Invalid artwork ID'); setLoading(false); return; }
+    setLoading(true);
+    getPainting(id)
+      .then(data => {
+        if (!data) { setError('Artwork not found'); }
+        else {
+          setPainting(data);
+          setWished(getWishlist().includes(data.id ?? data._id));
         }
-        setPainting(data);
         setLoading(false);
-      } catch (err) {
-        console.error('Failed to load painting:', err);
-        setError(err.message || 'Failed to load artwork. Please try again.');
+      })
+      .catch(err => {
+        setError(err.message ?? 'Failed to load artwork.');
         setLoading(false);
-      }
-    };
-
-    loadPainting();
+      });
   }, [id]);
 
   if (loading) {
     return (
-      <div className="painting-page">
-        <div className="container">
-          <div className="painting-page__loading">
-            <div className="spinner" />
-            <p>Loading artwork...</p>
-          </div>
-        </div>
+      <div className="painting-page painting-page--state">
+        <div className="painting-page__spinner" />
+        <p>Loading artwork…</p>
       </div>
     );
   }
 
   if (error || !painting) {
     return (
-      <div className="painting-page">
-        <div className="container">
-          <div className="painting-page__error">
-            <h2>{error || 'Artwork Not Found'}</h2>
-            <p>The artwork you're looking for couldn't be loaded.</p>
-            <Link to="/gallery" className="btn">Back to Gallery</Link>
-          </div>
-        </div>
+      <div className="painting-page painting-page--state">
+        <p className="painting-page__error-msg">{error ?? 'Artwork not found'}</p>
+        <Link to="/gallery" className="btn">Back to Gallery</Link>
       </div>
     );
   }
 
-  const hasOriginal = painting.category === 'original' || painting.category === 'both';
-  const hasPrint = painting.category === 'print' || painting.category === 'both';
-  const originalAvailable = hasOriginal && painting.originalAvailable && !painting.sold;
-  const printAvailable = hasPrint && painting.printAvailable;
+  const images = Array.isArray(painting.images) && painting.images.length
+    ? painting.images
+    : painting.image
+    ? [painting.image]
+    : [];
 
-  const currentPrice = version === 'print' ? painting.printPrice : painting.originalPrice || painting.price;
-  const currentAvailable = version === 'print' ? printAvailable : originalAvailable;
-
-  // Safe price formatting
-  const formatPrice = (price) => {
-    if (!price && price !== 0) return '';
-    try {
-      return `$${Number(price).toLocaleString()}`;
-    } catch {
-      return '';
-    }
-  };
+  const isAvailable = !painting.sold && painting.originalAvailable !== false;
+  const isReserved = painting.reserved === true;
+  const price = painting.originalPrice ?? painting.price;
 
   const handleAddToCart = () => {
-    if (!currentPrice) {
-      alert('Price not available');
-      return;
-    }
-    addItem({ 
-      ...painting, 
-      selectedVersion: version, 
-      price: currentPrice 
-    });
-    setAdded(true);
-    setTimeout(() => setAdded(false), 3000);
+    addItem({ ...painting, price });
+    setAddedToCart(true);
+    setTimeout(() => setAddedToCart(false), 2500);
   };
 
-  const images = painting.images && Array.isArray(painting.images) 
-    ? painting.images 
-    : (painting.image ? [painting.image] : []);
-  
-  const mainImage = images[activeImg] || images[0];
+  const handleWishlist = () => {
+    const paintingId = painting.id ?? painting._id;
+    const nowWished = toggleWishlist(paintingId);
+    setWished(nowWished);
+  };
+
+  const statusLabel = painting.sold
+    ? 'Sold'
+    : isReserved
+    ? 'Reserved'
+    : 'Available';
+
+  const statusMod = painting.sold
+    ? 'sold'
+    : isReserved
+    ? 'reserved'
+    : 'available';
+
+  const fmt = n => n != null ? `$${Number(n).toLocaleString()}` : null;
 
   return (
     <main className="painting-page">
       <div className="container">
-        <Link to="/gallery" className="painting-page__back">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+
+        <Link to="/gallery" className="painting-back">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
             <path d="M19 12H5M12 19l-7-7 7-7"/>
           </svg>
           Back to Gallery
         </Link>
 
-        <div className="painting-page__grid">
-          {/* IMAGES */}
-          <div className="painting-page__imgs">
-            <div className="painting-page__main-img-wrap">
-              {mainImage ? (
+        <div className="painting-layout">
+
+          {/* ── IMAGE COLUMN ── */}
+          <div className="painting-images">
+            <div className="painting-images__main">
+              {images.length > 0 ? (
                 <img
-                  src={mainImage}
-                  alt={painting.title || 'Artwork'}
-                  className="painting-page__main-img"
+                  src={images[activeImg]}
+                  alt={painting.title ?? 'Artwork'}
+                  className="painting-images__img"
                   loading="eager"
                 />
               ) : (
-                <div className="painting-page__img-placeholder">
-                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <div className="painting-images__placeholder">
+                  <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" aria-hidden="true">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
                     <circle cx="8.5" cy="8.5" r="1.5"/>
                     <polyline points="21 15 16 10 5 21"/>
                   </svg>
@@ -142,101 +136,109 @@ export default function PaintingPage() {
             </div>
 
             {images.length > 1 && (
-              <div className="painting-page__thumbs">
-                {images.map((img, idx) => (
+              <div className="painting-images__thumbs">
+                {images.map((src, i) => (
                   <button
-                    key={idx}
-                    className={`painting-page__thumb ${idx === activeImg ? 'active' : ''}`}
-                    onClick={() => setActiveImg(idx)}
-                    aria-label={`View image ${idx + 1}`}
+                    key={i}
+                    className={`painting-images__thumb${i === activeImg ? ' active' : ''}`}
+                    onClick={() => setActiveImg(i)}
+                    aria-label={`View image ${i + 1}`}
                   >
-                    <img 
-                      src={img} 
-                      alt={`${painting.title || 'Artwork'} view ${idx + 1}`}
-                      decoding="async"
-                    />
+                    <img src={src} alt="" loading="lazy" />
                   </button>
                 ))}
               </div>
             )}
           </div>
 
-          {/* DETAILS */}
-          <div className="painting-page__details">
-            <h1 className="painting-page__title">{painting.title || 'Untitled'}</h1>
+          {/* ── DETAILS COLUMN ── */}
+          <div className="painting-details">
+            <p className="painting-details__artist">BAASHER</p>
 
-            <div className="painting-page__meta">
-              {painting.year && <div><strong>Year:</strong> {painting.year}</div>}
-              {painting.medium && <div><strong>Medium:</strong> {painting.medium}</div>}
-              {painting.dimensions && <div><strong>Dimensions:</strong> {painting.dimensions}</div>}
+            <div className="painting-details__status-row">
+              <span className={`painting-details__badge painting-details__badge--${statusMod}`}>
+                {statusLabel}
+              </span>
             </div>
 
-            {painting.description && (
-              <p className="painting-page__description">{painting.description}</p>
-            )}
+            <h1 className="painting-details__title">
+              {painting.title ?? 'Untitled'}
+            </h1>
 
-            {/* VERSION SELECTION */}
-            {(hasOriginal || hasPrint) && (
-              <div className="painting-page__versions">
-                <label className="label">Select Version</label>
-                <div className="painting-page__version-buttons">
-                  {hasOriginal && (
-                    <button
-                      className={`painting-page__version-btn ${version === 'original' ? 'active' : ''}`}
-                      onClick={() => setVersion('original')}
-                      aria-pressed={version === 'original'}
-                    >
-                      <div className="painting-page__version-label">Original</div>
-                      {painting.originalPrice && (
-                        <div className="painting-page__version-price">{formatPrice(painting.originalPrice)}</div>
-                      )}
-                    </button>
-                  )}
-                  {hasPrint && (
-                    <button
-                      className={`painting-page__version-btn ${version === 'print' ? 'active' : ''}`}
-                      onClick={() => setVersion('print')}
-                      aria-pressed={version === 'print'}
-                    >
-                      <div className="painting-page__version-label">Print</div>
-                      {painting.printPrice && (
-                        <div className="painting-page__version-price">{formatPrice(painting.printPrice)}</div>
-                      )}
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* AVAILABILITY & CTA */}
-            <div className="painting-page__cta">
-              {currentAvailable ? (
+            <dl className="painting-details__meta">
+              {painting.year && (
                 <>
-                  <button 
-                    className="btn btn--large" 
-                    onClick={handleAddToCart}
-                    disabled={added}
-                  >
-                    {added ? '✓ Added to Cart' : 'Add to Cart'}
-                  </button>
-                  <Link to="/cart" className="btn btn--ghost">
-                    View Cart
-                  </Link>
+                  <dt>Year</dt>
+                  <dd>{painting.year}</dd>
                 </>
+              )}
+              {painting.medium && (
+                <>
+                  <dt>Medium</dt>
+                  <dd>{painting.medium}</dd>
+                </>
+              )}
+              {painting.dimensions && (
+                <>
+                  <dt>Dimensions</dt>
+                  <dd>{painting.dimensions}</dd>
+                </>
+              )}
+              {fmt(price) && (
+                <>
+                  <dt>Price</dt>
+                  <dd className="painting-details__price">{fmt(price)}</dd>
+                </>
+              )}
+            </dl>
+
+            {painting.description && (
+              <p className="painting-details__description">{painting.description}</p>
+            )}
+
+            {/* ── ACTIONS ── */}
+            <div className="painting-details__actions">
+              {isAvailable && !isReserved ? (
+                <button
+                  className={`btn btn--large painting-details__cart-btn${addedToCart ? ' added' : ''}`}
+                  onClick={handleAddToCart}
+                  disabled={addedToCart}
+                >
+                  {addedToCart ? (
+                    <>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                      Added to Cart
+                    </>
+                  ) : 'Add to Cart'}
+                </button>
               ) : (
-                <div className="painting-page__unavailable">
-                  <p>This version is currently unavailable</p>
-                  <Link to="/gallery" className="btn btn--ghost">
-                    Browse Other Works
+                <div className="painting-details__unavailable">
+                  This work is {statusLabel.toLowerCase()}.
+                  <Link to="/commissions" className="painting-details__commission-link">
+                    Enquire about a commission →
                   </Link>
                 </div>
               )}
+
+              <button
+                className={`painting-details__wishlist-btn${wished ? ' active' : ''}`}
+                onClick={handleWishlist}
+                aria-pressed={wished}
+                aria-label={wished ? 'Remove from wishlist' : 'Save to wishlist'}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill={wished ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+                {wished ? 'Saved to Wishlist' : 'Save to Wishlist'}
+              </button>
             </div>
 
-            {/* CONTACT INFO */}
-            <div className="painting-page__contact">
-              <p><strong>Questions?</strong> <Link to="/commissions">Contact for inquiries</Link></p>
-            </div>
+            <p className="painting-details__enquiry">
+              Questions about this work?{' '}
+              <Link to="/commissions">Get in touch</Link>
+            </p>
           </div>
         </div>
       </div>

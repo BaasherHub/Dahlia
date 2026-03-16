@@ -1,411 +1,346 @@
+/* ════════════════════════════════
+   PAINTING DETAIL PAGE
+════════════════════════════════ */
+
 .painting-page {
-  padding: calc(var(--nav-h) + var(--space-2xl)) 0 var(--space-5xl);
-  min-height: calc(100vh - var(--nav-h));
-  background: #ffffff;
+  min-height: 100vh;
+  background: var(--color-bg);
+  padding-bottom: 120px;
 }
 
-.painting-page__back {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-sm);
-  font-family: var(--font-ui);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--color-accent);
-  text-decoration: none;
-  margin-bottom: var(--space-2xl);
-  transition: all var(--transition-fast);
-  padding: 8px 0;
-  min-height: 44px;
-}
-
-.painting-page__back:hover {
-  color: var(--color-accent3);
-  transform: translateX(-4px);
-}
-
-.painting-page__loading,
-.painting-page__error {
+/* ── STATES ── */
+.painting-page--state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--space-lg);
-  padding: var(--space-5xl) var(--space-lg);
+  gap: 20px;
+  min-height: 60vh;
+  font-family: var(--font-sans);
   text-align: center;
-  min-height: 400px;
+  padding: 40px;
 }
 
-.painting-page__error {
-  background: #ffffff;
-  border-radius: var(--radius);
-  padding: var(--space-4xl) var(--space-2xl);
+.painting-page__spinner {
+  width: 36px;
+  height: 36px;
+  border: 1.5px solid var(--color-border);
+  border-top-color: var(--color-gold);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
 }
 
-.painting-page__error h2 {
-  font-family: var(--font-display);
-  font-size: 32px;
-  margin-bottom: var(--space-md);
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.painting-page__error-msg {
+  font-size: 1rem;
+  color: var(--color-text-muted);
+  margin: 0;
 }
 
-.painting-page__error p {
-  color: var(--color-text-secondary);
-  margin-bottom: var(--space-lg);
+/* ── BACK LINK ── */
+.painting-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 48px 0 40px;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition: color var(--transition);
 }
 
-.painting-page__grid {
+.painting-back:hover {
+  color: var(--color-gold);
+}
+
+/* ── LAYOUT ── */
+.painting-layout {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-4xl);
+  grid-template-columns: 1fr 420px;
+  gap: 72px;
   align-items: start;
 }
 
-.painting-page__imgs {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-lg);
+/* ── IMAGE COLUMN ── */
+.painting-images {
+  position: sticky;
+  top: calc(var(--header-height) + 24px);
 }
 
-.painting-page__main-img-wrap {
+.painting-images__main {
   width: 100%;
-  aspect-ratio: 3 / 4;
-  background: #ffffff;
-  border-radius: var(--radius);
+  aspect-ratio: 4 / 5;
   overflow: hidden;
+  background: var(--color-bg-alt);
 }
 
-.painting-page__main-img {
+.painting-images__img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
+  transition: transform 0.6s ease;
 }
 
-.painting-page__img-placeholder {
+.painting-images__main:hover .painting-images__img {
+  transform: scale(1.025);
+}
+
+.painting-images__placeholder {
   width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--space-md);
-  color: var(--color-muted);
+  gap: 12px;
+  color: var(--color-text-muted);
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
 }
 
-.painting-page__img-placeholder svg {
-  width: 48px;
-  height: 48px;
-  opacity: 0.5;
+.painting-images__thumbs {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
 }
 
-.painting-page__thumbs {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-md);
-}
-
-.painting-page__thumb {
-  aspect-ratio: 1;
-  border: 2px solid var(--color-border);
-  border-radius: var(--radius);
+.painting-images__thumb {
+  width: 72px;
+  height: 72px;
   overflow: hidden;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  background: #ffffff;
+  border: 1.5px solid transparent;
+  background: none;
   padding: 0;
-  min-height: 80px;
-  min-width: 80px;
+  cursor: pointer;
+  transition: border-color var(--transition);
+  flex-shrink: 0;
 }
 
-.painting-page__thumb:hover {
-  border-color: var(--color-accent);
-  transform: scale(1.05);
-}
-
-.painting-page__thumb.active {
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 2px var(--color-accent);
-}
-
-.painting-page__thumb img {
+.painting-images__thumb img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
 
-.painting-page__info {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2xl);
+.painting-images__thumb.active,
+.painting-images__thumb:hover {
+  border-color: var(--color-gold);
 }
 
-.painting-page__title {
-  font-family: var(--font-display);
-  font-size: clamp(28px, 5vw, 48px);
-  font-weight: 400;
-  margin: 0;
-  letter-spacing: -0.01em;
-  line-height: var(--lh-tight);
-  color: var(--color-text);
+/* ── DETAILS COLUMN ── */
+.painting-details {
+  padding-top: 8px;
 }
 
-.painting-page__meta {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-lg);
-}
-
-.painting-page__meta-item {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-}
-
-.painting-page__meta-label {
-  font-family: var(--font-ui);
-  font-size: 10px;
+.painting-details__artist {
+  font-family: var(--font-sans);
+  font-size: 0.7rem;
   font-weight: 600;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--color-accent);
+  color: var(--color-gold);
+  margin: 0 0 12px;
 }
 
-.painting-page__meta-value {
-  font-family: var(--font-display);
-  font-size: 16px;
-  color: var(--color-text);
+.painting-details__status-row {
+  margin-bottom: 16px;
 }
 
-.painting-page__description {
-  font-size: 15px;
-  line-height: var(--lh-relaxed);
-  color: var(--color-text-secondary);
-}
-
-.painting-page__pricing {
-  display: flex;
-  gap: var(--space-lg);
-  padding: var(--space-lg);
-  background: #ffffff;
-  border-radius: var(--radius);
-}
-
-.painting-page__version {
-  flex: 1;
-  text-align: center;
-  padding: var(--space-md);
-  border: 2px solid var(--color-border);
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.painting-page__version:hover {
-  border-color: var(--color-accent);
-}
-
-.painting-page__version.active {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-  color: #fff;
-}
-
-.painting-page__price {
-  font-family: var(--font-display);
-  font-size: 20px;
+.painting-details__badge {
+  display: inline-block;
+  padding: 4px 12px;
+  font-family: var(--font-sans);
+  font-size: 0.68rem;
   font-weight: 500;
-  margin-bottom: var(--space-xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-radius: 2px;
 }
 
-.painting-page__status {
-  font-family: var(--font-ui);
-  font-size: 11px;
-  font-weight: 600;
+.painting-details__badge--available {
+  background: #eaf5ee;
+  color: #2d7a4a;
+}
+
+.painting-details__badge--sold {
+  background: #f5eaea;
+  color: #7a2d2d;
+}
+
+.painting-details__badge--reserved {
+  background: #f5f2ea;
+  color: #7a6a2d;
+}
+
+.painting-details__title {
+  font-family: var(--font-serif);
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 400;
+  color: var(--color-text);
+  margin: 0 0 32px;
+  line-height: 1.15;
+}
+
+/* ── META ── */
+.painting-details__meta {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 20px;
+  margin: 0 0 32px;
+  padding: 24px;
+  background: var(--color-bg-alt);
+  border: 1px solid var(--color-border);
+}
+
+.painting-details__meta dt {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
+  padding-top: 1px;
 }
 
-.painting-page__actions {
+.painting-details__meta dd {
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.painting-details__price {
+  font-family: var(--font-serif);
+  font-size: 1.2rem !important;
+  color: var(--color-text) !important;
+}
+
+/* ── DESCRIPTION ── */
+.painting-details__description {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  line-height: 1.8;
+  color: var(--color-text-muted);
+  margin: 0 0 36px;
+}
+
+/* ── ACTIONS ── */
+.painting-details__actions {
   display: flex;
-  gap: var(--space-lg);
-  min-height: 48px;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
 }
 
-.painting-page__actions button,
-.painting-page__actions a {
-  flex: 1;
-  min-height: 48px;
+.painting-details__cart-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all var(--transition);
 }
 
-/* ════════════════════════════════════════════════════════════════
-   RESPONSIVE DESIGN
-   ════════════════════════════════════════════════════════════════ */
-
-@media (max-width: 1024px) {
-  .painting-page__grid {
-    gap: var(--space-3xl);
-  }
-
-  .painting-page__thumbs {
-    grid-template-columns: repeat(3, 1fr);
-  }
+.painting-details__cart-btn.added {
+  background: var(--color-dark-mid);
+  border-color: var(--color-dark-mid);
+  color: #fefdfb;
 }
 
-@media (max-width: 768px) {
-  .painting-page {
-    padding: calc(var(--nav-h) + var(--space-lg)) 0 var(--space-3xl);
-  }
+.painting-details__wishlist-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 13px 24px;
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: all var(--transition);
+  width: 100%;
+}
 
-  .painting-page__grid {
+.painting-details__wishlist-btn:hover {
+  border-color: var(--color-gold);
+  color: var(--color-gold);
+}
+
+.painting-details__wishlist-btn.active {
+  border-color: var(--color-gold);
+  color: var(--color-gold);
+  background: rgba(168, 153, 104, 0.06);
+}
+
+.painting-details__unavailable {
+  padding: 20px;
+  background: var(--color-bg-alt);
+  border: 1px solid var(--color-border);
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.painting-details__commission-link {
+  color: var(--color-gold);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.painting-details__commission-link:hover {
+  text-decoration: underline;
+}
+
+.painting-details__enquiry {
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.painting-details__enquiry a {
+  color: var(--color-gold);
+  text-decoration: none;
+}
+
+.painting-details__enquiry a:hover {
+  text-decoration: underline;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 960px) {
+  .painting-layout {
     grid-template-columns: 1fr;
-    gap: var(--space-2xl);
+    gap: 48px;
   }
-
-  .painting-page__back {
-    font-size: 11px;
-    margin-bottom: var(--space-lg);
+  .painting-images {
+    position: static;
   }
-
-  .painting-page__title {
-    font-size: clamp(24px, 4vw, 36px);
-  }
-
-  .painting-page__meta {
-    grid-template-columns: 1fr;
-    gap: var(--space-md);
-  }
-
-  .painting-page__description {
-    font-size: 14px;
-  }
-
-  .painting-page__thumbs {
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--space-md);
-  }
-
-  .painting-page__thumb {
-    min-height: 70px;
-    min-width: 70px;
-  }
-
-  .painting-page__pricing {
-    flex-direction: column;
-    gap: var(--space-md);
-    padding: var(--space-md);
-  }
-
-  .painting-page__version {
-    padding: var(--space-md);
-  }
-
-  .painting-page__price {
-    font-size: 18px;
-  }
-
-  .painting-page__actions {
-    gap: var(--space-md);
-    flex-direction: column;
-  }
-
-  .painting-page__actions button,
-  .painting-page__actions a {
-    min-height: 44px;
+  .painting-images__main {
+    aspect-ratio: 1 / 1;
   }
 }
 
-@media (max-width: 480px) {
-  .painting-page {
-    padding: calc(var(--nav-h) + var(--space-md)) 0 var(--space-2xl);
+@media (max-width: 600px) {
+  .painting-back {
+    padding-top: 28px;
   }
-
-  .painting-page__back {
-    font-size: 10px;
-    margin-bottom: var(--space-md);
-    min-height: 40px;
-    padding: 6px 0;
-  }
-
-  .painting-page__grid {
-    gap: var(--space-lg);
-  }
-
-  .painting-page__title {
-    font-size: clamp(20px, 3vw, 28px);
-  }
-
-  .painting-page__meta {
-    grid-template-columns: 1fr;
-    gap: var(--space-sm);
-  }
-
-  .painting-page__meta-label {
-    font-size: 9px;
-  }
-
-  .painting-page__meta-value {
-    font-size: 14px;
-  }
-
-  .painting-page__description {
-    font-size: 13px;
-    line-height: var(--lh-relaxed);
-  }
-
-  .painting-page__thumbs {
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--space-sm);
-  }
-
-  .painting-page__thumb {
-    aspect-ratio: 1;
-    min-height: 60px;
-    min-width: 60px;
-    border: 1.5px solid var(--color-border);
-  }
-
-  .painting-page__pricing {
-    flex-direction: column;
-    gap: var(--space-sm);
-    padding: var(--space-sm);
-  }
-
-  .painting-page__version {
-    padding: var(--space-sm);
-    border: 1.5px solid var(--color-border);
-  }
-
-  .painting-page__price {
-    font-size: 16px;
-    margin-bottom: var(--space-xs);
-  }
-
-  .painting-page__status {
-    font-size: 10px;
-  }
-
-  .painting-page__actions {
-    gap: var(--space-sm);
-    flex-direction: column;
-  }
-
-  .painting-page__actions button,
-  .painting-page__actions a {
-    min-height: 40px;
-    font-size: 13px;
-    padding: 8px 12px;
-  }
-
-  .painting-page__main-img-wrap {
-    aspect-ratio: 3 / 4;
-    border-radius: var(--radius);
-  }
-
-  .painting-page__imgs {
-    gap: var(--space-md);
+  .painting-details__meta {
+    padding: 16px;
   }
 }
