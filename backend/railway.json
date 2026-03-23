@@ -10,10 +10,3 @@
     "restartPolicyMaxRetries": 3
   }
 }
-```
-
----
-
-## `backend/.nvmrc` ← new file, create it
-```
-20
