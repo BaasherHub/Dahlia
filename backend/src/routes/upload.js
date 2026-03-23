@@ -4,82 +4,110 @@ import { logInfo, logError } from '../services/logger.js';
 
 const router = Router();
 
-// Cloudinary upload via unsigned upload (using REST API directly)
+/**
+ * POST /api/admin/upload
+ *
+ * Accepts multipart/form-data with a single "file" field.
+ * Uploads directly to Cloudinary using signed authentication.
+ *
+ * Required env vars:
+ *   CLOUDINARY_CLOUD_NAME
+ *   CLOUDINARY_API_KEY
+ *   CLOUDINARY_API_SECRET
+ *
+ * NOTE: In normal operation the frontend uploads DIRECTLY to Cloudinary
+ * using an unsigned preset — this backend route is a fallback / alternative.
+ */
 router.post('/', requireAdmin, async (req, res) => {
   try {
-    const chunks = [];
-    for await (const chunk of req) {
-      chunks.push(chunk);
-    }
-    const buffer = Buffer.concat(chunks);
-    
-    // Parse multipart form data manually (simple approach)
-    const boundary = req.headers['content-type'].split('boundary=')[1];
-    if (!boundary) {
-      return res.status(400).json({ error: 'No boundary in content-type' });
-    }
-
-    // Extract file data from multipart
-    const parts = buffer.toString('binary').split('--' + boundary);
-    let fileData = null;
-    let fileName = 'upload';
-    
-    for (const part of parts) {
-      if (part.includes('filename=')) {
-        const nameMatch = part.match(/filename="([^"]+)"/);
-        if (nameMatch) fileName = nameMatch[1];
-        
-        const headerEnd = part.indexOf('\r\n\r\n');
-        if (headerEnd !== -1) {
-          const bodyStart = headerEnd + 4;
-          const bodyEnd = part.lastIndexOf('\r\n');
-          fileData = Buffer.from(part.substring(bodyStart, bodyEnd), 'binary');
-        }
-      }
-    }
-
-    if (!fileData) {
-      return res.status(400).json({ error: 'No file found in request' });
-    }
-
-    // Upload to Cloudinary using REST API
     const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
     const apiKey = process.env.CLOUDINARY_API_KEY;
     const apiSecret = process.env.CLOUDINARY_API_SECRET;
 
     if (!cloudName || !apiKey || !apiSecret) {
-      return res.status(500).json({ error: 'Cloudinary not configured. Add CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET to env.' });
+      return res.status(500).json({
+        error:
+          'Cloudinary not configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET.',
+      });
     }
 
-    // Create signature
+    // Collect raw body
+    const chunks = [];
+    for await (const chunk of req) {
+      chunks.push(chunk);
+    }
+    const buffer = Buffer.concat(chunks);
+
+    // Parse boundary
+    const contentType = req.headers['content-type'] || '';
+    const boundaryMatch = contentType.match(/boundary=([^\s;]+)/);
+    if (!boundaryMatch) {
+      return res.status(400).json({ error: 'No multipart boundary found.' });
+    }
+    const boundary = boundaryMatch[1];
+    const delimiterBuf = Buffer.from(`--${boundary}`);
+
+    // Parse multipart to find file
+    let fileBuffer = null;
+    let fileName = 'upload.jpg';
+    let pos = 0;
+
+    while (pos < buffer.length) {
+      const delimStart = buffer.indexOf(delimiterBuf, pos);
+      if (delimStart === -1) break;
+      pos = delimStart + delimiterBuf.length;
+      if (buffer[pos] === 0x0d && buffer[pos + 1] === 0x0a) pos += 2;
+      if (buffer[pos] === 0x2d && buffer[pos + 1] === 0x2d) break;
+
+      const headerEnd = buffer.indexOf(Buffer.from('\r\n\r\n'), pos);
+      if (headerEnd === -1) break;
+      const headers = buffer.slice(pos, headerEnd).toString('utf8');
+      pos = headerEnd + 4;
+
+      if (headers.includes('filename=')) {
+        const nameMatch = headers.match(/filename="([^"]+)"/);
+        if (nameMatch) fileName = nameMatch[1];
+        const nextDelim = buffer.indexOf(delimiterBuf, pos);
+        const fileEnd = nextDelim !== -1 ? nextDelim - 2 : buffer.length;
+        fileBuffer = buffer.slice(pos, fileEnd);
+        break;
+      }
+    }
+
+    if (!fileBuffer || fileBuffer.length === 0) {
+      return res.status(400).json({ error: 'No file found in request.' });
+    }
+
+    // Sign the upload
     const timestamp = Math.round(Date.now() / 1000);
+    const folder = 'dahlia-paintings';
     const { createHash } = await import('crypto');
     const signature = createHash('sha1')
-      .update(`folder=dahlia-paintings&timestamp=${timestamp}${apiSecret}`)
+      .update(`folder=${folder}&timestamp=${timestamp}${apiSecret}`)
       .digest('hex');
 
-    // Upload via fetch
+    // Upload to Cloudinary
     const formData = new FormData();
-    formData.append('file', new Blob([fileData]), fileName);
+    formData.append('file', new Blob([fileBuffer]), fileName);
     formData.append('api_key', apiKey);
-    formData.append('timestamp', timestamp.toString());
+    formData.append('timestamp', String(timestamp));
     formData.append('signature', signature);
-    formData.append('folder', 'dahlia-paintings');
+    formData.append('folder', folder);
 
     const cloudRes = await fetch(
       `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
       { method: 'POST', body: formData }
     );
-
     const cloudData = await cloudRes.json();
 
     if (!cloudRes.ok) {
       logError({ message: 'Cloudinary upload failed', error: cloudData });
-      return res.status(500).json({ error: 'Upload to Cloudinary failed' });
+      return res.status(502).json({
+        error: cloudData?.error?.message || 'Cloudinary upload failed.',
+      });
     }
 
-    logInfo('Image uploaded to Cloudinary', { url: cloudData.secure_url });
-
+    logInfo('Image uploaded', { url: cloudData.secure_url });
     res.json({
       url: cloudData.secure_url,
       publicId: cloudData.public_id,
