@@ -1,28 +1,20 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
-// ── Public API ────────────────────────────────────────────────────────────────
-
 export async function fetchPaintings(params?: Record<string, string>) {
   const qs = params ? new URLSearchParams(params).toString() : "";
-  const res = await fetch(`${API_URL}/api/paintings${qs ? "?" + qs : ""}`, {
-    cache: "no-store",
-  });
+  const res = await fetch(`${API_URL}/api/paintings${qs ? "?" + qs : ""}`, { cache: "no-store" });
   if (!res.ok) throw new Error("Failed to fetch paintings");
   return res.json();
 }
 
 export async function fetchHeroPainting() {
-  const res = await fetch(`${API_URL}/api/paintings/hero`, {
-    cache: "no-store",
-  });
+  const res = await fetch(`${API_URL}/api/paintings/hero`, { cache: "no-store" });
   if (!res.ok) return null;
   return res.json();
 }
 
 export async function fetchPainting(id: string) {
-  const res = await fetch(`${API_URL}/api/paintings/${id}`, {
-    cache: "no-store",
-  });
+  const res = await fetch(`${API_URL}/api/paintings/${id}`, { cache: "no-store" });
   if (!res.ok) throw new Error("Failed to fetch painting");
   return res.json();
 }
@@ -34,17 +26,13 @@ export async function fetchCollections() {
 }
 
 export async function fetchCollection(id: string) {
-  const res = await fetch(`${API_URL}/api/collections/${id}`, {
-    cache: "no-store",
-  });
+  const res = await fetch(`${API_URL}/api/collections/${id}`, { cache: "no-store" });
   if (!res.ok) throw new Error("Failed to fetch collection");
   return res.json();
 }
 
 export async function fetchSiteSettings() {
-  const res = await fetch(`${API_URL}/api/site-settings`, {
-    cache: "no-store",
-  });
+  const res = await fetch(`${API_URL}/api/site-settings`, { cache: "no-store" });
   if (!res.ok) return null;
   return res.json();
 }
@@ -82,14 +70,10 @@ export async function createCheckoutSession(
 }
 
 export async function fetchOrderBySession(sessionId: string) {
-  const res = await fetch(`${API_URL}/api/orders/session/${sessionId}`, {
-    cache: "no-store",
-  });
+  const res = await fetch(`${API_URL}/api/orders/session/${sessionId}`, { cache: "no-store" });
   if (!res.ok) throw new Error("Failed to fetch order");
   return res.json();
 }
-
-// ── Admin API ─────────────────────────────────────────────────────────────────
 
 function getAdminKey(): string {
   if (typeof window === "undefined") return "";
@@ -126,19 +110,22 @@ export async function adminCreatePainting(data: Record<string, unknown>) {
     method: "POST",
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error("Failed to create painting");
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error || "Failed to create painting");
+  }
   return res.json();
 }
 
-export async function adminUpdatePainting(
-  id: string,
-  data: Record<string, unknown>
-) {
+export async function adminUpdatePainting(id: string, data: Record<string, unknown>) {
   const res = await adminFetch(`/api/paintings/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error("Failed to update painting");
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error || "Failed to update painting");
+  }
   return res.json();
 }
 
@@ -163,10 +150,7 @@ export async function adminCreateCollection(data: Record<string, unknown>) {
   return res.json();
 }
 
-export async function adminUpdateCollection(
-  id: string,
-  data: Record<string, unknown>
-) {
+export async function adminUpdateCollection(id: string, data: Record<string, unknown>) {
   const res = await adminFetch(`/api/collections/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
@@ -187,5 +171,29 @@ export async function adminUpdateSiteSettings(data: Record<string, unknown>) {
     body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error("Failed to update settings");
+  return res.json();
+}
+
+export async function adminFetchOrders() {
+  const res = await adminFetch("/api/admin/orders");
+  if (!res.ok) throw new Error("Failed to fetch orders");
+  return res.json();
+}
+
+export async function adminFetchStats() {
+  const res = await adminFetch("/api/admin/stats");
+  if (!res.ok) throw new Error("Failed to fetch stats");
+  return res.json();
+}
+
+export async function adminUpdateOrder(
+  id: string,
+  data: { status?: string; trackingCode?: string; carrier?: string }
+) {
+  const res = await adminFetch(`/api/admin/orders/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to update order");
   return res.json();
 }
