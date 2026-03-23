@@ -91,3 +91,78 @@ enum OrderStatus {
   DELIVERED
   CANCELLED
 }
+
+model SiteSettings {
+  id    String @id @default("singleton")
+  
+  // About page content
+  aboutHeroSubtitle   String @default("Contemporary artist creating refined works on premium linen canvas")
+  aboutBio1           String @default("I am a contemporary artist specializing in oil paintings on premium linen canvas. My work is defined by deliberate palette knife technique and expressive brushwork, creating pieces that resonate with collectors and designers worldwide.")
+  aboutBio2           String @default("Each painting begins with careful consideration of color, composition, and emotional resonance. I work exclusively with the finest materials to ensure longevity and visual impact that endures through time.")
+  aboutBio3           String @default("My practice combines technical precision with spontaneous creativity, resulting in works that are both carefully considered and intuitively executed.")
+  aboutStatement1     String @default("My practice is rooted in a deep engagement with color, form, and the physical materiality of paint. I create work that exists in conversation with contemporary art practice while maintaining a reverence for the traditions of painting.")
+  aboutStatement2     String @default("Through careful observation and intuitive response, I build paintings that invite contemplation and emotional engagement. Each piece is an attempt to capture a moment of synthesis between intention and spontaneity, between control and surrender.")
+  aboutStatement3     String @default("I am committed to creating work of lasting value—both visually and materially. My practice is defined by a pursuit of excellence and a dedication to the craft of painting.")
+  
+  // Testimonials (stored as JSON array)
+  testimonials        String @default("[]")
+
+  // Homepage content
+  heroTitle           String @default("Dahlia Baasher")
+  heroSubtitle        String @default("Contemporary Oil Paintings")
+  heroDescription     String @default("Refined works on premium linen canvas, defined by deliberate palette knife technique and expressive brushwork.")
+  featuredWorksTitle  String @default("Featured Works")
+  featuredWorksSubtitle String @default("Original Paintings")
+  printsTitle         String @default("Limited Edition Prints")
+  printsSubtitle      String @default("High-Quality Reproductions")
+  ctaTitle            String @default("Ready to Commission?")
+  ctaDescription      String @default("I work with collectors and designers worldwide to create bespoke artwork tailored to your vision and space.")
+  newsletterTitle     String @default("Stay Updated")
+  newsletterSubtitle  String @default("Subscribe to receive updates about new artworks, exhibitions, and commission opportunities.")
+
+  // Footer
+  footerTagline       String @default("Contemporary Art · Toronto, Canada")
+  socialLinks         String @default("[]")
+
+  // Commissions page
+  commissionsSubtitle   String @default("I work with collectors and designers worldwide to create bespoke artwork tailored to your vision and space.")
+  commissionSteps       String @default("[]")
+  commissionFaqs        String @default("[]")
+  commissionFormHelpText String @default("I typically respond within 48 hours. Looking forward to collaborating with you!")
+
+  // About page practice cards (JSON array)
+  practiceCards       String @default("[]")
+
+  // Gallery page
+  galleryLabel        String @default("Portfolio")
+  galleryTitle        String @default("Artworks")
+  gallerySubtitle     String @default("Explore original paintings and limited edition prints")
+
+  // Navigation
+  navLogoSubtext      String @default("Studio")
+
+  // Portfolio page
+  portfolioTitle      String @default("Portfolio")
+  portfolioSubtitle   String @default("A curated selection of original works")
+  portfolioStatement  String @default("Each painting is a meditation on color, form, and the expressive potential of oil on linen. These selected works represent the breadth of my practice — from intimate studies to large-scale statements.")
+
+  updatedAt           DateTime @updatedAt
+}
+
+model CommissionInquiry {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  vision    String
+  size      String
+  budget    String
+  status    String   @default("new")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}

@@ -1,8 +1,11 @@
 // src/seed.js — run with: npm run db:seed
 import 'dotenv/config';
-import { PrismaClient } from '@prisma/client';
+import prisma from './lib/prisma.js';
 
-const prisma = new PrismaClient();
+if (process.env.NODE_ENV === 'production') {
+  console.error('❌ Refusing to seed in production environment.');
+  process.exit(1);
+}
 
 const paintings = [
   {
@@ -13,7 +16,7 @@ const paintings = [
     printPrice: 85,
     printAvailable: true,
     category: 'both',
-    images: ['https://via.placeholder.com/800x1000/c9a96e/ffffff?text=Golden+Hour'],
+    images: ['https://images.unsplash.com/photo-1578301978693-85fa9c0320b9?w=800'],
     dimensions: '80 × 100 cm',
     medium: 'Oil on canvas',
     year: 2024,
@@ -27,7 +30,7 @@ const paintings = [
     printPrice: 65,
     printAvailable: true,
     category: 'both',
-    images: ['https://via.placeholder.com/800x900/8b2635/ffffff?text=Pomegranates'],
+    images: ['https://images.unsplash.com/photo-1516617442634-75371039cb3a?w=800'],
     dimensions: '60 × 70 cm',
     medium: 'Oil on linen',
     year: 2024,
@@ -39,7 +42,7 @@ const paintings = [
     originalPrice: 980,
     originalAvailable: true,
     category: 'original',
-    images: ['https://via.placeholder.com/800x800/d4c5b2/3d3530?text=Quiet+Interior'],
+    images: ['https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=800'],
     dimensions: '70 × 70 cm',
     medium: 'Oil on canvas',
     year: 2023,
@@ -51,7 +54,7 @@ const paintings = [
     originalPrice: 650,
     originalAvailable: true,
     category: 'original',
-    images: ['https://via.placeholder.com/800x1000/5a7a4a/ffffff?text=Garden+Study'],
+    images: ['https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=800'],
     dimensions: '50 × 70 cm',
     medium: 'Oil on panel',
     year: 2024,
@@ -65,7 +68,7 @@ const paintings = [
     printPrice: 45,
     printAvailable: true,
     category: 'both',
-    images: ['https://via.placeholder.com/600x800/b5a99e/ffffff?text=Vessel'],
+    images: ['https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800'],
     dimensions: '40 × 55 cm',
     medium: 'Oil on linen',
     year: 2023,
@@ -75,17 +78,16 @@ const paintings = [
 ];
 
 async function main() {
-  // Only seed if database is empty
-  const count = await prisma.painting.count();
-  if (count > 0) {
-    console.log(`Database already has ${count} paintings, skipping seed.`);
-    return;
-  }
-
   console.log('🌱 Seeding database...');
-  for (const painting of paintings) {
-    await prisma.painting.create({ data: painting });
-  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.painting.deleteMany();
+
+    for (const painting of paintings) {
+      await tx.painting.create({ data: painting });
+    }
+  });
+
   console.log(`✅ Seeded ${paintings.length} paintings`);
 }
 

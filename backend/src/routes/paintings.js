@@ -1,11 +1,17 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import rateLimit from 'express-rate-limit';
 import { requireAdmin } from './admin.js';
+import prisma from '../lib/prisma.js';
 
 const router = Router();
-const prisma = new PrismaClient();
+
+const emptyStringToNull = (value) => {
+  if (typeof value === 'string' && value.trim() === '') {
+    return null;
+  }
+  return value;
+};
 
 const CreatePaintingSchema = z.object({
   title: z.string().min(1).max(255),
@@ -21,10 +27,16 @@ const CreatePaintingSchema = z.object({
   featured: z.boolean().default(false),
   heroImage: z.boolean().default(false),
   category: z.enum(['original', 'print', 'both']).default('original'),
-  collectionId: z.string().nullable().optional(),
+  collectionId: z.preprocess(emptyStringToNull, z.string().nullable().optional()),
 });
 
-const UpdatePaintingSchema = CreatePaintingSchema.partial();
+const UpdatePaintingSchema = CreatePaintingSchema.partial().extend({
+  images: z.preprocess(
+    (value) => (Array.isArray(value) && value.length === 0 ? undefined : value),
+    z.array(z.string().url()).min(1).optional()
+  ),
+  collectionId: z.preprocess(emptyStringToNull, z.string().nullable().optional()),
+});
 
 const PaginationSchema = z.object({
   page: z.coerce.number().int().positive().default(1),
