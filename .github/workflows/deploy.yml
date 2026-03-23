@@ -37,10 +37,12 @@ jobs:
       - name: Build frontend
         run: cd frontend && npm run build
         env:
-          VITE_API_URL: "https://placeholder.railway.app"
+          NEXT_PUBLIC_API_URL: "https://placeholder.railway.app"
+          NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: "placeholder"
+          NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET: "dahlia"
 
       - name: Prisma generate (verify schema)
         run: cd backend && npx prisma generate
 
-      - name: ✅ All checks passed
-        run: echo "✅ Linting, testing, and building successful — Railway will deploy automatically"
+      - name: All checks passed
+        run: echo "Linting, testing, and building successful — Railway will deploy automatically"
