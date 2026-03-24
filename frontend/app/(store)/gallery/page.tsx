@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { fetchPaintings } from "@/lib/api";
 import { PaintingCard } from "@/components/store/painting-card";
-import { GalleryFilters } from "./gallery-filters";
 
 export const metadata: Metadata = {
   title: "Gallery",
@@ -17,6 +16,7 @@ export default async function GalleryPage({
   const params: Record<string, string> = {};
   if (sp.category) params.category = sp.category;
   if (sp.collectionId) params.collectionId = sp.collectionId;
+  if (sp.featured === "true") params.featured = "true";
 
   let paintings: Parameters<typeof PaintingCard>[0]['painting'][] = [];
   try {
@@ -32,8 +32,6 @@ export default async function GalleryPage({
         <p className="label-sm mb-3">All Works</p>
         <h1 className="heading-xl">Gallery</h1>
       </div>
-
-      <GalleryFilters />
 
       {paintings.length === 0 ? (
         <div className="text-center py-24">

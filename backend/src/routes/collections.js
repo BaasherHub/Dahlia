@@ -21,7 +21,6 @@ router.get('/', async (req, res) => {
       paintings: {
         take: 1,
         orderBy: { createdAt: 'desc' },
-        where: { originalAvailable: true },
         select: { id: true, images: true, title: true },
       },
       _count: { select: { paintings: true } },
@@ -35,7 +34,6 @@ router.get('/:id', async (req, res) => {
     where: { id: req.params.id },
     include: {
       paintings: {
-        where: { originalAvailable: true },
         orderBy: { createdAt: 'desc' },
       },
     },

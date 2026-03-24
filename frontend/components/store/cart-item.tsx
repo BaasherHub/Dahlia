@@ -31,7 +31,7 @@ export function CartItemRow({ item }: CartItemProps) {
       <div className="flex-1 min-w-0">
         <h4 className="font-display text-charcoal font-medium">{item.title}</h4>
         <p className="text-sm text-graphite capitalize mt-1">{item.type}</p>
-        <p className="font-display italic text-gold-dark mt-2">
+        <p className="text-charcoal font-medium mt-2">
           {formatPrice(item.price)}
         </p>
       </div>

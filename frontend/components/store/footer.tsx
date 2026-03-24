@@ -3,7 +3,7 @@ import { NewsletterForm } from "./newsletter-form";
 
 export function Footer() {
   return (
-    <footer className="bg-charcoal text-ivory/80 mt-24">
+    <footer className="bg-charcoal text-ivory/90 mt-24">
       <div className="max-w-7xl mx-auto px-6 lg:px-12 py-16">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8">
           {/* Brand */}
@@ -24,6 +24,7 @@ export function Footer() {
             </h3>
             <nav className="flex flex-col gap-3">
               {[
+                { name: "Home", href: "/" },
                 { name: "Gallery", href: "/gallery" },
                 { name: "Collections", href: "/collections" },
                 { name: "About", href: "/about" },

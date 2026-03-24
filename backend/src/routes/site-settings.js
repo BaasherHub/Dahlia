@@ -58,6 +58,11 @@ function buildResponse(s) {
     // About practice cards
     practiceCards: parseJson(s.practiceCards, []),
 
+    // About page: exhibitions & publications
+    exhibitions: parseJson(s.exhibitions, []),
+    publications: parseJson(s.publications, []),
+    aboutArtistImage: s.aboutArtistImage || null,
+
     // Gallery page
     galleryLabel: s.galleryLabel,
     galleryTitle: s.galleryTitle,
@@ -104,6 +109,7 @@ router.put('/', requireAdmin, async (req, res) => {
       'galleryLabel', 'galleryTitle', 'gallerySubtitle',
       'navLogoSubtext',
       'portfolioTitle', 'portfolioSubtitle', 'portfolioStatement',
+      'aboutArtistImage',
     ];
     for (const field of stringFields) {
       if (body[field] !== undefined) data[field] = body[field];
@@ -113,6 +119,7 @@ router.put('/', requireAdmin, async (req, res) => {
     const jsonFields = [
       'testimonials', 'socialLinks',
       'commissionSteps', 'commissionFaqs', 'practiceCards',
+      'exhibitions', 'publications',
     ];
     for (const field of jsonFields) {
       if (body[field] !== undefined) data[field] = JSON.stringify(body[field]);

@@ -18,7 +18,7 @@ export function CollectionCard({ collection }: CollectionCardProps) {
 
   return (
     <Link href={`/collections/${collection.id}`} className="group block">
-      <div className="overflow-hidden rounded-sm bg-cream aspect-video relative">
+      <div className="overflow-hidden rounded-sm bg-cream aspect-square relative">
         {collection.coverImage ? (
           <Image
             src={collection.coverImage}

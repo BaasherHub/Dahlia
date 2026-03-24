@@ -133,6 +133,11 @@ model SiteSettings {
   // About page practice cards (JSON array)
   practiceCards       String @default("[]")
 
+  // About page: exhibitions & publications (JSON arrays)
+  exhibitions         String @default("[]")
+  publications        String @default("[]")
+  aboutArtistImage    String?
+
   // Gallery page
   galleryLabel        String @default("Portfolio")
   galleryTitle        String @default("Artworks")

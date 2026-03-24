@@ -27,7 +27,7 @@ export function Hero({ painting, settings }: HeroProps) {
     return (
       <section className="relative min-h-[80vh] bg-cream flex items-center justify-center">
         <div className="text-center px-6">
-          <h1 className="font-display text-5xl md:text-7xl font-semibold text-charcoal tracking-tight mb-6">
+          <h1 className="font-script text-6xl md:text-8xl font-normal text-charcoal mb-6">
             {settings?.heroTitle || "Dahlia"}
           </h1>
           <p className="text-graphite text-lg max-w-md mx-auto mb-2">
@@ -38,7 +38,7 @@ export function Hero({ painting, settings }: HeroProps) {
           </p>
           <Link href="/gallery" className="mt-4 inline-block">
             <Button size="lg" variant="outline">
-              Shop Prints
+              Browse Gallery
             </Button>
           </Link>
         </div>

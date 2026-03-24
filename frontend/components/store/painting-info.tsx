@@ -40,17 +40,6 @@ export function PaintingInfo({ painting }: PaintingInfoProps) {
     });
   };
 
-  const addPrint = () => {
-    if (!painting.printPrice) return;
-    cart.addItem({
-      paintingId: painting.id,
-      title: painting.title,
-      image: painting.images?.[0] || "",
-      type: "print",
-      price: painting.printPrice,
-    });
-  };
-
   return (
     <div className="space-y-8">
       <div>
@@ -104,26 +93,11 @@ export function PaintingInfo({ painting }: PaintingInfoProps) {
                 <p className="text-xs tracking-widest uppercase text-graphite mb-1">
                   Original
                 </p>
-                <p className="font-display italic text-xl text-gold-dark">
+                <p className="text-charcoal text-xl font-medium">
                   {formatPrice(painting.originalPrice)}
                 </p>
               </div>
               <Button onClick={addOriginal} variant="outline">
-                Add to Cart
-              </Button>
-            </div>
-          )}
-          {painting.printAvailable && painting.printPrice && (
-            <div className="flex items-center justify-between p-4 border border-gold/20 rounded-sm">
-              <div>
-                <p className="text-xs tracking-widest uppercase text-graphite mb-1">
-                  Fine Art Print
-                </p>
-                <p className="font-display italic text-xl text-gold-dark">
-                  {formatPrice(painting.printPrice)}
-                </p>
-              </div>
-              <Button onClick={addPrint} variant="outline">
                 Add to Cart
               </Button>
             </div>

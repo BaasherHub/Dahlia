@@ -26,7 +26,7 @@ export function PaintingCard({ painting }: PaintingCardProps) {
 
   return (
     <Link href={`/paintings/${painting.id}`} className="group block">
-      <div className="overflow-hidden rounded-sm bg-cream aspect-[3/4] relative">
+      <div className="overflow-hidden rounded-sm bg-cream aspect-square relative">
         {image && (
           <Image
             src={image}
@@ -51,7 +51,7 @@ export function PaintingCard({ painting }: PaintingCardProps) {
         <p className="text-sm text-graphite">{painting.medium}</p>
         <p className="text-sm text-graphite">{painting.dimensions}</p>
         {price && (
-          <p className="font-display italic text-gold-dark text-base">
+          <p className="text-charcoal text-base font-medium">
             {formatPrice(price)}
           </p>
         )}

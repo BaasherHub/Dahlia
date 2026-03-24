@@ -13,7 +13,7 @@ export default function StoreLayout({
         <PromoStrip />
         <Navbar />
       </div>
-      <main className="pt-[calc(2.5rem+4rem)]">{children}</main>
+      <main className="pt-[calc(2.5rem+4rem)] min-h-screen bg-ivory">{children}</main>
       <Footer />
     </>
   );

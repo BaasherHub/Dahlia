@@ -6,14 +6,15 @@
   :root {
     --ivory: #FAF9F6;
     --cream: #F5F0EB;
-    --charcoal: #1A1A1A;
-    --graphite: #4A4A4A;
+    --charcoal: #252320;
+    --graphite: #5A5652;
     --gold: #BFAF8A;
     --gold-light: #D4C9A8;
     --gold-dark: #8B7D5E;
-    --border: rgba(26, 26, 26, 0.06);
+    --border: rgba(37, 35, 32, 0.08);
     --font-playfair: "Playfair Display", Georgia, serif;
     --font-inter: "Inter", system-ui, sans-serif;
+    --font-script: "Great Vibes", cursive;
   }
 
   * {
@@ -62,7 +63,7 @@
   }
 
   .label-sm {
-    @apply text-xs tracking-widest uppercase text-graphite;
+    @apply font-body text-xs tracking-widest uppercase text-graphite;
   }
 }
 

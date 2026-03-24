@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { ImagePlus, Trash2 } from "lucide-react";
+import imageCompression from "browser-image-compression";
 import toast from "react-hot-toast";
 
 interface ImageUploadProps {
@@ -26,7 +27,9 @@ export function ImageUpload({ value, onChange, disabled }: ImageUploadProps) {
     const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "dahlia";
 
     if (!cloudName) {
-      toast.error("Cloudinary not configured. Add NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME to env.");
+      toast.error(
+        "Cloudinary not configured. Add NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME to Railway env. (Note: VITE_ prefix does not work with Next.js — use NEXT_PUBLIC_ instead.)"
+      );
       return;
     }
 
@@ -35,8 +38,22 @@ export function ImageUpload({ value, onChange, disabled }: ImageUploadProps) {
 
     try {
       for (const file of Array.from(files)) {
+        let fileToUpload = file;
+        if (file.size > 2 * 1024 * 1024) {
+          try {
+            fileToUpload = await imageCompression(file, {
+              maxSizeMB: 5,
+              maxWidthOrHeight: 2400,
+              useWebWorker: true,
+              fileType: file.type,
+            });
+          } catch {
+            toast.error("Could not compress image. Try a smaller file.");
+            continue;
+          }
+        }
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("file", fileToUpload);
         formData.append("upload_preset", uploadPreset);
         formData.append("folder", "dahlia-paintings");
 

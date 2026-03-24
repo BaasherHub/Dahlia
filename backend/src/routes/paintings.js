@@ -179,7 +179,9 @@ router.put('/:id', requireAdmin, async (req, res) => {
 });
 
 // DELETE painting (admin)
+// Deletes associated order items first, then the painting (allows full removal)
 router.delete('/:id', requireAdmin, async (req, res) => {
+  await prisma.orderItem.deleteMany({ where: { paintingId: req.params.id } });
   await prisma.painting.delete({ where: { id: req.params.id } });
   res.json({ ok: true });
 });

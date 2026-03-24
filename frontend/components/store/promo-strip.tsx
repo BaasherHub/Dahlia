@@ -18,7 +18,7 @@ export function PromoStrip() {
   return (
     <Link
       href="/#newsletter"
-      className="block bg-charcoal text-ivory text-center py-2 px-4 text-sm tracking-wider hover:bg-graphite transition-colors duration-300"
+      className="block bg-charcoal text-ivory/95 text-center py-2.5 px-4 text-sm font-medium tracking-wider hover:bg-graphite/90 transition-colors duration-300"
     >
       {text}
     </Link>

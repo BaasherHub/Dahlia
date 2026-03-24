@@ -13,21 +13,6 @@ import { createCheckoutSession } from "@/lib/api";
 import { useState } from "react";
 import toast from "react-hot-toast";
 
-const COUNTRIES = [
-  { code: "US", name: "United States" },
-  { code: "CA", name: "Canada" },
-  { code: "GB", name: "United Kingdom" },
-  { code: "AU", name: "Australia" },
-  { code: "DE", name: "Germany" },
-  { code: "FR", name: "France" },
-  { code: "IT", name: "Italy" },
-  { code: "ES", name: "Spain" },
-  { code: "NL", name: "Netherlands" },
-  { code: "IN", name: "India" },
-  { code: "AE", name: "United Arab Emirates" },
-  { code: "OTHER", name: "Other" },
-];
-
 export default function CheckoutPage() {
   const router = useRouter();
   const cart = useCart();
@@ -39,7 +24,7 @@ export default function CheckoutPage() {
     city: "",
     state: "",
     zip: "",
-    country: "US",
+    country: "",
     phone: "",
   });
 
@@ -63,7 +48,7 @@ export default function CheckoutPage() {
           city: formData.city,
           state: formData.state,
           zip: formData.zip,
-          country: formData.country === "OTHER" ? "US" : formData.country,
+          country: formData.country,
           phone: formData.phone || undefined,
         },
       };
@@ -78,7 +63,7 @@ export default function CheckoutPage() {
     }
   };
 
-  const update = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const update = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData((prev) => ({ ...prev, [field]: e.target.value }));
   };
 
@@ -165,32 +150,25 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="zip">ZIP / Postcode *</Label>
+                    <Label htmlFor="zip">ZIP / Postcode (optional)</Label>
                     <Input
                       id="zip"
-                      required
                       value={formData.zip}
                       onChange={update("zip")}
-                      placeholder="ZIP"
+                      placeholder="ZIP or postal code"
                     />
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="country">Country *</Label>
-                    <select
+                    <Input
                       id="country"
                       required
                       value={formData.country}
                       onChange={update("country")}
-                      className="flex h-10 w-full rounded-md border border-charcoal/20 bg-ivory px-3 py-2 text-sm ring-offset-ivory placeholder:text-graphite focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2"
-                    >
-                      {COUNTRIES.map((c) => (
-                        <option key={c.code} value={c.code}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
+                      placeholder="e.g. United States, Canada"
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Phone (optional)</Label>
@@ -225,7 +203,7 @@ export default function CheckoutPage() {
             <Separator />
             <div className="flex justify-between">
               <span className="font-medium text-charcoal">Total</span>
-              <span className="font-display italic text-xl text-gold-dark">
+              <span className="text-charcoal text-xl font-medium">
                 {formatPrice(total)}
               </span>
             </div>

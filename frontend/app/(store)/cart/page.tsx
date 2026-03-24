@@ -60,7 +60,7 @@ export default function CartPage() {
           <Separator />
           <div className="flex justify-between">
             <span className="font-medium text-charcoal">Total</span>
-            <span className="font-display italic text-xl text-gold-dark">
+            <span className="text-charcoal text-xl font-medium">
               {formatPrice(total)}
             </span>
           </div>

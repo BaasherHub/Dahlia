@@ -160,7 +160,10 @@ export async function adminUpdatePainting(id: string, data: Record<string, unkno
 
 export async function adminDeletePainting(id: string) {
   const res = await adminFetch(`/api/paintings/${id}`, { method: "DELETE" });
-  if (!res.ok) throw new Error("Failed to delete painting");
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error || "Failed to delete painting");
+  }
   return res.json();
 }
 
@@ -199,7 +202,10 @@ export async function adminUpdateSiteSettings(data: Record<string, unknown>) {
     method: "PUT",
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error("Failed to update settings");
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error || `Failed to update settings (${res.status})`);
+  }
   return res.json();
 }
 

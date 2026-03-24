@@ -7,8 +7,8 @@ const config: Config = {
       colors: {
         ivory: "#FAF9F6",
         cream: "#F5F0EB",
-        charcoal: "#1A1A1A",
-        graphite: "#4A4A4A",
+        charcoal: "#252320",
+        graphite: "#5A5652",
         gold: {
           DEFAULT: "#BFAF8A",
           light: "#D4C9A8",
@@ -18,6 +18,7 @@ const config: Config = {
       fontFamily: {
         display: ["var(--font-playfair)", "Georgia", "serif"],
         body: ["var(--font-inter)", "system-ui", "sans-serif"],
+        script: ["var(--font-script)", "cursive"],
       },
       transitionTimingFunction: {
         luxury: "cubic-bezier(0.4, 0, 0.2, 1)",
