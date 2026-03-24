@@ -28,6 +28,7 @@ export function Footer() {
                 { name: "Collections", href: "/collections" },
                 { name: "About", href: "/about" },
                 { name: "Commissions", href: "/commissions" },
+                { name: "Contact", href: "/contact" },
                 { name: "Cart", href: "/cart" },
               ].map((item) => (
                 <Link
@@ -42,7 +43,7 @@ export function Footer() {
           </div>
 
           {/* Newsletter */}
-          <div>
+          <div id="newsletter">
             <h3 className="text-xs tracking-widest uppercase text-gold mb-6">
               Stay in Touch
             </h3>

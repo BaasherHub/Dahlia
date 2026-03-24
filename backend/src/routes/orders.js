@@ -14,9 +14,15 @@ const checkoutLimiter = rateLimit({
   message: 'Too many checkout attempts, please try again later.',
 });
 
+const CheckoutItemSchema = z.object({
+  paintingId: z.string(),
+  type: z.enum(['original', 'print']),
+});
+
 const CheckoutSchema = z.object({
-  paintingIds: z.array(z.string()).min(1).max(20),
+  items: z.array(CheckoutItemSchema).min(1).max(20),
   customerEmail: z.string().email(),
+  customerName: z.string().min(1).max(100),
   shipping: z.object({
     name: z.string().min(1).max(100),
     street: z.string().min(1).max(100),
@@ -30,38 +36,43 @@ const CheckoutSchema = z.object({
 
 router.post('/checkout', checkoutLimiter, async (req, res) => {
   const data = CheckoutSchema.parse(req.body);
+  const paintingIds = data.items.map((i) => i.paintingId);
 
   const paintings = await prisma.painting.findMany({
-    where: {
-      id: { in: data.paintingIds },
-      originalAvailable: true,
-    },
+    where: { id: { in: paintingIds } },
   });
 
-  if (paintings.length !== data.paintingIds.length) {
+  if (paintings.length !== paintingIds.length) {
     return res.status(400).json({
-      error: 'One or more paintings are unavailable.',
+      error: 'One or more paintings were not found.',
     });
   }
 
-  const lineItems = paintings.map((p) => {
-    const priceInCents = Math.round((p.originalPrice || 0) * 100);
-    if (priceInCents <= 0) {
-      throw new Error(`Invalid price for painting ${p.id}`);
+  const lineItems = [];
+  for (const item of data.items) {
+    const p = paintings.find((x) => x.id === item.paintingId);
+    if (!p) continue;
+    const price = item.type === 'print' ? p.printPrice : p.originalPrice;
+    const available = item.type === 'print' ? p.printAvailable : p.originalAvailable;
+    if (!available || (price ?? 0) <= 0) {
+      return res.status(400).json({
+        error: `"${p.title}" (${item.type}) is not available for purchase.`,
+      });
     }
-    return {
+    const priceInCents = Math.round(price * 100);
+    lineItems.push({
       price_data: {
         currency: 'usd',
         product_data: {
-          name: p.title,
+          name: `${p.title} (${item.type})`,
           description: `${p.medium} · ${p.dimensions}`,
           images: p.images.slice(0, 1),
         },
         unit_amount: priceInCents,
       },
       quantity: 1,
-    };
-  });
+    });
+  }
 
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],
@@ -71,7 +82,7 @@ router.post('/checkout', checkoutLimiter, async (req, res) => {
     success_url: `${process.env.FRONTEND_URL}/order-success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${process.env.FRONTEND_URL}/cart`,
     metadata: {
-      paintingIds: JSON.stringify(data.paintingIds),
+      items: JSON.stringify(data.items),
       customerEmail: data.customerEmail,
       customerName: data.shipping.name,
       shipName: data.shipping.name,

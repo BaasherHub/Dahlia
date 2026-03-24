@@ -17,12 +17,11 @@ export default async function GalleryPage({
   const params: Record<string, string> = {};
   if (sp.category) params.category = sp.category;
   if (sp.collectionId) params.collectionId = sp.collectionId;
-  if (sp.available) params.available = sp.available;
 
   let paintings: Parameters<typeof PaintingCard>[0]['painting'][] = [];
   try {
     const result = await fetchPaintings(params);
-    paintings = Array.isArray(result) ? result : result?.paintings || [];
+    paintings = Array.isArray(result) ? result : result?.data ?? [];
   } catch {
     paintings = [];
   }

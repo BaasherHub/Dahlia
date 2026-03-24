@@ -112,6 +112,13 @@ export function PaintingForm({ initialData, collections }: PaintingFormProps) {
     finally { setLoading(false); setDeleteOpen(false); }
   };
 
+  const [activeTab, setActiveTab] = useState<"basic" | "pricing" | "visibility">("basic");
+  const tabs = [
+    { id: "basic" as const, label: "Basic Info", description: "Title, images, description" },
+    { id: "pricing" as const, label: "Pricing", description: "Original & print prices" },
+    { id: "visibility" as const, label: "Visibility", description: "Featured, sold, collection" },
+  ];
+
   return (
     <>
       <AlertModal isOpen={deleteOpen} onClose={() => setDeleteOpen(false)} onConfirm={onDelete} loading={loading} />
@@ -130,10 +137,28 @@ export function PaintingForm({ initialData, collections }: PaintingFormProps) {
           )}
         </div>
         <Separator />
+        {/* Tabs */}
+        <div className="flex gap-2 border-b border-charcoal/10 pb-2">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-2 text-sm font-medium rounded-t-sm transition-colors ${
+                activeTab === tab.id
+                  ? "bg-gold/20 text-charcoal border-b-2 border-gold"
+                  : "text-graphite hover:text-charcoal hover:bg-cream"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 max-w-3xl">
+          <div className={activeTab !== "basic" ? "hidden" : "space-y-8"}>
           <div className="space-y-2">
             <Label>Images <span className="text-red-500">*</span></Label>
-            <p className="text-xs text-graphite">First image is the main display image.</p>
+            <p className="text-xs text-graphite">First image is the main display image. Upload via the button below.</p>
             <ImageUpload value={images} onChange={setImages} disabled={loading} />
           </div>
           <Separator />
@@ -157,28 +182,20 @@ export function PaintingForm({ initialData, collections }: PaintingFormProps) {
                 <Label htmlFor="year">Year</Label>
                 <Input id="year" type="number" disabled={loading} placeholder="2024" {...form.register("year")} />
               </div>
-              <div className="space-y-2">
-                <Label>Collection</Label>
-                <Select disabled={loading} onValueChange={(v) => form.setValue("collectionId", v === "none" ? "" : v)} defaultValue={form.getValues("collectionId") || "none"}>
-                  <SelectTrigger><SelectValue placeholder="No collection" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No collection</SelectItem>
-                    {collections.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
               <Textarea id="description" disabled={loading} placeholder="Describe this painting…" rows={5} {...form.register("description")} />
             </div>
           </div>
+          </div>
+          <div className={activeTab !== "pricing" ? "hidden" : "space-y-8"}>
           <Separator />
           <div className="space-y-6">
             <h2 className="font-display text-lg font-semibold text-charcoal">Pricing & Availability</h2>
             <div className="space-y-2">
               <Label>Category</Label>
-              <Select disabled={loading} onValueChange={(v) => form.setValue("category", v as "original" | "print" | "both")} defaultValue={form.getValues("category")}>
+              <Select disabled={loading} onValueChange={(v) => form.setValue("category", v as "original" | "print" | "both")} value={form.watch("category")}>
                 <SelectTrigger className="w-48"><SelectValue placeholder="Select category" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="original">Original only</SelectItem>
@@ -212,6 +229,23 @@ export function PaintingForm({ initialData, collections }: PaintingFormProps) {
               </div>
             </div>
           </div>
+          </div>
+          <div className={activeTab !== "visibility" ? "hidden" : "space-y-8"}>
+          <Separator />
+          <div className="space-y-6">
+            <h2 className="font-display text-lg font-semibold text-charcoal">Collection</h2>
+            <div className="space-y-2">
+              <Label>Collection</Label>
+              <Select disabled={loading} onValueChange={(v) => form.setValue("collectionId", v === "none" ? "" : v)} value={form.watch("collectionId") || "none"}>
+                <SelectTrigger className="max-w-xs"><SelectValue placeholder="No collection" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No collection</SelectItem>
+                  {collections.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-graphite">Group this painting with a series (e.g. &quot;Landscapes&quot;).</p>
+            </div>
+          </div>
           <Separator />
           <div className="space-y-4">
             <h2 className="font-display text-lg font-semibold text-charcoal">Visibility</h2>
@@ -230,6 +264,7 @@ export function PaintingForm({ initialData, collections }: PaintingFormProps) {
                 </label>
               ))}
             </div>
+          </div>
           </div>
           <div className="flex gap-3 pt-4">
             <Button type="submit" disabled={loading} size="lg">

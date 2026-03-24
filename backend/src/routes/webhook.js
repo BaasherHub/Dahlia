@@ -39,22 +39,28 @@ router.post('/', async (req, res) => {
     }
 
     const meta = session.metadata;
-    const paintingIds = JSON.parse(meta.paintingIds);
+    const items = JSON.parse(meta.items || '[]');
+    const paintingIds = items.map((i) => i.paintingId);
 
     try {
       const paintings = await prisma.painting.findMany({
         where: { id: { in: paintingIds } },
       });
 
-      const total = paintings.reduce((sum, p) => sum + (p.originalPrice || 0), 0);
+      const priceMap = (p, type) =>
+        type === 'print' ? (p.printPrice ?? 0) : (p.originalPrice ?? 0);
+      const total = items.reduce((sum, item) => {
+        const p = paintings.find((x) => x.id === item.paintingId);
+        return sum + (p ? priceMap(p, item.type) : 0);
+      }, 0);
 
       const order = await prisma.order.create({
         data: {
-          stripePaymentId: session.payment_intent,
+          stripePaymentId: session.payment_intent || session.id,
           stripeSessionId: session.id,
           status: 'PAID',
           customerEmail: meta.customerEmail,
-          customerName: meta.customerName,
+          customerName: meta.customerName || meta.shipName,
           shipName: meta.shipName,
           shipStreet: meta.shipStreet,
           shipCity: meta.shipCity,
@@ -64,19 +70,27 @@ router.post('/', async (req, res) => {
           shipPhone: meta.shipPhone || null,
           total,
           items: {
-            create: paintings.map((p) => ({
-              paintingId: p.id,
-              price: p.originalPrice || 0,
-            })),
+            create: items.map((item) => {
+              const p = paintings.find((x) => x.id === item.paintingId);
+              const price = p ? priceMap(p, item.type) : 0;
+              return {
+                paintingId: item.paintingId,
+                price,
+                version: item.type,
+              };
+            }),
           },
         },
         include: { items: { include: { painting: true } } },
       });
 
-      await prisma.painting.updateMany({
-        where: { id: { in: paintingIds } },
-        data: { originalAvailable: false },
-      });
+      const originalIds = items.filter((i) => i.type === 'original').map((i) => i.paintingId);
+      if (originalIds.length > 0) {
+        await prisma.painting.updateMany({
+          where: { id: { in: originalIds } },
+          data: { originalAvailable: false, sold: true },
+        });
+      }
 
       logInfo(`Order created: ${order.id}`, {
         customerEmail: meta.customerEmail,

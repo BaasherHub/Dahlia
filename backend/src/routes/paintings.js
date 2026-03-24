@@ -24,6 +24,7 @@ const CreatePaintingSchema = z.object({
   dimensions: z.string().min(1).max(100),
   medium: z.string().max(100).default('Oil on canvas'),
   year: z.number().int().min(1900).max(new Date().getFullYear()).optional(),
+  sold: z.boolean().default(false),
   featured: z.boolean().default(false),
   heroImage: z.boolean().default(false),
   category: z.enum(['original', 'print', 'both']).default('original'),
@@ -41,6 +42,12 @@ const UpdatePaintingSchema = CreatePaintingSchema.partial().extend({
 const PaginationSchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(20),
+  collectionId: z.string().optional(),
+  featured: z.preprocess(
+    (v) => v === 'true' || v === true,
+    z.boolean().optional()
+  ),
+  category: z.enum(['original', 'print', 'both']).optional(),
 });
 
 const adminLimiter = rateLimit({
@@ -87,12 +94,25 @@ router.get('/hero', async (req, res) => {
 
 // GET all available paintings (public)
 router.get('/', async (req, res) => {
-  const { collectionId, page, limit } = PaginationSchema.parse(req.query);
+  const { collectionId, page, limit, featured, category } = PaginationSchema.parse(req.query);
   const skip = (page - 1) * limit;
 
+  const availabilityFilter = category === 'original'
+    ? { originalAvailable: true }
+    : category === 'print'
+      ? { printAvailable: true }
+      : {
+          OR: [
+            { originalAvailable: true },
+            { printAvailable: true },
+          ],
+        };
+
   const where = {
-    originalAvailable: true,
+    ...availabilityFilter,
+    sold: false,
     ...(collectionId && { collectionId }),
+    ...(featured === true && { featured: true }),
   };
 
   const paintings = await prisma.painting.findMany({

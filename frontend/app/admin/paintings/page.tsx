@@ -93,7 +93,7 @@ export default function AdminPaintingsPage() {
   const load = useCallback(async () => {
     try {
       const result = await adminFetchAllPaintings();
-      setPaintings(Array.isArray(result) ? result : result?.paintings || []);
+      setPaintings(Array.isArray(result) ? result : result?.data ?? []);
     } catch {
       setPaintings([]);
     } finally {

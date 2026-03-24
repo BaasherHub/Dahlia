@@ -47,6 +47,19 @@ export async function submitCommission(data: Record<string, string>) {
   return res.json();
 }
 
+export async function submitContact(data: { name: string; email: string; subject: string; message: string }) {
+  const res = await fetch(`${API_URL}/api/contact`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error || "Failed to send message");
+  }
+  return res.json();
+}
+
 export async function subscribeNewsletter(email: string) {
   const res = await fetch(`${API_URL}/api/newsletter`, {
     method: "POST",
@@ -57,15 +70,31 @@ export async function subscribeNewsletter(email: string) {
   return res.json();
 }
 
-export async function createCheckoutSession(
-  items: Array<{ paintingId: string; type: "original" | "print" }>
-) {
+export interface CheckoutPayload {
+  items: Array<{ paintingId: string; type: "original" | "print" }>;
+  customerEmail: string;
+  customerName: string;
+  shipping: {
+    name: string;
+    street: string;
+    city: string;
+    state: string;
+    zip: string;
+    country: string;
+    phone?: string;
+  };
+}
+
+export async function createCheckoutSession(payload: CheckoutPayload) {
   const res = await fetch(`${API_URL}/api/orders/checkout`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ items }),
+    body: JSON.stringify(payload),
   });
-  if (!res.ok) throw new Error("Failed to create checkout session");
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error || "Failed to create checkout session");
+  }
   return res.json();
 }
 

@@ -11,24 +11,34 @@ interface HeroPainting {
   dimensions?: string;
 }
 
-interface HeroProps {
-  painting: HeroPainting | null;
+interface SiteSettings {
+  heroTitle?: string;
+  heroSubtitle?: string;
+  heroDescription?: string;
 }
 
-export function Hero({ painting }: HeroProps) {
+interface HeroProps {
+  painting: HeroPainting | null;
+  settings?: SiteSettings | null;
+}
+
+export function Hero({ painting, settings }: HeroProps) {
   if (!painting) {
     return (
-      <section className="relative min-h-screen bg-cream flex items-center justify-center">
+      <section className="relative min-h-[80vh] bg-cream flex items-center justify-center">
         <div className="text-center px-6">
           <h1 className="font-display text-5xl md:text-7xl font-semibold text-charcoal tracking-tight mb-6">
-            Dahlia Studio
+            {settings?.heroTitle || "Dahlia"}
           </h1>
-          <p className="text-graphite text-lg max-w-md mx-auto">
-            Original paintings and fine art prints
+          <p className="text-graphite text-lg max-w-md mx-auto mb-2">
+            {settings?.heroSubtitle || "Contemporary Oil Paintings"}
           </p>
-          <Link href="/gallery" className="mt-8 inline-block">
+          <p className="text-graphite/80 text-base max-w-lg mx-auto mb-8">
+            {settings?.heroDescription || "Original paintings and fine art prints on premium materials"}
+          </p>
+          <Link href="/gallery" className="mt-4 inline-block">
             <Button size="lg" variant="outline">
-              View Gallery
+              Shop Prints
             </Button>
           </Link>
         </div>

@@ -1,38 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import { CartItemRow } from "@/components/store/cart-item";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { formatPrice } from "@/lib/utils";
 import useCart from "@/hooks/use-cart";
-import { createCheckoutSession } from "@/lib/api";
-import { useState } from "react";
-import toast from "react-hot-toast";
 
 export default function CartPage() {
   const cart = useCart();
-  const [loading, setLoading] = useState(false);
-
   const total = cart.items.reduce((sum, item) => sum + item.price, 0);
-
-  const onCheckout = async () => {
-    if (cart.items.length === 0) return;
-    setLoading(true);
-    try {
-      const items = cart.items.map((item) => ({
-        paintingId: item.paintingId,
-        type: item.type,
-      }));
-      const { url } = await createCheckoutSession(items);
-      if (url) {
-        window.location.href = url;
-      }
-    } catch {
-      toast.error("Failed to start checkout. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (cart.items.length === 0) {
     return (
@@ -87,14 +64,11 @@ export default function CartPage() {
               {formatPrice(total)}
             </span>
           </div>
-          <Button
-            onClick={onCheckout}
-            disabled={loading}
-            className="w-full mt-2"
-            size="lg"
-          >
-            {loading ? "Redirecting…" : "Proceed to Checkout"}
-          </Button>
+          <Link href="/checkout">
+            <Button className="w-full mt-2" size="lg">
+              Proceed to Checkout
+            </Button>
+          </Link>
           <p className="text-xs text-graphite text-center">
             Secured by Stripe
           </p>
