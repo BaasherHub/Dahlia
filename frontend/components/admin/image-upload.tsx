@@ -39,11 +39,13 @@ export function ImageUpload({ value, onChange, disabled }: ImageUploadProps) {
     try {
       for (const file of Array.from(files)) {
         let fileToUpload = file;
-        if (file.size > 2 * 1024 * 1024) {
+        // Only compress when > 5MB (Cloudinary allows ~10MB). Preserve high quality for buyer viewing.
+        if (file.size > 5 * 1024 * 1024) {
           try {
             fileToUpload = await imageCompression(file, {
-              maxSizeMB: 5,
-              maxWidthOrHeight: 2400,
+              maxSizeMB: 8,
+              maxWidthOrHeight: 3000,
+              initialQuality: 0.92,
               useWebWorker: true,
               fileType: file.type,
             });

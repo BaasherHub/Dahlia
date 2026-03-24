@@ -3,6 +3,7 @@ import { z } from 'zod';
 import rateLimit from 'express-rate-limit';
 import { requireAdmin } from './admin.js';
 import prisma from '../lib/prisma.js';
+import { logError } from '../services/logger.js';
 
 const router = Router();
 
@@ -181,9 +182,19 @@ router.put('/:id', requireAdmin, async (req, res) => {
 // DELETE painting (admin)
 // Deletes associated order items first, then the painting (allows full removal)
 router.delete('/:id', requireAdmin, async (req, res) => {
-  await prisma.orderItem.deleteMany({ where: { paintingId: req.params.id } });
-  await prisma.painting.delete({ where: { id: req.params.id } });
-  res.json({ ok: true });
+  try {
+    const id = req.params.id;
+    const existing = await prisma.painting.findUnique({ where: { id } });
+    if (!existing) {
+      return res.status(404).json({ error: 'Painting not found' });
+    }
+    await prisma.orderItem.deleteMany({ where: { paintingId: id } });
+    await prisma.painting.delete({ where: { id } });
+    res.json({ ok: true });
+  } catch (err) {
+    logError({ message: 'Error deleting painting', error: err.message, paintingId: req.params.id });
+    res.status(500).json({ error: err.message || 'Failed to delete painting' });
+  }
 });
 
 export default router;

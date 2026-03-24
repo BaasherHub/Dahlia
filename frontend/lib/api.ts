@@ -162,7 +162,7 @@ export async function adminDeletePainting(id: string) {
   const res = await adminFetch(`/api/paintings/${id}`, { method: "DELETE" });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err?.error || "Failed to delete painting");
+    throw new Error(err?.error || err?.message || `Failed to delete painting (${res.status})`);
   }
   return res.json();
 }
