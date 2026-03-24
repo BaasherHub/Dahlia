@@ -7,6 +7,7 @@ interface Collection {
   description?: string;
   coverImage?: string;
   paintings?: Array<{ id: string }>;
+  _count?: { paintings: number };
 }
 
 interface CollectionCardProps {
@@ -14,7 +15,7 @@ interface CollectionCardProps {
 }
 
 export function CollectionCard({ collection }: CollectionCardProps) {
-  const count = collection.paintings?.length || 0;
+  const count = collection._count?.paintings ?? collection.paintings?.length ?? 0;
 
   return (
     <Link href={`/collections/${collection.id}`} className="group block">

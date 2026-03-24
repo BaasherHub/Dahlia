@@ -95,10 +95,11 @@ export default async function HomePage() {
         <div className="container-wide">
           <p className="label-sm mb-3">Start your collection</p>
           <h2 className="heading-lg mb-10">Shop Art</h2>
-          <Link
-            href="/gallery"
-            className="group block bg-cream rounded-sm p-8 md:p-12 border border-charcoal/10 hover:border-gold/40 transition-colors duration-400 max-w-xl"
-          >
+          <div className="flex justify-center">
+            <Link
+              href="/gallery"
+              className="group block bg-cream rounded-sm p-8 md:p-12 border border-charcoal/10 hover:border-gold/40 transition-colors duration-400 w-full max-w-xl"
+            >
             <h3 className="font-display text-2xl font-semibold text-charcoal mb-3 group-hover:text-gold-dark transition-colors">
               Original Paintings
             </h3>
@@ -109,29 +110,23 @@ export default async function HomePage() {
               Shop Originals →
             </span>
           </Link>
+          </div>
         </div>
       </section>
 
-      {/* Transition band: soft gradient into commission section */}
-      <div className="h-8 bg-gradient-to-b from-cream to-charcoal" />
-
       {/* Commission CTA */}
-      <section className="bg-charcoal text-ivory py-24">
+      <section className="section-padding bg-cream border-t border-charcoal/10">
         <div className="container-narrow text-center">
-          <p className="label-sm text-gold mb-4">Bespoke Work</p>
-          <h2 className="heading-lg text-ivory mb-6">
+          <p className="label-sm text-gold-dark mb-4">Bespoke Work</p>
+          <h2 className="heading-lg mb-6">
             {siteSettings?.ctaTitle || "Commission a Painting"}
           </h2>
-          <p className="text-ivory/60 max-w-lg mx-auto mb-10 leading-relaxed">
+          <p className="text-graphite max-w-lg mx-auto mb-10 leading-relaxed">
             {siteSettings?.ctaDescription ||
               "Create something uniquely yours. I work closely with each client to bring their vision to life."}
           </p>
           <Link href="/commissions">
-            <Button
-              size="lg"
-              variant="outline"
-              className="border-gold text-gold hover:bg-gold hover:text-charcoal"
-            >
+            <Button size="lg" variant="outline">
               Inquire Now
             </Button>
           </Link>
