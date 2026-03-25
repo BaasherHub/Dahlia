@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { fetchCollections } from "@/lib/api";
+import { fetchCollections, fetchSiteSettings } from "@/lib/api";
 import { CollectionCard } from "@/components/store/collection-card";
 
 export const metadata: Metadata = {
@@ -9,18 +9,27 @@ export const metadata: Metadata = {
 
 export default async function CollectionsPage() {
   let collections: Parameters<typeof CollectionCard>[0]['collection'][] = [];
-  try {
-    const result = await fetchCollections();
+  let settings: Awaited<ReturnType<typeof fetchSiteSettings>> = null;
+  const [colRes, settingsRes] = await Promise.allSettled([
+    fetchCollections(),
+    fetchSiteSettings(),
+  ]);
+  if (colRes.status === "fulfilled") {
+    const result = colRes.value;
     collections = Array.isArray(result) ? result : result?.collections || [];
-  } catch {
-    collections = [];
+  }
+  if (settingsRes.status === "fulfilled") {
+    settings = settingsRes.value;
   }
 
   return (
     <div className="section-padding container-wide">
       <div className="mb-12">
-        <p className="label-sm mb-3">Series</p>
-        <h1 className="heading-xl">Collections</h1>
+        <h1 className="heading-xl">{settings?.portfolioTitle?.trim() || "Collections"}</h1>
+        <p className="text-graphite mt-4 max-w-2xl text-sm leading-relaxed">
+          {settings?.portfolioSubtitle?.trim() ||
+            "Start your collection — shop original one-of-a-kind oil paintings on premium linen canvas."}
+        </p>
       </div>
 
       {collections.length === 0 ? (

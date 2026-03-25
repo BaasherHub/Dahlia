@@ -69,8 +69,11 @@ export default async function HomePage() {
           <div className="container-wide">
             <div className="flex items-end justify-between mb-12">
               <div>
-                <p className="label-sm mb-3">Series</p>
                 <h2 className="heading-lg">Collections</h2>
+                <p className="text-graphite mt-3 max-w-2xl text-sm leading-relaxed">
+                  {siteSettings?.portfolioSubtitle?.trim() ||
+                    "Start your collection — shop original one-of-a-kind oil paintings on premium linen canvas."}
+                </p>
               </div>
               <Link href="/collections">
                 <Button variant="outline" size="sm">
@@ -90,32 +93,29 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* Shop Art — single card (originals only, no prints) */}
+      {/* Shop Art — merged heading + card (originals only) */}
       <section className="section-padding border-b border-charcoal/6">
-        <div className="container-wide">
-          <p className="label-sm mb-3">Start your collection</p>
-          <h2 className="heading-lg mb-10">Shop Art</h2>
-          <div className="flex justify-center">
-            <Link
-              href="/gallery"
-              className="group block bg-cream rounded-sm p-8 md:p-12 border border-charcoal/10 hover:border-gold/40 transition-colors duration-400 w-full max-w-xl"
-            >
-            <h3 className="font-display text-2xl font-semibold text-charcoal mb-3 group-hover:text-gold-dark transition-colors">
-              Original Paintings
-            </h3>
-            <p className="text-graphite text-sm mb-6">
-              One-of-a-kind works on premium linen canvas
-            </p>
-            <span className="text-sm tracking-widest uppercase text-gold group-hover:underline">
-              Shop Originals →
-            </span>
-          </Link>
+        <div className="container-wide max-w-3xl mx-auto">
+          <div className="rounded-sm border border-charcoal/10 bg-cream/80 p-8 md:p-10">
+            <p className="label-sm mb-3">Start your collection</p>
+            <h2 className="heading-lg mb-8">Shop Art</h2>
+            <Link href="/gallery" className="group block">
+              <h3 className="font-display text-2xl font-semibold text-charcoal mb-3 group-hover:text-gold-dark transition-colors">
+                Original Paintings
+              </h3>
+              <p className="text-graphite text-sm mb-6">
+                One-of-a-kind works on premium linen canvas
+              </p>
+              <span className="text-sm tracking-widest uppercase text-gold group-hover:underline">
+                Shop Originals →
+              </span>
+            </Link>
           </div>
         </div>
       </section>
 
       {/* Commission CTA */}
-      <section className="section-padding bg-cream border-t border-charcoal/10">
+      <section className="section-padding bg-ivory border-t border-charcoal/10">
         <div className="container-narrow text-center">
           <p className="label-sm text-gold-dark mb-4">Bespoke Work</p>
           <h2 className="heading-lg mb-6">

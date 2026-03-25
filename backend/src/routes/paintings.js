@@ -7,6 +7,21 @@ import { logError } from '../services/logger.js';
 
 const router = Router();
 
+/** If no painting is marked hero, promote the best candidate so the homepage never loses its hero image unintentionally. */
+async function ensureAtLeastOneHeroIfNeeded() {
+  const heroCount = await prisma.painting.count({ where: { heroImage: true } });
+  if (heroCount > 0) return;
+  const fallback = await prisma.painting.findFirst({
+    orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
+  });
+  if (fallback) {
+    await prisma.painting.update({
+      where: { id: fallback.id },
+      data: { heroImage: true },
+    });
+  }
+}
+
 const emptyStringToNull = (value) => {
   if (typeof value === 'string' && value.trim() === '') {
     return null;
@@ -176,6 +191,7 @@ router.put('/:id', requireAdmin, async (req, res) => {
     where: { id: req.params.id },
     data,
   });
+  await ensureAtLeastOneHeroIfNeeded();
   res.json(painting);
 });
 
@@ -190,6 +206,7 @@ router.delete('/:id', requireAdmin, async (req, res) => {
     }
     await prisma.orderItem.deleteMany({ where: { paintingId: id } });
     await prisma.painting.delete({ where: { id } });
+    await ensureAtLeastOneHeroIfNeeded();
     res.json({ ok: true });
   } catch (err) {
     logError({ message: 'Error deleting painting', error: err.message, paintingId: req.params.id });

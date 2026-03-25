@@ -3,12 +3,12 @@ import { NewsletterForm } from "./newsletter-form";
 
 export function Footer() {
   return (
-    <footer className="bg-cream border-t border-charcoal/10 text-charcoal mt-24">
+    <footer className="bg-ivory border-t border-charcoal/10 text-charcoal mt-12">
       <div className="max-w-7xl mx-auto px-6 lg:px-12 py-16">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8">
           {/* Brand */}
           <div>
-            <h2 className="font-display text-2xl font-semibold tracking-widest uppercase text-charcoal mb-4">
+            <h2 className="font-script text-5xl font-normal text-charcoal mb-4 leading-none">
               Dahlia
             </h2>
             <p className="text-sm leading-relaxed text-graphite">
@@ -49,7 +49,7 @@ export function Footer() {
               Stay in Touch
             </h3>
             <p className="text-sm text-graphite mb-4">
-              Be the first to know about new works and exhibitions.
+              Be the first to know about new artworks and exhibitions.
             </p>
             <NewsletterForm />
           </div>

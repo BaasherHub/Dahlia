@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import toast from "react-hot-toast";
 import { fetchSiteSettings, adminUpdateSiteSettings } from "@/lib/api";
+import { parseEntryList } from "@/lib/parse-site-json";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -136,8 +137,8 @@ export default function AdminSettingsPage() {
           commissionsSubtitle: s.commissionsSubtitle || "",
           commissionFormHelpText: s.commissionFormHelpText || "",
         });
-        setExhibitions(Array.isArray(s.exhibitions) && s.exhibitions.length > 0 ? s.exhibitions : []);
-        setPublications(Array.isArray(s.publications) && s.publications.length > 0 ? s.publications : []);
+        setExhibitions(parseEntryList<ExhibitionEntry>(s?.exhibitions));
+        setPublications(parseEntryList<PublicationEntry>(s?.publications));
       }
     } catch {
       toast.error("Could not load settings.");

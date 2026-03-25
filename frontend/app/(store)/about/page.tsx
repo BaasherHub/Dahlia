@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { fetchSiteSettings } from "@/lib/api";
+import { parseEntryList } from "@/lib/parse-site-json";
 
 export const metadata: Metadata = {
   title: "About",
@@ -13,17 +14,16 @@ export default async function AboutPage() {
   const bioParagraphs = [settings?.aboutBio1, settings?.aboutBio2, settings?.aboutBio3].filter(Boolean);
   const statementParagraphs = [settings?.aboutStatement1, settings?.aboutStatement2, settings?.aboutStatement3].filter(Boolean);
 
-  const exhibitions: Array<{ title: string; description?: string; date?: string; location?: string; imageUrl?: string }> =
-    Array.isArray(settings?.exhibitions) ? settings.exhibitions : [];
-  const publications: Array<{ title: string; description?: string; date?: string; location?: string; imageUrl?: string }> =
-    Array.isArray(settings?.publications) ? settings.publications : [];
+  type Entry = { title: string; description?: string; date?: string; location?: string; imageUrl?: string };
+  const exhibitions = parseEntryList<Entry>(settings?.exhibitions);
+  const publications = parseEntryList<Entry>(settings?.publications);
 
   return (
     <div className="section-padding">
       <div className="container-narrow">
         <div className="max-w-3xl">
           <p className="label-sm mb-4">The Artist</p>
-          <h1 className="heading-xl mb-10">About Dahlia</h1>
+          <h1 className="heading-xl mb-8">About Dahlia</h1>
 
           {settings?.aboutArtistImage && (
             <div className="relative aspect-[4/3] max-w-md mb-10 rounded-sm overflow-hidden">
@@ -37,7 +37,7 @@ export default async function AboutPage() {
             </div>
           )}
 
-          <div className="prose prose-lg max-w-none space-y-6 text-graphite leading-relaxed">
+          <div className="prose max-w-none space-y-5 text-graphite text-sm leading-relaxed md:text-[15px]">
             {bioParagraphs.length > 0 ? (
               bioParagraphs.map((p, i) => <p key={i}>{p}</p>)
             ) : (
@@ -52,8 +52,8 @@ export default async function AboutPage() {
 
           {statementParagraphs.length > 0 && (
             <div className="mt-12 pt-12 border-t border-gold/20">
-              <h2 className="heading-lg mb-6">Artist Statement</h2>
-              <div className="prose prose-lg max-w-none space-y-6 text-graphite leading-relaxed">
+              <h2 className="font-display text-xl md:text-[1.35rem] font-semibold text-charcoal mb-5">Artist Statement</h2>
+              <div className="prose max-w-none space-y-5 text-graphite text-sm leading-relaxed md:text-[15px]">
                 {statementParagraphs.map((p, i) => <p key={i}>{p}</p>)}
               </div>
             </div>

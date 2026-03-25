@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { fetchCollection } from "@/lib/api";
 import { PaintingCard } from "@/components/store/painting-card";
 
+export const dynamic = "force-dynamic";
+
 type Props = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -32,25 +34,29 @@ export default async function CollectionDetailPage({ params }: Props) {
     notFound();
   }
 
+  const paintingsList = Array.isArray(collection.paintings) ? collection.paintings : [];
+
   return (
     <div className="section-padding container-wide">
-      <div className="mb-12">
+      <div className="mb-10">
         <p className="label-sm mb-3">Collection</p>
-        <h1 className="heading-xl">{collection.name}</h1>
+        <h1 className="font-display text-3xl md:text-4xl font-semibold text-charcoal leading-tight tracking-tight">
+          {collection.name}
+        </h1>
         {collection.description && (
-          <p className="text-graphite mt-4 max-w-2xl leading-relaxed">
+          <p className="text-graphite mt-4 max-w-2xl text-sm md:text-[15px] leading-relaxed">
             {collection.description}
           </p>
         )}
       </div>
 
-      {collection.paintings?.length === 0 ? (
+      {paintingsList.length === 0 ? (
         <div className="text-center py-24">
           <p className="text-graphite">No paintings in this collection yet.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {(collection.paintings || []).map(
+          {paintingsList.map(
             (painting: Parameters<typeof PaintingCard>[0]['painting'], i: number) => (
               <div
                 key={painting.id}

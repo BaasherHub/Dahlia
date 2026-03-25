@@ -34,7 +34,7 @@ export function Navbar() {
         <div className="flex h-16 items-center justify-between">
           <Link
             href="/"
-            className="font-display text-xl font-semibold tracking-widest text-charcoal uppercase hover:text-gold-dark transition-colors duration-400"
+            className="font-script text-3xl md:text-4xl font-normal text-charcoal normal-case tracking-normal hover:text-gold-dark transition-colors duration-400"
           >
             Dahlia
           </Link>
