@@ -102,7 +102,7 @@ model SiteSettings {
   aboutBio3           String @default("My practice combines technical precision with spontaneous creativity, resulting in works that are both carefully considered and intuitively executed.")
   aboutStatement1     String @default("My practice is rooted in a deep engagement with color, form, and the physical materiality of paint. I create work that exists in conversation with contemporary art practice while maintaining a reverence for the traditions of painting.")
   aboutStatement2     String @default("Through careful observation and intuitive response, I build paintings that invite contemplation and emotional engagement. Each piece is an attempt to capture a moment of synthesis between intention and spontaneity, between control and surrender.")
-  aboutStatement3     String @default("I am committed to creating work of lasting value—both visually and materially. My practice is defined by a pursuit of excellence and a dedication to the craft of painting.")
+  aboutStatement3     String @default("I am committed to creating work of lasting value - both visually and materially. My practice is defined by a pursuit of excellence and a dedication to the craft of painting.")
   
   // Testimonials (stored as JSON array)
   testimonials        String @default("[]")
@@ -121,7 +121,7 @@ model SiteSettings {
   newsletterSubtitle  String @default("Subscribe to receive updates about new artworks, exhibitions, and commission opportunities.")
 
   // Footer
-  footerTagline       String @default("Contemporary Art · Toronto, Canada")
+  footerTagline       String @default("Contemporary Art | Toronto, Canada")
   socialLinks         String @default("[]")
 
   // Commissions page
@@ -149,7 +149,7 @@ model SiteSettings {
   // Portfolio page
   portfolioTitle      String @default("Portfolio")
   portfolioSubtitle   String @default("A curated selection of original works")
-  portfolioStatement  String @default("Each painting is a meditation on color, form, and the expressive potential of oil on linen. These selected works represent the breadth of my practice — from intimate studies to large-scale statements.")
+  portfolioStatement  String @default("Each painting is a meditation on color, form, and the expressive potential of oil on linen. These selected works represent the breadth of my practice - from intimate studies to large-scale statements.")
 
   updatedAt           DateTime @updatedAt
 }
