@@ -21,7 +21,7 @@ interface PaintingCardProps {
 }
 
 export function PaintingCard({ painting }: PaintingCardProps) {
-  const price = painting.originalPrice || painting.printPrice;
+  const price = painting.originalPrice;
   const image = painting.images?.[0] || "";
 
   return (

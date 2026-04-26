@@ -34,7 +34,7 @@ export function Hero({ painting, settings }: HeroProps) {
             {settings?.heroSubtitle || "Contemporary Oil Paintings"}
           </p>
           <p className="text-graphite/80 text-base max-w-lg mx-auto mb-8">
-            {settings?.heroDescription || "Original paintings and fine art prints on premium materials"}
+            {settings?.heroDescription || "Original paintings on premium linen canvas."}
           </p>
           <Link href="/gallery" className="mt-4 inline-block">
             <Button size="lg" variant="outline">

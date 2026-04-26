@@ -9,8 +9,23 @@ const CreateCollectionSchema = z.object({
   name: z.string().min(1).max(100),
   description: z.string().max(1000).optional(),
   coverImage: z.string().url().nullable().optional(),
+  coverImages: z.array(z.string().url()).max(24).optional(),
   order: z.number().int().default(0),
 });
+
+function normalizeCovers(data) {
+  const imgs =
+    data.coverImages?.length > 0
+      ? data.coverImages
+      : data.coverImage
+        ? [data.coverImage]
+        : [];
+  return {
+    ...data,
+    coverImage: imgs[0] ?? null,
+    coverImages: imgs,
+  };
+}
 
 const UpdateCollectionSchema = CreateCollectionSchema.partial();
 
@@ -45,13 +60,18 @@ router.get('/:id', async (req, res) => {
 });
 
 router.post('/', requireAdmin, async (req, res) => {
-  const data = CreateCollectionSchema.parse(req.body);
+  const parsed = CreateCollectionSchema.parse(req.body);
+  const data = normalizeCovers(parsed);
   const collection = await prisma.collection.create({ data });
   res.status(201).json(collection);
 });
 
 router.put('/:id', requireAdmin, async (req, res) => {
-  const data = UpdateCollectionSchema.parse(req.body);
+  const parsed = UpdateCollectionSchema.parse(req.body);
+  const hasCover =
+    parsed.coverImages !== undefined ||
+    parsed.coverImage !== undefined;
+  const data = hasCover ? normalizeCovers(parsed) : parsed;
   const collection = await prisma.collection.update({
     where: { id: req.params.id },
     data,

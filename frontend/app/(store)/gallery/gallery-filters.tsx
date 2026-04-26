@@ -4,11 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
 
-const filters = [
-  { label: "All", value: "" },
-  { label: "Originals", value: "original" },
-  { label: "Prints", value: "print" },
-];
+const filters = [{ label: "All works", value: "" }];
 
 export function GalleryFilters() {
   const router = useRouter();

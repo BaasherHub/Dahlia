@@ -38,7 +38,7 @@ export default function CheckoutPage() {
       const payload = {
         items: cart.items.map((item) => ({
           paintingId: item.paintingId,
-          type: item.type,
+          type: "original" as const,
         })),
         customerEmail: formData.customerEmail,
         customerName: formData.customerName,

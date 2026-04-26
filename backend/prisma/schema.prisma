@@ -45,6 +45,7 @@ model Collection {
   name        String
   description String?
   coverImage  String?
+  coverImages String[]   @default([])
   order       Int        @default(0)
   paintings   Painting[]
   createdAt   DateTime   @default(now())

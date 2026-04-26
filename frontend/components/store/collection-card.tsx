@@ -6,6 +6,7 @@ interface Collection {
   name: string;
   description?: string;
   coverImage?: string;
+  coverImages?: string[];
   paintings?: Array<{ id: string }>;
   _count?: { paintings: number };
 }
@@ -16,13 +17,15 @@ interface CollectionCardProps {
 
 export function CollectionCard({ collection }: CollectionCardProps) {
   const count = collection._count?.paintings ?? collection.paintings?.length ?? 0;
+  const thumb =
+    (collection.coverImages && collection.coverImages[0]) || collection.coverImage;
 
   return (
     <Link href={`/collections/${collection.id}`} className="group block">
       <div className="overflow-hidden rounded-sm bg-cream aspect-square relative">
-        {collection.coverImage ? (
+        {thumb ? (
           <Image
-            src={collection.coverImage}
+            src={thumb}
             alt={collection.name}
             fill
             className="object-cover transition-transform duration-600 group-hover:scale-[1.03]"

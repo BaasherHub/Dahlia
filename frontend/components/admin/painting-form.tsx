@@ -23,11 +23,8 @@ const formSchema = z.object({
   medium: z.string().min(1, "Medium is required"),
   dimensions: z.string().min(1, "Dimensions are required"),
   year: z.string().optional(),
-  category: z.enum(["original", "print", "both"]).default("original"),
   originalPrice: z.string().optional(),
   originalAvailable: z.boolean().default(true),
-  printPrice: z.string().optional(),
-  printAvailable: z.boolean().default(false),
   featured: z.boolean().default(false),
   heroImage: z.boolean().default(false),
   sold: z.boolean().default(false),
@@ -65,11 +62,8 @@ export function PaintingForm({ initialData, collections }: PaintingFormProps) {
       medium: initialData?.medium || "",
       dimensions: initialData?.dimensions || "",
       year: initialData?.year?.toString() || "",
-      category: (initialData?.category as "original" | "print" | "both") || "original",
       originalPrice: initialData?.originalPrice?.toString() || "",
       originalAvailable: initialData?.originalAvailable ?? true,
-      printPrice: initialData?.printPrice?.toString() || "",
-      printAvailable: initialData?.printAvailable ?? false,
       featured: initialData?.featured ?? false,
       heroImage: initialData?.heroImage ?? false,
       sold: initialData?.sold ?? false,
@@ -82,10 +76,13 @@ export function PaintingForm({ initialData, collections }: PaintingFormProps) {
     setLoading(true);
     try {
       const data = {
-        ...values, images,
+        ...values,
+        images,
         year: values.year ? parseInt(values.year) : undefined,
         originalPrice: values.originalPrice ? parseFloat(values.originalPrice) : undefined,
-        printPrice: values.printPrice ? parseFloat(values.printPrice) : undefined,
+        category: "original" as const,
+        printAvailable: false,
+        printPrice: undefined,
         collectionId: values.collectionId || undefined,
       };
       if (isEditing) {
@@ -115,7 +112,7 @@ export function PaintingForm({ initialData, collections }: PaintingFormProps) {
   const [activeTab, setActiveTab] = useState<"basic" | "pricing" | "visibility">("basic");
   const tabs = [
     { id: "basic" as const, label: "Basic Info", description: "Title, images, description" },
-    { id: "pricing" as const, label: "Pricing", description: "Original & print prices" },
+    { id: "pricing" as const, label: "Pricing", description: "Original artwork" },
     { id: "visibility" as const, label: "Visibility", description: "Featured, sold, collection" },
   ];
 
@@ -193,40 +190,17 @@ export function PaintingForm({ initialData, collections }: PaintingFormProps) {
           <Separator />
           <div className="space-y-6">
             <h2 className="font-display text-lg font-semibold text-charcoal">Pricing & Availability</h2>
-            <div className="space-y-2">
-              <Label>Category</Label>
-              <Select disabled={loading} onValueChange={(v) => form.setValue("category", v as "original" | "print" | "both")} value={form.watch("category")}>
-                <SelectTrigger className="w-48"><SelectValue placeholder="Select category" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="original">Original only</SelectItem>
-                  <SelectItem value="print">Print only</SelectItem>
-                  <SelectItem value="both">Original + Prints</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4 p-4 bg-cream rounded-sm border border-gold/20">
-                <h3 className="text-sm font-semibold text-charcoal">Original</h3>
-                <div className="space-y-2">
-                  <Label htmlFor="originalPrice">Price (USD)</Label>
-                  <Input id="originalPrice" type="number" step="0.01" min="0" disabled={loading} placeholder="1500" {...form.register("originalPrice")} />
-                </div>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" disabled={loading} {...form.register("originalAvailable")} className="accent-gold w-4 h-4" />
-                  <span className="text-sm text-graphite">Available for purchase</span>
-                </label>
+            <p className="text-sm text-graphite">The public site lists originals only. Print fields remain in the database for future use.</p>
+            <div className="space-y-4 p-4 bg-cream rounded-sm border border-gold/20 max-w-md">
+              <h3 className="text-sm font-semibold text-charcoal">Original</h3>
+              <div className="space-y-2">
+                <Label htmlFor="originalPrice">Price (USD)</Label>
+                <Input id="originalPrice" type="number" step="0.01" min="0" disabled={loading} placeholder="1500" {...form.register("originalPrice")} />
               </div>
-              <div className="space-y-4 p-4 bg-cream rounded-sm border border-gold/20">
-                <h3 className="text-sm font-semibold text-charcoal">Print</h3>
-                <div className="space-y-2">
-                  <Label htmlFor="printPrice">Price (USD)</Label>
-                  <Input id="printPrice" type="number" step="0.01" min="0" disabled={loading} placeholder="250" {...form.register("printPrice")} />
-                </div>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" disabled={loading} {...form.register("printAvailable")} className="accent-gold w-4 h-4" />
-                  <span className="text-sm text-graphite">Prints available</span>
-                </label>
-              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" disabled={loading} {...form.register("originalAvailable")} className="accent-gold w-4 h-4" />
+                <span className="text-sm text-graphite">Available for purchase</span>
+              </label>
             </div>
           </div>
           </div>

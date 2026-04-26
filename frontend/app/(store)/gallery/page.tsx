@@ -4,7 +4,7 @@ import { PaintingCard } from "@/components/store/painting-card";
 
 export const metadata: Metadata = {
   title: "Gallery",
-  description: "Browse all original paintings and prints.",
+  description: "Browse original paintings.",
 };
 
 export default async function GalleryPage({
@@ -14,7 +14,6 @@ export default async function GalleryPage({
 }) {
   const sp = await searchParams;
   const params: Record<string, string> = {};
-  if (sp.category) params.category = sp.category;
   if (sp.collectionId) params.collectionId = sp.collectionId;
   if (sp.featured === "true") params.featured = "true";
 

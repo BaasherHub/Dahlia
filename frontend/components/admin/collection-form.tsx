@@ -35,6 +35,7 @@ interface CollectionFormProps {
     name: string;
     description?: string;
     coverImage?: string;
+    coverImages?: string[];
     order: number;
   } | null;
 }
@@ -43,9 +44,11 @@ export function CollectionForm({ initialData }: CollectionFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [coverImages, setCoverImages] = useState<string[]>(
-    initialData?.coverImage ? [initialData.coverImage] : []
-  );
+  const [coverImages, setCoverImages] = useState<string[]>(() => {
+    if (initialData?.coverImages?.length) return [...initialData.coverImages];
+    if (initialData?.coverImage) return [initialData.coverImage];
+    return [];
+  });
 
   const isEditing = !!initialData;
 
@@ -63,6 +66,7 @@ export function CollectionForm({ initialData }: CollectionFormProps) {
     try {
       const data = {
         ...values,
+        coverImages: coverImages.length > 0 ? coverImages : [],
         coverImage: coverImages[0] || undefined,
         order: parseInt(values.order),
       };
@@ -130,10 +134,11 @@ export function CollectionForm({ initialData }: CollectionFormProps) {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           {/* Cover image */}
           <div className="space-y-2">
-            <Label>Cover Image</Label>
+            <Label>Cover images</Label>
+            <p className="text-xs text-graphite">Add one or more images; the first is the main thumbnail.</p>
             <ImageUpload
               value={coverImages}
-              onChange={(urls) => setCoverImages(urls.slice(-1))}
+              onChange={(urls) => setCoverImages(urls)}
               disabled={loading}
             />
           </div>

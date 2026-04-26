@@ -63,7 +63,6 @@ const PaginationSchema = z.object({
     (v) => v === 'true' || v === true,
     z.boolean().optional()
   ),
-  category: z.enum(['original', 'print', 'both']).optional(),
 });
 
 const adminLimiter = rateLimit({
@@ -108,24 +107,13 @@ router.get('/hero', async (req, res) => {
   res.json(painting || null);
 });
 
-// GET all available paintings (public)
+// GET all available paintings (public) — originals only (prints not sold on site)
 router.get('/', async (req, res) => {
-  const { collectionId, page, limit, featured, category } = PaginationSchema.parse(req.query);
+  const { collectionId, page, limit, featured } = PaginationSchema.parse(req.query);
   const skip = (page - 1) * limit;
 
-  const availabilityFilter = category === 'original'
-    ? { originalAvailable: true }
-    : category === 'print'
-      ? { printAvailable: true }
-      : {
-          OR: [
-            { originalAvailable: true },
-            { printAvailable: true },
-          ],
-        };
-
   const where = {
-    ...availabilityFilter,
+    originalAvailable: true,
     sold: false,
     ...(collectionId && { collectionId }),
     ...(featured === true && { featured: true }),
