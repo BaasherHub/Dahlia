@@ -37,8 +37,8 @@ jobs:
       - name: Build frontend
         run: cd frontend && npm run build
         env:
-          NEXT_PUBLIC_API_URL: "https://placeholder.railway.app"
-          NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: "placeholder"
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: ${{ secrets.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME }}
           NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET: "dahlia"
 
       - name: Prisma generate (verify schema)

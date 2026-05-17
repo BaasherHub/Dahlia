@@ -122,7 +122,7 @@ model SiteSettings {
   newsletterSubtitle  String @default("Subscribe to receive updates about new artworks, exhibitions, and commission opportunities.")
 
   // Footer
-  footerTagline       String @default("Contemporary Art | Toronto, Canada")
+  footerTagline       String @default("Contemporary Art · Toronto, Canada")
   socialLinks         String @default("[]")
 
   // Commissions page

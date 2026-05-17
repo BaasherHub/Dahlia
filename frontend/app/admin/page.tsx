@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { adminFetch } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -24,16 +25,21 @@ interface Stats {
 }
 
 export default function AdminDashboardPage() {
+  const router = useRouter();
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     adminFetch("/api/admin/stats")
-      .then((r) => r.json())
-      .then((data) => setStats(data))
+      .then((r) => {
+        if (r.status === 401) { router.push("/admin/login"); return null; }
+        if (!r.ok) throw new Error("Failed to fetch stats");
+        return r.json();
+      })
+      .then((data) => data && setStats(data))
       .catch(() => setStats(null))
       .finally(() => setLoading(false));
-  }, []);
+  }, [router]);
 
   const cards = [
     { label: "Total Paintings", value: loading ? "…" : stats?.totalPaintings ?? 0, icon: ImageIcon, href: "/admin/paintings" },

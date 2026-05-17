@@ -4,20 +4,23 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
 
-const filters = [{ label: "All works", value: "" }];
+const filters = [
+  { label: "All works", value: "" },
+  { label: "Featured", value: "featured" },
+];
 
 export function GalleryFilters() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const current = searchParams.get("category") || "";
+  const current = searchParams.get("featured") ? "featured" : "";
 
   const setFilter = useCallback(
     (value: string) => {
       const params = new URLSearchParams(searchParams.toString());
-      if (value) {
-        params.set("category", value);
+      if (value === "featured") {
+        params.set("featured", "true");
       } else {
-        params.delete("category");
+        params.delete("featured");
       }
       router.push(`/gallery?${params.toString()}`);
     },

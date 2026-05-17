@@ -16,7 +16,7 @@ const checkoutLimiter = rateLimit({
 
 const CheckoutItemSchema = z.object({
   paintingId: z.string(),
-  type: z.literal('original'),
+  type: z.enum(['original', 'print']),
 });
 
 const CheckoutSchema = z.object({
@@ -52,8 +52,8 @@ router.post('/checkout', checkoutLimiter, async (req, res) => {
   for (const item of data.items) {
     const p = paintings.find((x) => x.id === item.paintingId);
     if (!p) continue;
-    const price = p.originalPrice;
-    const available = p.originalAvailable;
+    const price = item.type === 'print' ? p.printPrice : p.originalPrice;
+    const available = item.type === 'print' ? p.printAvailable : p.originalAvailable;
     if (!available || (price ?? 0) <= 0) {
       return res.status(400).json({
         error: `"${p.title}" is not available for purchase.`,
@@ -64,7 +64,7 @@ router.post('/checkout', checkoutLimiter, async (req, res) => {
       price_data: {
         currency: 'usd',
         product_data: {
-          name: `${p.title} (original)`,
+          name: `${p.title} (${item.type})`,
           description: `${p.medium} · ${p.dimensions}`,
           images: p.images.slice(0, 1),
         },

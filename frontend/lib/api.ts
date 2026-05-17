@@ -71,7 +71,7 @@ export async function subscribeNewsletter(email: string) {
 }
 
 export interface CheckoutPayload {
-  items: Array<{ paintingId: string; type: "original" }>;
+  items: Array<{ paintingId: string; type: "original" | "print" }>;
   customerEmail: string;
   customerName: string;
   shipping: {

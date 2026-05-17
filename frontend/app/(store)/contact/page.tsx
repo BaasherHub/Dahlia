@@ -16,8 +16,7 @@ export default async function ContactPage() {
         <p className="label-sm mb-4">Get in Touch</p>
         <h1 className="heading-xl mb-6">Contact</h1>
         <p className="text-graphite mb-10 leading-relaxed">
-          {settings?.newsletterSubtitle ||
-            "Have a question about artwork, shipping, or collaborations? Send a message and we'll get back to you soon."}
+          Have a question about artwork, shipping, or collaborations? Send a message and we&apos;ll get back to you soon.
         </p>
         <ContactForm />
       </div>

@@ -144,7 +144,7 @@ router.post('/', async (req, res) => {
         );
       }
 
-      console.info(`✅ Order ${order.id} processed for ${meta.customerEmail}`);
+      logInfo(`Order ${order.id} processed for ${meta.customerEmail}`);
     } catch (err) {
       logError({
         message: 'Order processing failed',
