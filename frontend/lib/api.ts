@@ -128,8 +128,8 @@ export async function verifyAdminKey(key: string): Promise<boolean> {
   return res.ok;
 }
 
-export async function adminFetchAllPaintings() {
-  const res = await adminFetch("/api/paintings/all");
+export async function adminFetchAllPaintings(page = 1, limit = 20) {
+  const res = await adminFetch(`/api/paintings/all?page=${page}&limit=${limit}`);
   if (!res.ok) throw new Error("Failed to fetch paintings");
   return res.json();
 }
@@ -218,6 +218,24 @@ export async function adminFetchOrders() {
 export async function adminFetchStats() {
   const res = await adminFetch("/api/admin/stats");
   if (!res.ok) throw new Error("Failed to fetch stats");
+  return res.json();
+}
+
+export async function adminFetchCommissions() {
+  const res = await adminFetch("/api/admin/commissions");
+  if (!res.ok) throw new Error("Failed to fetch commissions");
+  return res.json();
+}
+
+export async function adminUpdateCommissionStatus(id: string, status: string) {
+  const res = await adminFetch(`/api/admin/commissions/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error || "Failed to update inquiry");
+  }
   return res.json();
 }
 

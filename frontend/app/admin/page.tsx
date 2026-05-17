@@ -45,7 +45,7 @@ export default function AdminDashboardPage() {
     { label: "Total Paintings", value: loading ? "…" : stats?.totalPaintings ?? 0, icon: ImageIcon, href: "/admin/paintings" },
     { label: "Total Orders", value: loading ? "…" : stats?.totalOrders ?? 0, icon: ShoppingBag, href: "/admin/orders" },
     { label: "Revenue", value: loading ? "…" : `$${(stats?.totalRevenue ?? 0).toFixed(2)}`, icon: TrendingUp, href: "/admin/orders" },
-    { label: "Commission Inquiries", value: loading ? "…" : stats?.pendingInquiries ?? 0, icon: Mail, href: "/admin/orders" },
+    { label: "Commission Inquiries", value: loading ? "…" : stats?.pendingInquiries ?? 0, icon: Mail, href: "/admin/commissions" },
   ];
 
   return (

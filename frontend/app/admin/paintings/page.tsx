@@ -89,11 +89,21 @@ const columns: ColumnDef<Painting>[] = [
 export default function AdminPaintingsPage() {
   const [paintings, setPaintings] = useState<Painting[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (p: number) => {
+    setLoading(true);
     try {
-      const result = await adminFetchAllPaintings();
-      setPaintings(Array.isArray(result) ? result : result?.data ?? []);
+      const result = await adminFetchAllPaintings(p);
+      if (Array.isArray(result)) {
+        setPaintings(result);
+      } else {
+        setPaintings(result?.data ?? []);
+        setTotalPages(result?.pagination?.pages ?? 1);
+        setTotal(result?.pagination?.total ?? result?.data?.length ?? 0);
+      }
     } catch {
       setPaintings([]);
     } finally {
@@ -102,8 +112,8 @@ export default function AdminPaintingsPage() {
   }, []);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    load(page);
+  }, [load, page]);
 
   return (
     <div className="space-y-6">
@@ -114,7 +124,7 @@ export default function AdminPaintingsPage() {
             Paintings
           </h1>
           <p className="text-sm text-graphite mt-1">
-            {paintings.length} total
+            {total > 0 ? `${total} total` : `${paintings.length} total`}
           </p>
         </div>
         <Link href="/admin/paintings/new">
@@ -130,7 +140,22 @@ export default function AdminPaintingsPage() {
       {loading ? (
         <p className="text-graphite py-8">Loading paintings…</p>
       ) : (
-        <DataTable columns={columns} data={paintings} searchKey="title" />
+        <>
+          <DataTable columns={columns} data={paintings} searchKey="title" />
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-2">
+              <p className="text-sm text-graphite">Page {page} of {totalPages}</p>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+                  Previous
+                </Button>
+                <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

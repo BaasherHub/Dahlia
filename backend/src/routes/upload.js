@@ -31,12 +31,8 @@ router.post('/', requireAdmin, async (req, res) => {
       });
     }
 
-    // Collect raw body
-    const chunks = [];
-    for await (const chunk of req) {
-      chunks.push(chunk);
-    }
-    const buffer = Buffer.concat(chunks);
+    // req.body is already a Buffer — express.raw() consumed the stream upstream
+    const buffer = req.body;
 
     // Parse boundary
     const contentType = req.headers['content-type'] || '';

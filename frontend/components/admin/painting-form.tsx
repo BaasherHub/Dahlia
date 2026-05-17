@@ -25,6 +25,8 @@ const formSchema = z.object({
   year: z.string().optional(),
   originalPrice: z.string().optional(),
   originalAvailable: z.boolean().default(true),
+  printAvailable: z.boolean().default(false),
+  printPrice: z.string().optional(),
   featured: z.boolean().default(false),
   heroImage: z.boolean().default(false),
   sold: z.boolean().default(false),
@@ -64,6 +66,8 @@ export function PaintingForm({ initialData, collections }: PaintingFormProps) {
       year: initialData?.year?.toString() || "",
       originalPrice: initialData?.originalPrice?.toString() || "",
       originalAvailable: initialData?.originalAvailable ?? true,
+      printAvailable: initialData?.printAvailable ?? false,
+      printPrice: initialData?.printPrice?.toString() || "",
       featured: initialData?.featured ?? false,
       heroImage: initialData?.heroImage ?? false,
       sold: initialData?.sold ?? false,
@@ -75,14 +79,16 @@ export function PaintingForm({ initialData, collections }: PaintingFormProps) {
     if (images.length === 0) { toast.error("Please upload at least one image."); return; }
     setLoading(true);
     try {
+      const category = values.originalAvailable && values.printAvailable ? "both"
+        : values.printAvailable ? "print"
+        : "original";
       const data = {
         ...values,
         images,
         year: values.year ? parseInt(values.year) : undefined,
         originalPrice: values.originalPrice ? parseFloat(values.originalPrice) : undefined,
-        category: "original" as const,
-        printAvailable: false,
-        printPrice: undefined,
+        printPrice: values.printAvailable && values.printPrice ? parseFloat(values.printPrice) : undefined,
+        category,
         collectionId: values.collectionId || undefined,
       };
       if (isEditing) {
@@ -94,7 +100,7 @@ export function PaintingForm({ initialData, collections }: PaintingFormProps) {
       }
       router.push("/admin/paintings");
       router.refresh();
-    } catch { toast.error("Something went wrong. Please try again."); }
+    } catch (err) { toast.error(err instanceof Error ? err.message : "Something went wrong."); }
     finally { setLoading(false); }
   };
 
@@ -109,6 +115,7 @@ export function PaintingForm({ initialData, collections }: PaintingFormProps) {
     finally { setLoading(false); setDeleteOpen(false); }
   };
 
+  const printAvailable = form.watch("printAvailable");
   const [activeTab, setActiveTab] = useState<"basic" | "pricing" | "visibility">("basic");
   const tabs = [
     { id: "basic" as const, label: "Basic Info", description: "Title, images, description" },
@@ -190,7 +197,6 @@ export function PaintingForm({ initialData, collections }: PaintingFormProps) {
           <Separator />
           <div className="space-y-6">
             <h2 className="font-display text-lg font-semibold text-charcoal">Pricing & Availability</h2>
-            <p className="text-sm text-graphite">The public site lists originals only. Print fields remain in the database for future use.</p>
             <div className="space-y-4 p-4 bg-cream rounded-sm border border-gold/20 max-w-md">
               <h3 className="text-sm font-semibold text-charcoal">Original</h3>
               <div className="space-y-2">
@@ -201,6 +207,19 @@ export function PaintingForm({ initialData, collections }: PaintingFormProps) {
                 <input type="checkbox" disabled={loading} {...form.register("originalAvailable")} className="accent-gold w-4 h-4" />
                 <span className="text-sm text-graphite">Available for purchase</span>
               </label>
+            </div>
+            <div className="space-y-4 p-4 bg-cream rounded-sm border border-gold/20 max-w-md">
+              <h3 className="text-sm font-semibold text-charcoal">Prints</h3>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" disabled={loading} {...form.register("printAvailable")} className="accent-gold w-4 h-4" />
+                <span className="text-sm text-graphite">Enable print version</span>
+              </label>
+              {printAvailable && (
+                <div className="space-y-2">
+                  <Label htmlFor="printPrice">Print Price (USD)</Label>
+                  <Input id="printPrice" type="number" step="0.01" min="0" disabled={loading} placeholder="150" {...form.register("printPrice")} />
+                </div>
+              )}
             </div>
           </div>
           </div>

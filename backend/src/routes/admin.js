@@ -149,5 +149,38 @@ router.put('/orders/:id', requireAdmin, async (req, res) => {
   }
 });
 
+// GET all commission inquiries (admin)
+router.get('/commissions', requireAdmin, async (req, res) => {
+  try {
+    const inquiries = await prisma.commissionInquiry.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json(inquiries);
+  } catch (error) {
+    logError({ message: 'Error fetching commissions', error: error.message });
+    res.status(500).json({ error: 'Failed to fetch commissions' });
+  }
+});
+
+// PATCH update commission inquiry status (admin)
+router.patch('/commissions/:id', requireAdmin, async (req, res) => {
+  try {
+    const { status } = req.body;
+    const validStatuses = ['new', 'read', 'archived'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: 'Invalid status. Must be new, read, or archived.' });
+    }
+    const inquiry = await prisma.commissionInquiry.update({
+      where: { id: req.params.id },
+      data: { status },
+    });
+    logInfo('Commission inquiry updated', { id: req.params.id, status });
+    res.json(inquiry);
+  } catch (error) {
+    logError({ message: 'Error updating commission inquiry', error: error.message, id: req.params.id });
+    res.status(500).json({ error: 'Failed to update inquiry' });
+  }
+});
+
 export default router;
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { ImagePlus, Trash2 } from "lucide-react";
+import { ImagePlus, Trash2, GripVertical } from "lucide-react";
 import imageCompression from "browser-image-compression";
 import toast from "react-hot-toast";
 
@@ -14,6 +14,7 @@ interface ImageUploadProps {
 
 export function ImageUpload({ value, onChange, disabled }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
 
   const onRemove = (url: string) => {
     onChange(value.filter((v) => v !== url));
@@ -89,8 +90,26 @@ export function ImageUpload({ value, onChange, disabled }: ImageUploadProps) {
       {value.length > 0 && (
         <div className="flex flex-wrap gap-3">
           {value.map((url, idx) => (
-            <div key={url} className="relative w-28 h-28 rounded-sm overflow-hidden border border-gold/20 group">
+            <div
+              key={url}
+              draggable={!disabled && !uploading}
+              onDragStart={() => setDragIndex(idx)}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={() => {
+                if (dragIndex === null || dragIndex === idx) return;
+                const next = [...value];
+                const [moved] = next.splice(dragIndex, 1);
+                next.splice(idx, 0, moved);
+                onChange(next);
+                setDragIndex(null);
+              }}
+              onDragEnd={() => setDragIndex(null)}
+              className={`relative w-28 h-28 rounded-sm overflow-hidden border group cursor-grab active:cursor-grabbing transition-opacity ${dragIndex === idx ? "opacity-40" : "opacity-100"} ${dragIndex !== null && dragIndex !== idx ? "border-gold/60" : "border-gold/20"}`}
+            >
               <Image src={url} alt={`Painting image ${idx + 1}`} fill className="object-cover" sizes="112px" />
+              <div className="absolute top-1 right-1 text-ivory/70 opacity-0 group-hover:opacity-100 transition-opacity">
+                <GripVertical className="h-4 w-4 drop-shadow" />
+              </div>
               {idx === 0 && (
                 <div className="absolute top-1 left-1 bg-gold text-charcoal text-[10px] font-semibold px-1.5 py-0.5 rounded-sm">
                   Main

@@ -12,10 +12,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { ImageUpload } from "@/components/admin/image-upload";
 import { Plus, Trash2 } from "lucide-react";
 
-type ExhibitionEntry = { title: string; description?: string; date?: string; location?: string; imageUrl?: string };
-type PublicationEntry = { title: string; description?: string; date?: string; location?: string; imageUrl?: string };
+type ExhibitionEntry = { _id?: string; title: string; description?: string; date?: string; location?: string; imageUrl?: string };
+type PublicationEntry = { _id?: string; title: string; description?: string; date?: string; location?: string; imageUrl?: string };
 
 const schema = z.object({
   heroTitle: z.string().optional(),
@@ -34,7 +35,6 @@ const schema = z.object({
   aboutStatement1: z.string().optional(),
   aboutStatement2: z.string().optional(),
   aboutStatement3: z.string().optional(),
-  aboutArtistImage: z.string().optional(),
   galleryLabel: z.string().optional(),
   galleryTitle: z.string().optional(),
   gallerySubtitle: z.string().optional(),
@@ -97,14 +97,16 @@ const SECTIONS = [
   },
 ];
 
-const emptyExhibition: ExhibitionEntry = { title: "", description: "", date: "", location: "", imageUrl: "" };
-const emptyPublication: PublicationEntry = { title: "", description: "", date: "", location: "", imageUrl: "" };
+const newEntry = () => ({ _id: crypto.randomUUID() });
+const emptyExhibition = (): ExhibitionEntry => ({ ...newEntry(), title: "", description: "", date: "", location: "", imageUrl: "" });
+const emptyPublication = (): PublicationEntry => ({ ...newEntry(), title: "", description: "", date: "", location: "", imageUrl: "" });
 
 export default function AdminSettingsPage() {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [exhibitions, setExhibitions] = useState<ExhibitionEntry[]>([]);
   const [publications, setPublications] = useState<PublicationEntry[]>([]);
+  const [artistImage, setArtistImage] = useState<string[]>([]);
   const form = useForm<FormValues>({ resolver: zodResolver(schema) });
 
   const loadSettings = useCallback(async () => {
@@ -122,7 +124,6 @@ export default function AdminSettingsPage() {
           newsletterTitle: s.newsletterTitle || "",
           newsletterSubtitle: s.newsletterSubtitle || "",
           aboutHeroSubtitle: s.aboutHeroSubtitle || "",
-          aboutArtistImage: s.aboutArtistImage || "",
           aboutBio1: s.aboutBio1 || "",
           aboutBio2: s.aboutBio2 || "",
           aboutBio3: s.aboutBio3 || "",
@@ -137,8 +138,9 @@ export default function AdminSettingsPage() {
           commissionsSubtitle: s.commissionsSubtitle || "",
           commissionFormHelpText: s.commissionFormHelpText || "",
         });
-        setExhibitions(parseEntryList<ExhibitionEntry>(s?.exhibitions));
-        setPublications(parseEntryList<PublicationEntry>(s?.publications));
+        setExhibitions(parseEntryList<ExhibitionEntry>(s?.exhibitions).map((e) => ({ ...e, _id: e._id || crypto.randomUUID() })));
+        setPublications(parseEntryList<PublicationEntry>(s?.publications).map((p) => ({ ...p, _id: p._id || crypto.randomUUID() })));
+        setArtistImage(s.aboutArtistImage ? [s.aboutArtistImage] : []);
       }
     } catch {
       toast.error("Could not load settings.");
@@ -152,9 +154,9 @@ export default function AdminSettingsPage() {
   const onSubmit = async (values: FormValues) => {
     setLoading(true);
     try {
-      const cleanExhibitions = exhibitions.filter((e) => e.title?.trim());
-      const cleanPublications = publications.filter((p) => p.title?.trim());
-      const payload = { ...values, exhibitions: cleanExhibitions, publications: cleanPublications };
+      const cleanExhibitions = exhibitions.filter((e) => e.title?.trim()).map(({ _id, ...e }) => e);
+      const cleanPublications = publications.filter((p) => p.title?.trim()).map(({ _id, ...p }) => p);
+      const payload = { ...values, exhibitions: cleanExhibitions, publications: cleanPublications, aboutArtistImage: artistImage[0] || "" };
       await adminUpdateSiteSettings(payload);
       toast.success("Settings saved.");
     } catch (err) {
@@ -173,7 +175,7 @@ export default function AdminSettingsPage() {
       return next;
     });
   };
-  const addExhibition = () => setExhibitions((prev) => [...prev, { ...emptyExhibition }]);
+  const addExhibition = () => setExhibitions((prev) => [...prev, emptyExhibition()]);
   const removeExhibition = (i: number) => setExhibitions((prev) => prev.filter((_, idx) => idx !== i));
 
   const updatePublication = (i: number, field: keyof PublicationEntry, value: string) => {
@@ -183,7 +185,7 @@ export default function AdminSettingsPage() {
       return next;
     });
   };
-  const addPublication = () => setPublications((prev) => [...prev, { ...emptyPublication }]);
+  const addPublication = () => setPublications((prev) => [...prev, emptyPublication()]);
   const removePublication = (i: number) => setPublications((prev) => prev.filter((_, idx) => idx !== i));
 
   if (fetching) return <p className="text-graphite py-8">Loading settings…</p>;
@@ -221,6 +223,17 @@ export default function AdminSettingsPage() {
                 )}
               </div>
             ))}
+            {section.title === "About Page" && (
+              <div className="space-y-2">
+                <Label>Artist Photo</Label>
+                <p className="text-xs text-graphite">Displayed on the About page. Upload one image.</p>
+                <ImageUpload
+                  value={artistImage}
+                  onChange={(urls) => setArtistImage(urls.slice(0, 1))}
+                  disabled={loading}
+                />
+              </div>
+            )}
           </div>
         ))}
 
@@ -228,7 +241,7 @@ export default function AdminSettingsPage() {
           <h2 className="font-display text-xl font-semibold text-charcoal border-b border-gold/20 pb-3">Exhibitions</h2>
           <p className="text-sm text-graphite">List exhibitions to appear on the About page.</p>
           {exhibitions.map((ex, i) => (
-            <div key={i} className="border border-gold/20 rounded-sm p-4 space-y-3 bg-cream/30">
+            <div key={ex._id} className="border border-gold/20 rounded-sm p-4 space-y-3 bg-cream/30">
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium text-charcoal">Exhibition {i + 1}</span>
                 <Button type="button" variant="ghost" size="sm" onClick={() => removeExhibition(i)} className="text-graphite hover:text-charcoal">
@@ -269,7 +282,7 @@ export default function AdminSettingsPage() {
           <h2 className="font-display text-xl font-semibold text-charcoal border-b border-gold/20 pb-3">Publications</h2>
           <p className="text-sm text-graphite">List publications to appear on the About page.</p>
           {publications.map((pub, i) => (
-            <div key={i} className="border border-gold/20 rounded-sm p-4 space-y-3 bg-cream/30">
+            <div key={pub._id} className="border border-gold/20 rounded-sm p-4 space-y-3 bg-cream/30">
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium text-charcoal">Publication {i + 1}</span>
                 <Button type="button" variant="ghost" size="sm" onClick={() => removePublication(i)} className="text-graphite hover:text-charcoal">

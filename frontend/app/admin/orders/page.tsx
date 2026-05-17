@@ -2,10 +2,13 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import { adminFetch } from "@/lib/api";
+import { adminFetch, adminUpdateOrder } from "@/lib/api";
 import { DataTable } from "@/components/ui/data-table";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
+import toast from "react-hot-toast";
 
 interface OrderItem {
   id: string;
@@ -25,6 +28,8 @@ interface Order {
   items: OrderItem[];
 }
 
+const STATUSES = ["PENDING", "PAID", "SHIPPED", "DELIVERED", "CANCELLED"];
+
 const STATUS_COLORS: Record<string, string> = {
   PAID: "text-green-600 font-medium",
   SHIPPED: "text-blue-600 font-medium",
@@ -33,57 +38,97 @@ const STATUS_COLORS: Record<string, string> = {
   CANCELLED: "text-red-500 font-medium",
 };
 
-const columns: ColumnDef<Order>[] = [
-  {
-    accessorKey: "id",
-    header: "Order ID",
-    cell: ({ row }) => <span className="font-mono text-xs">{row.original.id.slice(0, 8)}…</span>,
-  },
-  {
-    accessorKey: "customerName",
-    header: "Customer",
-    cell: ({ row }) => (
-      <div>
-        <p className="font-medium text-charcoal">{row.original.customerName}</p>
-        <p className="text-xs text-graphite">{row.original.customerEmail}</p>
-      </div>
-    ),
-  },
-  {
-    accessorKey: "items",
-    header: "Paintings",
-    cell: ({ row }) => row.original.items?.map((i) => i.painting?.title || "Unknown").join(", ") || "—",
-  },
-  {
-    accessorKey: "total",
-    header: "Total",
-    cell: ({ row }) => `$${row.original.total.toFixed(2)}`,
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => (
-      <span className={STATUS_COLORS[row.original.status] || "text-graphite"}>{row.original.status}</span>
-    ),
-  },
-  {
-    accessorKey: "trackingCode",
-    header: "Tracking",
-    cell: ({ row }) =>
-      row.original.trackingCode ? (
-        <span className="font-mono text-xs text-graphite">{row.original.carrier} · {row.original.trackingCode}</span>
-      ) : (
-        <span className="text-graphite text-xs">—</span>
-      ),
-  },
-  {
-    accessorKey: "createdAt",
-    header: "Date",
-    cell: ({ row }) => {
-      try { return format(new Date(row.original.createdAt), "MMM d, yyyy"); } catch { return "—"; }
-    },
-  },
-];
+function OrderRow({ order, onUpdated }: { order: Order; onUpdated: (o: Order) => void }) {
+  const [expanded, setExpanded] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState(order.status);
+  const [tracking, setTracking] = useState(order.trackingCode || "");
+  const [carrier, setCarrier] = useState(order.carrier || "");
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const updated = await adminUpdateOrder(order.id, { status, trackingCode: tracking, carrier });
+      onUpdated(updated);
+      toast.success("Order updated.");
+      setExpanded(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update order.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="border border-gold/10 rounded-sm overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full grid grid-cols-[1fr_1.5fr_1fr_auto_auto_auto] gap-4 items-center px-4 py-3 text-left hover:bg-cream/50 transition-colors"
+      >
+        <span className="font-mono text-xs text-graphite">{order.id.slice(0, 8)}…</span>
+        <div>
+          <p className="font-medium text-charcoal text-sm">{order.customerName}</p>
+          <p className="text-xs text-graphite">{order.customerEmail}</p>
+        </div>
+        <span className="text-sm text-graphite truncate">
+          {order.items?.map((i) => i.painting?.title || "Unknown").join(", ") || "—"}
+        </span>
+        <span className="text-sm font-medium text-charcoal">${order.total.toFixed(2)}</span>
+        <span className={`text-sm ${STATUS_COLORS[order.status] || "text-graphite"}`}>{order.status}</span>
+        <span className="text-xs text-graphite">
+          {(() => { try { return format(new Date(order.createdAt), "MMM d, yyyy"); } catch { return "—"; } })()}
+        </span>
+      </button>
+
+      {expanded && (
+        <div className="border-t border-gold/10 bg-cream/30 px-4 py-4 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-graphite uppercase tracking-wide">Status</label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                disabled={saving}
+                className="w-full border border-charcoal/20 rounded-sm px-3 py-2 text-sm bg-ivory text-charcoal focus:outline-none focus:ring-1 focus:ring-gold"
+              >
+                {STATUSES.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-graphite uppercase tracking-wide">Carrier</label>
+              <Input
+                value={carrier}
+                onChange={(e) => setCarrier(e.target.value)}
+                placeholder="e.g. UPS, FedEx"
+                disabled={saving}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-graphite uppercase tracking-wide">Tracking Code</label>
+              <Input
+                value={tracking}
+                onChange={(e) => setTracking(e.target.value)}
+                placeholder="Tracking number"
+                disabled={saving}
+              />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" onClick={save} disabled={saving}>
+              {saving ? "Saving…" : "Save Changes"}
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setExpanded(false)} disabled={saving}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -108,13 +153,23 @@ export default function AdminOrdersPage() {
 
   useEffect(() => { load(); }, [load]);
 
+  const handleUpdated = (updated: Order) => {
+    setOrders((prev) => prev.map((o) => (o.id === updated.id ? updated : o)));
+    setRevenue(
+      orders
+        .map((o) => (o.id === updated.id ? updated : o))
+        .filter((o) => o.status !== "CANCELLED")
+        .reduce((sum, o) => sum + o.total, 0)
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div>
           <p className="label-sm mb-1">Manage</p>
           <h1 className="font-display text-3xl font-semibold text-charcoal">Orders</h1>
-          <p className="text-sm text-graphite mt-1">{orders.length} total</p>
+          <p className="text-sm text-graphite mt-1">{orders.length} total · click a row to edit</p>
         </div>
         {!loading && orders.length > 0 && (
           <div className="text-right">
@@ -132,7 +187,19 @@ export default function AdminOrdersPage() {
           <p className="text-sm text-graphite/60 mt-1">Orders will appear here once customers complete checkout.</p>
         </div>
       ) : (
-        <DataTable columns={columns} data={orders} searchKey="customerName" />
+        <div className="space-y-2">
+          <div className="grid grid-cols-[1fr_1.5fr_1fr_auto_auto_auto] gap-4 px-4 py-2 text-xs font-medium text-graphite uppercase tracking-wide">
+            <span>Order ID</span>
+            <span>Customer</span>
+            <span>Paintings</span>
+            <span>Total</span>
+            <span>Status</span>
+            <span>Date</span>
+          </div>
+          {orders.map((order) => (
+            <OrderRow key={order.id} order={order} onUpdated={handleUpdated} />
+          ))}
+        </div>
       )}
     </div>
   );

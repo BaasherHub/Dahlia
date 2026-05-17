@@ -7,6 +7,7 @@ import {
   Image as ImageIcon,
   Library,
   ShoppingBag,
+  Mail,
   Settings,
   LogOut,
   ChevronRight,
@@ -19,6 +20,7 @@ const navItems = [
   { label: "Paintings", href: "/admin/paintings", icon: ImageIcon },
   { label: "Collections", href: "/admin/collections", icon: Library },
   { label: "Orders", href: "/admin/orders", icon: ShoppingBag },
+  { label: "Commissions", href: "/admin/commissions", icon: Mail },
   { label: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
