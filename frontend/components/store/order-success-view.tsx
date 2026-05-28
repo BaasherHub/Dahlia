@@ -37,7 +37,7 @@ export function OrderSuccessView({ sessionId, order }: OrderSuccessViewProps) {
 
   useEffect(() => {
     cart.removeAll();
-    // Clear cart once after successful return from Stripe
+    sessionStorage.removeItem("pendingCheckoutSession");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

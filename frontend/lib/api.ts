@@ -1,40 +1,44 @@
 import { parseApiErrorResponse } from "@/lib/admin-errors";
+import { getApiBaseUrl } from "@/lib/api-base";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
+function apiUrl(path: string): string {
+  const base = getApiBaseUrl();
+  return `${base}${path}`;
+}
 
 export async function fetchPaintings(params?: Record<string, string>) {
   const qs = params ? new URLSearchParams(params).toString() : "";
-  const res = await fetch(`${API_URL}/api/paintings${qs ? "?" + qs : ""}`, { cache: "no-store" });
+  const res = await fetch(apiUrl(`/api/paintings${qs ? "?" + qs : ""}`), { cache: "no-store" });
   if (!res.ok) throw new Error("Failed to fetch paintings");
   return res.json();
 }
 
 export async function fetchHeroPainting() {
-  const res = await fetch(`${API_URL}/api/paintings/hero`, { cache: "no-store" });
+  const res = await fetch(apiUrl("/api/paintings/hero"), { cache: "no-store" });
   if (!res.ok) return null;
   return res.json();
 }
 
 export async function fetchPainting(id: string) {
-  const res = await fetch(`${API_URL}/api/paintings/${id}`, { cache: "no-store" });
+  const res = await fetch(apiUrl(`/api/paintings/${id}`), { cache: "no-store" });
   if (!res.ok) throw new Error("Failed to fetch painting");
   return res.json();
 }
 
 export async function fetchCollections() {
-  const res = await fetch(`${API_URL}/api/collections`, { cache: "no-store" });
+  const res = await fetch(apiUrl("/api/collections"), { cache: "no-store" });
   if (!res.ok) throw new Error("Failed to fetch collections");
   return res.json();
 }
 
 export async function fetchCollection(id: string) {
-  const res = await fetch(`${API_URL}/api/collections/${id}`, { cache: "no-store" });
+  const res = await fetch(apiUrl(`/api/collections/${id}`), { cache: "no-store" });
   if (!res.ok) throw new Error("Failed to fetch collection");
   return res.json();
 }
 
 export async function fetchSiteSettings() {
-  const res = await fetch(`${API_URL}/api/site-settings`, { cache: "no-store" });
+  const res = await fetch(apiUrl("/api/site-settings"), { cache: "no-store" });
   if (!res.ok) return null;
   return res.json();
 }
@@ -46,7 +50,7 @@ export async function submitCommission(data: {
   size: string;
   budget: string;
 }) {
-  const res = await fetch(`${API_URL}/api/commissions`, {
+  const res = await fetch(apiUrl("/api/commissions"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -58,7 +62,7 @@ export async function submitCommission(data: {
 }
 
 export async function submitContact(data: { name: string; email: string; subject: string; message: string }) {
-  const res = await fetch(`${API_URL}/api/contact`, {
+  const res = await fetch(apiUrl("/api/contact"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -71,7 +75,7 @@ export async function submitContact(data: { name: string; email: string; subject
 }
 
 export async function subscribeNewsletter(email: string) {
-  const res = await fetch(`${API_URL}/api/newsletter`, {
+  const res = await fetch(apiUrl("/api/newsletter"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email }),
@@ -96,7 +100,7 @@ export interface CheckoutPayload {
 }
 
 export async function createCheckoutSession(payload: CheckoutPayload) {
-  const res = await fetch(`${API_URL}/api/orders/checkout`, {
+  const res = await fetch(apiUrl("/api/orders/checkout"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -105,37 +109,56 @@ export async function createCheckoutSession(payload: CheckoutPayload) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err?.error || "Failed to create checkout session");
   }
-  return res.json();
+  return res.json() as Promise<{ url: string; sessionId?: string }>;
 }
 
 export async function fetchOrderBySession(sessionId: string) {
-  const res = await fetch(`${API_URL}/api/orders/session/${sessionId}`, { cache: "no-store" });
+  const res = await fetch(apiUrl(`/api/orders/session/${sessionId}`), { cache: "no-store" });
   if (!res.ok) throw new Error("Failed to fetch order");
   return res.json();
 }
 
-function getAdminKey(): string {
-  if (typeof window === "undefined") return "";
-  return sessionStorage.getItem("adminKey") || "";
-}
-
 export async function adminFetch(path: string, options: RequestInit = {}) {
-  const adminKey = getAdminKey();
-  return fetch(`${API_URL}${path}`, {
+  return fetch(apiUrl(path), {
     ...options,
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
-      "x-admin-key": adminKey,
       ...(options.headers as Record<string, string>),
     },
   });
 }
 
-export async function verifyAdminKey(key: string): Promise<boolean> {
-  const res = await fetch(`${API_URL}/api/admin/verify`, {
-    headers: { "x-admin-key": key },
+export async function adminLogin(key: string): Promise<boolean> {
+  const res = await fetch(apiUrl("/api/admin/login"), {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ key }),
   });
   return res.ok;
+}
+
+export async function adminLogout(): Promise<void> {
+  await fetch(apiUrl("/api/admin/logout"), {
+    method: "POST",
+    credentials: "include",
+  });
+}
+
+export async function verifyAdminSession(): Promise<boolean> {
+  const res = await fetch(apiUrl("/api/admin/verify"), {
+    credentials: "include",
+  });
+  return res.ok;
+}
+
+export async function releaseCheckoutHold(sessionId: string): Promise<void> {
+  await fetch(apiUrl("/api/orders/release-hold"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sessionId }),
+  });
 }
 
 export async function adminFetchAllPaintings(page = 1, limit = 20) {

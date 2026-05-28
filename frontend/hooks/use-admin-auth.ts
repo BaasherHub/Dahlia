@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { verifyAdminKey } from "@/lib/api";
+import { adminLogin, adminLogout, verifyAdminSession } from "@/lib/api";
+
+const LEGACY_KEY = "adminKey";
 
 export function useAdminAuth() {
   const router = useRouter();
@@ -10,18 +12,11 @@ export function useAdminAuth() {
   const [isLoading, setIsLoading] = useState(true);
 
   const checkAuth = useCallback(async () => {
-    if (typeof window === "undefined") return;
-    const key = sessionStorage.getItem("adminKey");
-    if (!key) {
-      setIsAuthenticated(false);
-      setIsLoading(false);
-      return;
-    }
     try {
-      const valid = await verifyAdminKey(key);
+      const valid = await verifyAdminSession();
       setIsAuthenticated(valid);
-      if (!valid) {
-        sessionStorage.removeItem("adminKey");
+      if (!valid && typeof window !== "undefined") {
+        sessionStorage.removeItem(LEGACY_KEY);
       }
     } catch {
       setIsAuthenticated(false);
@@ -31,6 +26,9 @@ export function useAdminAuth() {
   }, []);
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem(LEGACY_KEY);
+    }
     checkAuth();
   }, [checkAuth]);
 
@@ -40,20 +38,18 @@ export function useAdminAuth() {
     }
   }, [isLoading, isAuthenticated, router]);
 
-  const login = useCallback(
-    async (key: string): Promise<boolean> => {
-      const valid = await verifyAdminKey(key);
-      if (valid) {
-        sessionStorage.setItem("adminKey", key);
-        setIsAuthenticated(true);
-      }
-      return valid;
-    },
-    []
-  );
+  const login = useCallback(async (key: string): Promise<boolean> => {
+    const ok = await adminLogin(key);
+    if (ok) {
+      sessionStorage.removeItem(LEGACY_KEY);
+      setIsAuthenticated(true);
+    }
+    return ok;
+  }, []);
 
-  const logout = useCallback(() => {
-    sessionStorage.removeItem("adminKey");
+  const logout = useCallback(async () => {
+    await adminLogout();
+    sessionStorage.removeItem(LEGACY_KEY);
     setIsAuthenticated(false);
     router.push("/admin/login");
   }, [router]);

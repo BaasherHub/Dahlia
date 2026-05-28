@@ -93,27 +93,6 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* Shop Art — merged heading + card (originals only) */}
-      <section className="section-padding border-b border-charcoal/6">
-        <div className="container-wide max-w-3xl mx-auto">
-          <div className="rounded-sm border border-charcoal/10 bg-cream/80 p-8 md:p-10">
-            <p className="label-sm mb-3">Start your collection</p>
-            <h2 className="heading-lg mb-8">Shop Art</h2>
-            <Link href="/gallery" className="group block">
-              <h3 className="font-display text-2xl font-semibold text-charcoal mb-3 group-hover:text-gold-dark transition-colors">
-                Original Paintings
-              </h3>
-              <p className="text-graphite text-sm mb-6">
-                One-of-a-kind works on premium linen canvas
-              </p>
-              <span className="text-sm tracking-widest uppercase text-gold group-hover:underline">
-                Shop Originals →
-              </span>
-            </Link>
-          </div>
-        </div>
-      </section>
-
       {/* Commission CTA */}
       <section className="section-padding bg-ivory border-t border-charcoal/10">
         <div className="container-narrow text-center">

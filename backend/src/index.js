@@ -54,15 +54,17 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, cb) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        cb(null, true);
-      } else {
-        logInfo('CORS blocked request', { origin });
-        cb(null, false);
+      if (!origin) {
+        return cb(null, true);
       }
+      if (allowedOrigins.includes(origin)) {
+        return cb(null, origin);
+      }
+      logInfo('CORS blocked request', { origin });
+      return cb(null, false);
     },
     credentials: true,
-    allowedHeaders: ['Content-Type', 'x-admin-key'],
+    allowedHeaders: ['Content-Type', 'x-admin-key', 'Cookie'],
   })
 );
 

@@ -45,13 +45,13 @@ export default function AdminLoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="key">Admin Key</Label>
+            <Label htmlFor="key">Admin password</Label>
             <Input
               id="key"
               type="password"
               value={key}
               onChange={(e) => setKey(e.target.value)}
-              placeholder="Enter admin key"
+              placeholder="Enter admin password"
               disabled={loading}
               required
             />

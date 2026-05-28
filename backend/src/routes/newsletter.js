@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import rateLimit from 'express-rate-limit';
 import { logInfo, logError } from '../services/logger.js';
-import { requireAdmin } from './admin.js';
+import { requireAdmin } from '../middleware/requireAdmin.js';
 import prisma from '../lib/prisma.js';
 
 const router = Router();

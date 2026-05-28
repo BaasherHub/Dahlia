@@ -1,68 +1,62 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { logInfo, logError } from '../services/logger.js';
+import {
+  verifyAdminKey,
+  setSessionCookie,
+  clearSessionCookie,
+  isRequestAdmin,
+} from '../services/adminSession.js';
+import { requireAdmin } from '../middleware/requireAdmin.js';
 import prisma from '../lib/prisma.js';
 
 const router = Router();
 
-// Admin authentication middleware
-export function requireAdmin(req, res, next) {
-  const key = (req.headers['x-admin-key'] || '').trim();
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: 'Too many login attempts. Please try again later.',
+});
 
-  if (!key) {
-    logInfo('Admin request without key', { path: req.path });
-    return res.status(401).json({ error: 'Missing admin key' });
-  }
-
-  const expectedKey = (process.env.ADMIN_KEY || '').trim();
-  const keyMatch = key === expectedKey;
-
-  if (!keyMatch) {
-    logInfo('Invalid admin key attempt', {
-      providedKeyLength: key.length,
-      expectedKeyLength: expectedKey?.length || 0,
-      match: keyMatch,
-    });
+router.post('/login', loginLimiter, (req, res) => {
+  const key = (req.body?.key || '').trim();
+  if (!verifyAdminKey(key)) {
+    logInfo('Failed admin login attempt');
     return res.status(401).json({ error: 'Invalid admin key' });
   }
+  setSessionCookie(res);
+  logInfo('Admin logged in');
+  res.json({ ok: true });
+});
 
-  logInfo('Admin authenticated', { path: req.path });
-  req.isAdmin = true;
-  next();
-}
+router.post('/logout', (req, res) => {
+  clearSessionCookie(res);
+  res.json({ ok: true });
+});
 
-// Rate limiter for admin endpoints
 const adminAuthLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 requests per window
-  skip: (req) => {
-    // Don't rate limit if key is correct
-    const key = (req.headers['x-admin-key'] || '').trim();
-    return key === process.env.ADMIN_KEY;
-  },
-  message: 'Too many failed admin attempts. Please try again later.',
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  skip: (req) => isRequestAdmin(req),
+  message: 'Too many requests, please try again later.',
 });
 
 router.use(adminAuthLimiter);
 
-// Verify admin access (for frontend)
 router.get('/verify', requireAdmin, (req, res) => {
   res.json({ authenticated: true });
 });
 
-// GET dashboard stats
 router.get('/stats', requireAdmin, async (req, res) => {
   try {
-    const [
-    totalPaintings,
-    totalOrders,
-    totalRevenue,
-    recentOrders,
-    pendingInquiries,
-  ] = await Promise.all([
+    const [totalPaintings, totalOrders, totalRevenue, recentOrders, pendingInquiries] =
+      await Promise.all([
         prisma.painting.count(),
         prisma.order.count(),
-        prisma.order.aggregate({ _sum: { total: true }, where: { status: { not: 'CANCELLED' } } }),
+        prisma.order.aggregate({
+          _sum: { total: true },
+          where: { status: { not: 'CANCELLED' } },
+        }),
         prisma.order.findMany({
           take: 5,
           orderBy: { createdAt: 'desc' },
@@ -84,7 +78,6 @@ router.get('/stats', requireAdmin, async (req, res) => {
   }
 });
 
-// GET all orders (admin)
 router.get('/orders', requireAdmin, async (req, res) => {
   try {
     const orders = await prisma.order.findMany({
@@ -102,7 +95,6 @@ router.get('/orders', requireAdmin, async (req, res) => {
   }
 });
 
-// GET single order (admin)
 router.get('/orders/:id', requireAdmin, async (req, res) => {
   try {
     const order = await prisma.order.findUnique({
@@ -119,7 +111,6 @@ router.get('/orders/:id', requireAdmin, async (req, res) => {
   }
 });
 
-// PUT update order (admin) — status + tracking
 router.put('/orders/:id', requireAdmin, async (req, res) => {
   try {
     const { status, trackingCode, carrier } = req.body;
@@ -149,7 +140,6 @@ router.put('/orders/:id', requireAdmin, async (req, res) => {
   }
 });
 
-// GET all commission inquiries (admin)
 router.get('/commissions', requireAdmin, async (req, res) => {
   try {
     const inquiries = await prisma.commissionInquiry.findMany({
@@ -162,7 +152,6 @@ router.get('/commissions', requireAdmin, async (req, res) => {
   }
 });
 
-// PATCH update commission inquiry status (admin)
 router.patch('/commissions/:id', requireAdmin, async (req, res) => {
   try {
     const { status } = req.body;
@@ -183,4 +172,3 @@ router.patch('/commissions/:id', requireAdmin, async (req, res) => {
 });
 
 export default router;
-

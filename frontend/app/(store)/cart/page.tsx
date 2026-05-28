@@ -1,7 +1,9 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { CartItemRow } from "@/components/store/cart-item";
+import { CartCheckoutRecovery } from "@/components/store/cart-checkout-recovery";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { formatPrice } from "@/lib/utils";
@@ -14,6 +16,9 @@ export default function CartPage() {
   if (cart.items.length === 0) {
     return (
       <div className="section-padding container-narrow text-center">
+        <Suspense fallback={null}>
+          <CartCheckoutRecovery />
+        </Suspense>
         <div className="max-w-sm mx-auto">
           <p className="label-sm mb-4">Your Cart</p>
           <h1 className="heading-lg mb-6">Cart is Empty</h1>
@@ -32,6 +37,9 @@ export default function CartPage() {
 
   return (
     <div className="section-padding container-narrow">
+      <Suspense fallback={null}>
+        <CartCheckoutRecovery />
+      </Suspense>
       <p className="label-sm mb-4">Your Cart</p>
       <h1 className="heading-lg mb-10">Shopping Cart</h1>
 

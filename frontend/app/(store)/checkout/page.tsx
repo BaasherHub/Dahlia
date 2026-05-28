@@ -67,7 +67,10 @@ export default function CheckoutPage() {
           phone: formData.phone || undefined,
         },
       };
-      const { url } = await createCheckoutSession(payload);
+      const { url, sessionId } = await createCheckoutSession(payload);
+      if (sessionId) {
+        sessionStorage.setItem("pendingCheckoutSession", sessionId);
+      }
       if (url) {
         window.location.href = url;
       }

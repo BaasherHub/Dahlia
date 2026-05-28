@@ -121,7 +121,7 @@ router.post('/checkout', checkoutLimiter, async (req, res) => {
       mode: 'payment',
       customer_email: data.customerEmail,
       success_url: `${process.env.FRONTEND_URL}/order-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.FRONTEND_URL}/cart`,
+      cancel_url: `${process.env.FRONTEND_URL}/cart?checkout=cancelled`,
       metadata: {
         items: JSON.stringify(data.items),
         heldOriginals: JSON.stringify(heldOriginalIds),
@@ -137,7 +137,7 @@ router.post('/checkout', checkoutLimiter, async (req, res) => {
       },
     });
 
-    res.json({ url: session.url });
+    res.json({ url: session.url, sessionId: session.id });
   } catch (err) {
     await releaseCheckoutHold(heldOriginalIds);
     const status = err.status || 500;
@@ -145,6 +145,45 @@ router.post('/checkout', checkoutLimiter, async (req, res) => {
       error: err.message || 'Checkout failed',
     });
   }
+});
+
+const ReleaseHoldSchema = z.object({
+  sessionId: z.string().min(1),
+});
+
+router.post('/release-hold', checkoutLimiter, async (req, res) => {
+  const { sessionId } = ReleaseHoldSchema.parse(req.body);
+
+  const existing = await prisma.order.findUnique({
+    where: { stripeSessionId: sessionId },
+  });
+  if (existing) {
+    return res.json({ ok: true, released: false, reason: 'order_completed' });
+  }
+
+  let session;
+  try {
+    session = await stripe.checkout.sessions.retrieve(sessionId);
+  } catch {
+    return res.status(400).json({ error: 'Invalid checkout session' });
+  }
+
+  if (session.payment_status === 'paid') {
+    return res.json({ ok: true, released: false, reason: 'already_paid' });
+  }
+
+  let heldOriginals = [];
+  try {
+    heldOriginals = JSON.parse(session.metadata?.heldOriginals || '[]');
+  } catch {
+    heldOriginals = [];
+  }
+
+  if (heldOriginals.length > 0) {
+    await releaseCheckoutHold(heldOriginals);
+  }
+
+  res.json({ ok: true, released: heldOriginals.length > 0 });
 });
 
 router.get('/session/:sessionId', async (req, res) => {
