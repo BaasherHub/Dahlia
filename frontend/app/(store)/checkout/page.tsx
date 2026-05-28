@@ -1,20 +1,26 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CartItemRow } from "@/components/store/cart-item";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { formatPrice } from "@/lib/utils";
 import useCart from "@/hooks/use-cart";
 import { createCheckoutSession } from "@/lib/api";
+import { CHECKOUT_COUNTRIES, zipRequiredForCountry } from "@/lib/countries";
 import { useState } from "react";
 import toast from "react-hot-toast";
 
 export default function CheckoutPage() {
-  const router = useRouter();
   const cart = useCart();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -29,10 +35,19 @@ export default function CheckoutPage() {
   });
 
   const total = cart.items.reduce((sum, item) => sum + item.price, 0);
+  const zipRequired = zipRequiredForCountry(formData.country);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (cart.items.length === 0) return;
+    if (zipRequired && !formData.zip.trim()) {
+      toast.error("ZIP / postal code is required for your country.");
+      return;
+    }
+    if (!formData.country) {
+      toast.error("Please select a country.");
+      return;
+    }
     setLoading(true);
     try {
       const payload = {
@@ -150,9 +165,12 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="zip">ZIP / Postcode (optional)</Label>
+                    <Label htmlFor="zip">
+                      ZIP / Postcode{zipRequired ? " *" : " (optional)"}
+                    </Label>
                     <Input
                       id="zip"
+                      required={zipRequired}
                       value={formData.zip}
                       onChange={update("zip")}
                       placeholder="ZIP or postal code"
@@ -162,13 +180,24 @@ export default function CheckoutPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="country">Country *</Label>
-                    <Input
-                      id="country"
+                    <Select
+                      value={formData.country || undefined}
+                      onValueChange={(v) =>
+                        setFormData((prev) => ({ ...prev, country: v }))
+                      }
                       required
-                      value={formData.country}
-                      onChange={update("country")}
-                      placeholder="e.g. United States, Canada"
-                    />
+                    >
+                      <SelectTrigger id="country">
+                        <SelectValue placeholder="Select country" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CHECKOUT_COUNTRIES.map((c) => (
+                          <SelectItem key={c} value={c}>
+                            {c}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Phone (optional)</Label>
@@ -195,14 +224,16 @@ export default function CheckoutPage() {
             </div>
             <Separator />
             <div className="flex justify-between text-sm">
-              <span className="text-graphite">
-                {cart.items.length} {cart.items.length === 1 ? "item" : "items"}
-              </span>
+              <span className="text-graphite">Subtotal</span>
               <span className="font-medium text-charcoal">{formatPrice(total)}</span>
             </div>
+            <p className="text-xs text-graphite leading-relaxed">
+              Shipping for original artwork is included in the listed price unless
+              noted otherwise. You will receive tracking by email when your order ships.
+            </p>
             <Separator />
             <div className="flex justify-between">
-              <span className="font-medium text-charcoal">Total</span>
+              <span className="font-medium text-charcoal">Total due today</span>
               <span className="text-charcoal text-xl font-medium">
                 {formatPrice(total)}
               </span>
@@ -213,9 +244,9 @@ export default function CheckoutPage() {
               className="w-full mt-2"
               size="lg"
             >
-              {loading ? "Processing…" : "Pay with Stripe"}
+              {loading ? "Processing…" : "Continue to secure payment"}
             </Button>
-            <p className="text-xs text-graphite text-center">Secured by Stripe</p>
+            <p className="text-xs text-graphite text-center">You will complete payment on Stripe</p>
             <Link href="/cart" className="block text-center text-sm text-graphite hover:text-charcoal">
               Back to cart
             </Link>

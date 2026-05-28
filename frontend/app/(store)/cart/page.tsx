@@ -20,11 +20,11 @@ export default function CartPage() {
           <p className="text-graphite mb-8">
             Browse the gallery to find paintings you love.
           </p>
-          <a href="/gallery">
+          <Link href="/gallery">
             <Button variant="outline" size="lg">
               Browse Gallery
             </Button>
-          </a>
+          </Link>
         </div>
       </div>
     );

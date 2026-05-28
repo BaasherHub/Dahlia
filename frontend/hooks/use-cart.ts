@@ -44,7 +44,7 @@ const useCart = create(
             ),
           ],
         });
-        toast.success("Item removed from cart.");
+        // No toast on remove — reduces noise during checkout edits
       },
       removeAll: () => set({ items: [] }),
     }),

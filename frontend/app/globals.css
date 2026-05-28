@@ -93,3 +93,18 @@
 .animate-fade-in-delay-3 {
   animation: fade-in 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .animate-fade-in,
+  .animate-fade-in-delay-1,
+  .animate-fade-in-delay-2,
+  .animate-fade-in-delay-3 {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}

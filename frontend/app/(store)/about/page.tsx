@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import { fetchSiteSettings } from "@/lib/api";
 import { parseEntryList } from "@/lib/parse-site-json";
+import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {
   title: "About",
@@ -115,6 +117,25 @@ export default async function AboutPage() {
             </ul>
           </div>
         )}
+
+        <div className="mt-20 pt-12 border-t border-gold/20 text-center max-w-lg mx-auto">
+          <h2 className="font-display text-2xl font-semibold text-charcoal mb-4">
+            Explore the work
+          </h2>
+          <p className="text-graphite text-sm mb-8 leading-relaxed">
+            Browse available originals or start a conversation about a custom commission.
+          </p>
+          <div className="flex flex-wrap gap-4 justify-center">
+            <Link href="/gallery">
+              <Button size="lg">View Gallery</Button>
+            </Link>
+            <Link href="/commissions">
+              <Button size="lg" variant="outline">
+                Commission a Piece
+              </Button>
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );

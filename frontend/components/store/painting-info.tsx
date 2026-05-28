@@ -1,10 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { formatPrice } from "@/lib/utils";
 import useCart from "@/hooks/use-cart";
-import toast from "react-hot-toast";
 
 interface Painting {
   id: string;
@@ -16,10 +16,8 @@ interface Painting {
   year?: number;
   originalPrice?: number;
   originalAvailable: boolean;
-  printPrice?: number;
-  printAvailable: boolean;
   sold: boolean;
-  collection?: { name: string };
+  collection?: { id: string; name: string };
 }
 
 interface PaintingInfoProps {
@@ -40,6 +38,9 @@ export function PaintingInfo({ painting }: PaintingInfoProps) {
     });
   };
 
+  const canPurchase =
+    !painting.sold && painting.originalAvailable && !!painting.originalPrice;
+
   return (
     <div className="space-y-8">
       <div>
@@ -57,52 +58,72 @@ export function PaintingInfo({ painting }: PaintingInfoProps) {
 
       <div className="space-y-3 text-sm text-graphite">
         <div className="flex gap-8">
-          <span className="text-xs tracking-widest uppercase w-24">Medium</span>
+          <span className="text-xs tracking-widest uppercase w-24 shrink-0">Medium</span>
           <span className="text-charcoal">{painting.medium}</span>
         </div>
         <div className="flex gap-8">
-          <span className="text-xs tracking-widest uppercase w-24">Size</span>
+          <span className="text-xs tracking-widest uppercase w-24 shrink-0">Size</span>
           <span className="text-charcoal">{painting.dimensions}</span>
         </div>
         {painting.collection && (
           <div className="flex gap-8">
-            <span className="text-xs tracking-widest uppercase w-24">
+            <span className="text-xs tracking-widest uppercase w-24 shrink-0">
               Collection
             </span>
-            <span className="text-charcoal">{painting.collection.name}</span>
+            <Link
+              href={`/collections/${painting.collection.id}`}
+              className="text-charcoal hover:text-gold-dark underline-offset-2 hover:underline"
+            >
+              {painting.collection.name}
+            </Link>
           </div>
         )}
       </div>
 
       <Separator />
 
-      <p className="text-graphite leading-relaxed">{painting.description}</p>
+      <p className="text-graphite leading-relaxed text-base">{painting.description}</p>
 
       <Separator />
 
-      {/* Pricing & purchase */}
       {painting.sold ? (
-        <p className="font-display text-xl text-graphite italic">
-          This work has been sold.
-        </p>
-      ) : (
         <div className="space-y-4">
-          {painting.originalAvailable && painting.originalPrice && (
-            <div className="flex items-center justify-between p-4 border border-gold/20 rounded-sm">
-              <div>
-                <p className="text-xs tracking-widest uppercase text-graphite mb-1">
-                  Original
-                </p>
-                <p className="text-charcoal text-xl font-medium">
-                  {formatPrice(painting.originalPrice)}
-                </p>
-              </div>
-              <Button onClick={addOriginal} variant="outline">
-                Add to Cart
-              </Button>
-            </div>
-          )}
+          <p className="font-display text-xl text-graphite italic">
+            This work has been sold.
+          </p>
+          <Link href="/commissions">
+            <Button variant="outline">Inquire about a similar piece</Button>
+          </Link>
         </div>
+      ) : canPurchase ? (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border border-gold/20 rounded-sm bg-cream/40">
+            <div>
+              <p className="text-xs tracking-widest uppercase text-graphite mb-1">
+                Original · one of a kind
+              </p>
+              <p className="text-charcoal text-2xl font-medium">
+                {formatPrice(painting.originalPrice!)}
+              </p>
+            </div>
+            <Button onClick={addOriginal} size="lg" className="shrink-0">
+              Add to Cart
+            </Button>
+          </div>
+          <ul className="text-xs text-graphite space-y-1.5 border-l-2 border-gold/30 pl-4">
+            <li>Original oil painting — ships from the studio</li>
+            <li>Carefully packed for safe delivery</li>
+            <li>Shipping calculated at checkout where applicable</li>
+          </ul>
+        </div>
+      ) : (
+        <p className="text-graphite text-sm">
+          This work is not currently available for online purchase.{" "}
+          <Link href="/contact" className="text-charcoal underline hover:text-gold-dark">
+            Contact me
+          </Link>{" "}
+          for availability.
+        </p>
       )}
     </div>
   );

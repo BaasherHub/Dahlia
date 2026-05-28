@@ -50,7 +50,7 @@ export function PaintingCard({ painting }: PaintingCardProps) {
         </h3>
         <p className="text-sm text-graphite">{painting.medium}</p>
         <p className="text-sm text-graphite">{painting.dimensions}</p>
-        {price && (
+        {price && !painting.sold && (
           <p className="text-charcoal text-base font-medium">
             {formatPrice(price)}
           </p>
