@@ -158,6 +158,32 @@ router.post('/', async (req, res) => {
     }
   }
 
+  if (event.type === 'checkout.session.expired') {
+    const session = event.data.object;
+    const meta = session.metadata || {};
+    let heldOriginals = [];
+    try {
+      heldOriginals = JSON.parse(meta.heldOriginals || '[]');
+    } catch {
+      heldOriginals = [];
+    }
+
+    const existing = await prisma.order.findUnique({
+      where: { stripeSessionId: session.id },
+    });
+
+    if (!existing && heldOriginals.length > 0) {
+      await prisma.painting.updateMany({
+        where: { id: { in: heldOriginals }, sold: false },
+        data: { originalAvailable: true },
+      });
+      logInfo('Released checkout hold after session expired', {
+        sessionId: session.id,
+        paintingIds: heldOriginals,
+      });
+    }
+  }
+
   res.json({ received: true });
 });
 

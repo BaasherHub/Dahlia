@@ -47,6 +47,19 @@ const CreatePaintingSchema = z.object({
   collectionId: z.preprocess(emptyStringToNull, z.string().nullable().optional()),
 });
 
+function normalizePaintingPayload(data) {
+  const next = { ...data };
+  if (next.sold) {
+    next.originalAvailable = false;
+    next.printAvailable = false;
+    next.featured = false;
+    next.heroImage = false;
+  }
+  next.category = 'original';
+  next.printAvailable = false;
+  return next;
+}
+
 const UpdatePaintingSchema = CreatePaintingSchema.partial().extend({
   images: z.preprocess(
     (value) => (Array.isArray(value) && value.length === 0 ? undefined : value),
@@ -154,7 +167,7 @@ router.get('/:id', async (req, res) => {
 
 // POST create painting (admin)
 router.post('/', requireAdmin, async (req, res) => {
-  const data = CreatePaintingSchema.parse(req.body);
+  const data = normalizePaintingPayload(CreatePaintingSchema.parse(req.body));
 
   if (data.heroImage) {
     await prisma.painting.updateMany({ data: { heroImage: false } });
@@ -166,7 +179,7 @@ router.post('/', requireAdmin, async (req, res) => {
 
 // PUT update painting (admin)
 router.put('/:id', requireAdmin, async (req, res) => {
-  const data = UpdatePaintingSchema.parse(req.body);
+  const data = normalizePaintingPayload(UpdatePaintingSchema.parse(req.body));
 
   if (data.heroImage) {
     await prisma.painting.updateMany({

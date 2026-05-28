@@ -1,3 +1,5 @@
+import { parseApiErrorResponse } from "@/lib/admin-errors";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 export async function fetchPaintings(params?: Record<string, string>) {
@@ -37,13 +39,21 @@ export async function fetchSiteSettings() {
   return res.json();
 }
 
-export async function submitCommission(data: Record<string, string>) {
+export async function submitCommission(data: {
+  name: string;
+  email: string;
+  vision: string;
+  size: string;
+  budget: string;
+}) {
   const res = await fetch(`${API_URL}/api/commissions`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error("Failed to submit commission");
+  if (!res.ok) {
+    throw new Error(await parseApiErrorResponse(res));
+  }
   return res.json();
 }
 
@@ -140,8 +150,7 @@ export async function adminCreatePainting(data: Record<string, unknown>) {
     body: JSON.stringify(data),
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err?.error || "Failed to create painting");
+    throw new Error(await parseApiErrorResponse(res));
   }
   return res.json();
 }
@@ -152,8 +161,7 @@ export async function adminUpdatePainting(id: string, data: Record<string, unkno
     body: JSON.stringify(data),
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err?.error || "Failed to update painting");
+    throw new Error(await parseApiErrorResponse(res));
   }
   return res.json();
 }

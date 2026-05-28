@@ -24,20 +24,6 @@ import prisma from './lib/prisma.js';
 // ── Run migrations on startup ─────────────────────────────────────────────────
 async function runMigrations() {
   try {
-    await prisma.$executeRawUnsafe(`
-      UPDATE "_prisma_migrations"
-      SET "finished_at" = NOW(),
-          "applied_steps_count" = 1,
-          "logs" = NULL
-      WHERE "finished_at" IS NULL
-      AND "rolled_back_at" IS NULL;
-    `);
-    logInfo('Checked and resolved any failed migrations');
-  } catch (err) {
-    logInfo('Migration fix skipped (table may not exist yet)', { error: err.message });
-  }
-
-  try {
     execSync('npx prisma migrate deploy', { stdio: 'inherit' });
     logInfo('Prisma migrations applied');
   } catch (err) {
@@ -87,8 +73,6 @@ app.get('/api/health', (req, res) => {
   res.json({
     ok: true,
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
-    adminKeySet: !!process.env.ADMIN_KEY,
   });
 });
 

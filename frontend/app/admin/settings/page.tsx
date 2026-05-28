@@ -38,6 +38,7 @@ const schema = z.object({
   galleryLabel: z.string().optional(),
   galleryTitle: z.string().optional(),
   gallerySubtitle: z.string().optional(),
+  portfolioSubtitle: z.string().optional(),
   footerTagline: z.string().optional(),
   navLogoSubtext: z.string().optional(),
   commissionsSubtitle: z.string().optional(),
@@ -74,11 +75,17 @@ const SECTIONS = [
     ],
   },
   {
-    title: "Gallery Page",
+    title: "Gallery & Collections",
     fields: [
-      { name: "galleryLabel" as const, label: "Gallery Label", placeholder: "Portfolio" },
-      { name: "galleryTitle" as const, label: "Gallery Title", placeholder: "Artworks" },
-      { name: "gallerySubtitle" as const, label: "Gallery Subtitle" },
+      { name: "galleryLabel" as const, label: "Gallery Label", placeholder: "All Works" },
+      { name: "galleryTitle" as const, label: "Gallery Title", placeholder: "Gallery" },
+      { name: "gallerySubtitle" as const, label: "Gallery Subtitle", multiline: true, rows: 2 },
+      {
+        name: "portfolioSubtitle" as const,
+        label: "Collections Section Subtitle (Homepage)",
+        multiline: true,
+        rows: 2,
+      },
     ],
   },
   {
@@ -133,6 +140,7 @@ export default function AdminSettingsPage() {
           galleryLabel: s.galleryLabel || "",
           galleryTitle: s.galleryTitle || "",
           gallerySubtitle: s.gallerySubtitle || "",
+          portfolioSubtitle: s.portfolioSubtitle || "",
           footerTagline: s.footerTagline || "",
           navLogoSubtext: s.navLogoSubtext || "",
           commissionsSubtitle: s.commissionsSubtitle || "",

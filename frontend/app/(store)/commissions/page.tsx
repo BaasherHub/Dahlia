@@ -16,9 +16,9 @@ const schema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Valid email required"),
   subject: z.string().min(1, "Subject is required"),
-  message: z.string().min(20, "Please describe your commission in detail"),
-  budget: z.string().optional(),
-  dimensions: z.string().optional(),
+  vision: z.string().min(20, "Please describe your commission in detail (at least 20 characters)"),
+  size: z.string().min(1, "Please enter desired size or write \"To be discussed\""),
+  budget: z.string().min(1, "Please enter a budget range or write \"To be discussed\""),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -33,20 +33,30 @@ export default function CommissionsPage() {
       name: "",
       email: "",
       subject: "",
-      message: "",
+      vision: "",
+      size: "",
       budget: "",
-      dimensions: "",
     },
   });
 
   const onSubmit = async (values: FormValues) => {
     setLoading(true);
     try {
-      await submitCommission(values);
+      const vision = values.subject.trim()
+        ? `${values.subject.trim()}\n\n${values.vision.trim()}`
+        : values.vision.trim();
+
+      await submitCommission({
+        name: values.name,
+        email: values.email,
+        vision,
+        size: values.size.trim(),
+        budget: values.budget.trim(),
+      });
       setSubmitted(true);
       toast.success("Inquiry submitted!");
-    } catch {
-      toast.error("Failed to send. Please try again.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to send. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -93,9 +103,7 @@ export default function CommissionsPage() {
                 {...form.register("name")}
               />
               {form.formState.errors.name && (
-                <p className="text-xs text-red-500">
-                  {form.formState.errors.name.message}
-                </p>
+                <p className="text-xs text-red-500">{form.formState.errors.name.message}</p>
               )}
             </div>
             <div className="space-y-2">
@@ -108,9 +116,7 @@ export default function CommissionsPage() {
                 {...form.register("email")}
               />
               {form.formState.errors.email && (
-                <p className="text-xs text-red-500">
-                  {form.formState.errors.email.message}
-                </p>
+                <p className="text-xs text-red-500">{form.formState.errors.email.message}</p>
               )}
             </div>
           </div>
@@ -123,42 +129,49 @@ export default function CommissionsPage() {
               placeholder="Portrait, landscape, abstract…"
               {...form.register("subject")}
             />
+            {form.formState.errors.subject && (
+              <p className="text-xs text-red-500">{form.formState.errors.subject.message}</p>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="dimensions">Desired Size (optional)</Label>
+              <Label htmlFor="size">Desired Size</Label>
               <Input
-                id="dimensions"
+                id="size"
                 disabled={loading}
-                placeholder='24" × 36"'
-                {...form.register("dimensions")}
+                placeholder='24" × 36" or "To be discussed"'
+                {...form.register("size")}
               />
+              {form.formState.errors.size && (
+                <p className="text-xs text-red-500">{form.formState.errors.size.message}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="budget">Budget Range (optional)</Label>
+              <Label htmlFor="budget">Budget Range</Label>
               <Input
                 id="budget"
                 disabled={loading}
-                placeholder="$500 – $2,000"
+                placeholder="$500 – $2,000 or To be discussed"
                 {...form.register("budget")}
               />
+              {form.formState.errors.budget && (
+                <p className="text-xs text-red-500">{form.formState.errors.budget.message}</p>
+              )}
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="message">Tell Me About Your Vision</Label>
+            <Label htmlFor="vision">Tell Me About Your Vision</Label>
             <Textarea
-              id="message"
+              id="vision"
               disabled={loading}
               placeholder="Describe the subject, mood, colors, setting, and any references…"
               rows={6}
-              {...form.register("message")}
+              {...form.register("vision")}
             />
-            {form.formState.errors.message && (
-              <p className="text-xs text-red-500">
-                {form.formState.errors.message.message}
-              </p>
+            {form.formState.errors.vision && (
+              <p className="text-xs text-red-500">{form.formState.errors.vision.message}</p>
             )}
           </div>
 

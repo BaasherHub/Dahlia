@@ -10,6 +10,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { formatPrice } from "@/lib/utils";
+import toast from "react-hot-toast";
 
 interface Painting {
   id: string;
@@ -17,9 +18,12 @@ interface Painting {
   images: string[];
   medium: string;
   originalPrice?: number;
+  originalAvailable: boolean;
   featured: boolean;
+  heroImage: boolean;
   sold: boolean;
   createdAt: string;
+  collection?: { name: string } | null;
 }
 
 const columns: ColumnDef<Painting>[] = [
@@ -57,22 +61,37 @@ const columns: ColumnDef<Painting>[] = [
         : "—",
   },
   {
+    id: "collection",
+    header: "Collection",
+    cell: ({ row }) => (
+      <span className="text-graphite text-sm">
+        {row.original.collection?.name || "—"}
+      </span>
+    ),
+  },
+  {
     accessorKey: "featured",
     header: "Featured",
-    cell: ({ row }) => (row.original.featured ? "Yes" : "No"),
+    cell: ({ row }) => (row.original.featured ? "Yes" : "—"),
+  },
+  {
+    accessorKey: "heroImage",
+    header: "Hero",
+    cell: ({ row }) => (row.original.heroImage ? "Yes" : "—"),
   },
   {
     accessorKey: "sold",
     header: "Status",
-    cell: ({ row }) => (
-      <span
-        className={
-          row.original.sold ? "text-red-500" : "text-green-600"
-        }
-      >
-        {row.original.sold ? "Sold" : "Available"}
-      </span>
-    ),
+    cell: ({ row }) => {
+      const { sold, originalAvailable } = row.original;
+      if (sold) {
+        return <span className="text-red-500 font-medium">Sold</span>;
+      }
+      if (!originalAvailable) {
+        return <span className="text-amber-700 font-medium">Unavailable</span>;
+      }
+      return <span className="text-green-600 font-medium">Available</span>;
+    },
   },
   {
     id: "actions",
@@ -106,6 +125,7 @@ export default function AdminPaintingsPage() {
       }
     } catch {
       setPaintings([]);
+      toast.error("Failed to load paintings. Check your admin key and try again.");
     } finally {
       setLoading(false);
     }
@@ -141,7 +161,12 @@ export default function AdminPaintingsPage() {
         <p className="text-graphite py-8">Loading paintings…</p>
       ) : (
         <>
-          <DataTable columns={columns} data={paintings} searchKey="title" />
+          <DataTable
+            columns={columns}
+            data={paintings}
+            searchKey="title"
+            clientPagination={false}
+          />
           {totalPages > 1 && (
             <div className="flex items-center justify-between pt-2">
               <p className="text-sm text-graphite">Page {page} of {totalPages}</p>

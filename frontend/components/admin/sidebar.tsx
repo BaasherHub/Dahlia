@@ -69,7 +69,15 @@ export function AdminSidebar() {
         })}
       </nav>
 
-      <div className="px-4 py-4 border-t border-ivory/10">
+      <div className="px-4 py-4 border-t border-ivory/10 space-y-1">
+        <Link
+          href="/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-3 px-3 py-2.5 w-full text-sm text-ivory/60 hover:text-ivory transition-colors duration-400"
+        >
+          View live site
+        </Link>
         <button
           onClick={logout}
           className="flex items-center gap-3 px-3 py-2.5 w-full text-sm text-ivory/60 hover:text-ivory transition-colors duration-400"

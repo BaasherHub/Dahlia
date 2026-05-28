@@ -116,6 +116,7 @@ export default function AdminCommissionsPage() {
       setInquiries(Array.isArray(data) ? data : []);
     } catch {
       setInquiries([]);
+      toast.error("Failed to load commission inquiries.");
     } finally {
       setLoading(false);
     }

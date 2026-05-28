@@ -34,68 +34,117 @@ const CheckoutSchema = z.object({
   }),
 });
 
+async function releaseCheckoutHold(paintingIds) {
+  if (!paintingIds?.length) return;
+  await prisma.painting.updateMany({
+    where: { id: { in: paintingIds }, sold: false },
+    data: { originalAvailable: true },
+  });
+}
+
 router.post('/checkout', checkoutLimiter, async (req, res) => {
   const data = CheckoutSchema.parse(req.body);
   const paintingIds = data.items.map((i) => i.paintingId);
+  let heldOriginalIds = [];
 
-  const paintings = await prisma.painting.findMany({
-    where: { id: { in: paintingIds } },
-  });
+  try {
+    const paintings = await prisma.$transaction(async (tx) => {
+      const held = [];
+      const found = await tx.painting.findMany({
+        where: { id: { in: paintingIds } },
+      });
 
-  if (paintings.length !== paintingIds.length) {
-    return res.status(400).json({
-      error: 'One or more paintings were not found.',
+      if (found.length !== paintingIds.length) {
+        const err = new Error('One or more paintings were not found.');
+        err.status = 400;
+        throw err;
+      }
+
+      for (const item of data.items) {
+        const p = found.find((x) => x.id === item.paintingId);
+        const price = item.type === 'print' ? p.printPrice : p.originalPrice;
+        const available =
+          item.type === 'print'
+            ? p.printAvailable
+            : p.originalAvailable && !p.sold;
+
+        if (!available || (price ?? 0) <= 0) {
+          const err = new Error(`"${p.title}" is not available for purchase.`);
+          err.status = 400;
+          throw err;
+        }
+
+        if (item.type === 'original') {
+          const holdResult = await tx.painting.updateMany({
+            where: {
+              id: item.paintingId,
+              originalAvailable: true,
+              sold: false,
+            },
+            data: { originalAvailable: false },
+          });
+          if (holdResult.count !== 1) {
+            const err = new Error(`"${p.title}" was just purchased or is no longer available.`);
+            err.status = 400;
+            throw err;
+          }
+          held.push(item.paintingId);
+        }
+      }
+
+      heldOriginalIds = held;
+      return found;
     });
-  }
 
-  const lineItems = [];
-  for (const item of data.items) {
-    const p = paintings.find((x) => x.id === item.paintingId);
-    if (!p) continue;
-    const price = item.type === 'print' ? p.printPrice : p.originalPrice;
-    const available = item.type === 'print' ? p.printAvailable : p.originalAvailable;
-    if (!available || (price ?? 0) <= 0) {
-      return res.status(400).json({
-        error: `"${p.title}" is not available for purchase.`,
+    const lineItems = [];
+    for (const item of data.items) {
+      const p = paintings.find((x) => x.id === item.paintingId);
+      const price = item.type === 'print' ? p.printPrice : p.originalPrice;
+      const priceInCents = Math.round(price * 100);
+      lineItems.push({
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: `${p.title} (${item.type})`,
+            description: `${p.medium} · ${p.dimensions}`,
+            images: p.images.slice(0, 1),
+          },
+          unit_amount: priceInCents,
+        },
+        quantity: 1,
       });
     }
-    const priceInCents = Math.round(price * 100);
-    lineItems.push({
-      price_data: {
-        currency: 'usd',
-        product_data: {
-          name: `${p.title} (${item.type})`,
-          description: `${p.medium} · ${p.dimensions}`,
-          images: p.images.slice(0, 1),
-        },
-        unit_amount: priceInCents,
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: lineItems,
+      mode: 'payment',
+      customer_email: data.customerEmail,
+      success_url: `${process.env.FRONTEND_URL}/order-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.FRONTEND_URL}/cart`,
+      metadata: {
+        items: JSON.stringify(data.items),
+        heldOriginals: JSON.stringify(heldOriginalIds),
+        customerEmail: data.customerEmail,
+        customerName: data.shipping.name,
+        shipName: data.shipping.name,
+        shipStreet: data.shipping.street,
+        shipCity: data.shipping.city,
+        shipState: data.shipping.state,
+        shipZip: data.shipping.zip || '',
+        shipCountry: data.shipping.country,
+        shipPhone: data.shipping.phone || '',
       },
-      quantity: 1,
+    });
+
+    res.json({ url: session.url });
+  } catch (err) {
+    await releaseCheckoutHold(heldOriginalIds);
+    const status = err.status || 500;
+    return res.status(status).json({
+      error: err.message || 'Checkout failed',
     });
   }
-
-  const session = await stripe.checkout.sessions.create({
-    payment_method_types: ['card'],
-    line_items: lineItems,
-    mode: 'payment',
-    customer_email: data.customerEmail,
-    success_url: `${process.env.FRONTEND_URL}/order-success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${process.env.FRONTEND_URL}/cart`,
-    metadata: {
-      items: JSON.stringify(data.items),
-      customerEmail: data.customerEmail,
-      customerName: data.shipping.name,
-      shipName: data.shipping.name,
-      shipStreet: data.shipping.street,
-      shipCity: data.shipping.city,
-      shipState: data.shipping.state,
-      shipZip: data.shipping.zip || '',
-      shipCountry: data.shipping.country,
-      shipPhone: data.shipping.phone || '',
-    },
-  });
-
-  res.json({ url: session.url });
 });
 
 router.get('/session/:sessionId', async (req, res) => {
