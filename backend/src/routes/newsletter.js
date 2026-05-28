@@ -9,8 +9,7 @@ const router = Router();
 const subscribeLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5 });
 const SubscribeSchema = z.object({ email: z.string().email() });
 
-// POST /api/newsletter/subscribe — public (rate-limited)
-router.post('/subscribe', subscribeLimiter, async (req, res) => {
+async function subscribeHandler(req, res) {
   try {
     const { email } = SubscribeSchema.parse(req.body);
     await prisma.newsletterSubscriber.create({ data: { email } });
@@ -23,7 +22,10 @@ router.post('/subscribe', subscribeLimiter, async (req, res) => {
     logError({ message: 'Newsletter subscription failed', error: error.message });
     res.status(500).json({ error: 'Failed to subscribe' });
   }
-});
+}
+
+router.post('/', subscribeLimiter, subscribeHandler);
+router.post('/subscribe', subscribeLimiter, subscribeHandler);
 
 // GET /api/newsletter — admin only
 router.get('/', requireAdmin, async (req, res) => {

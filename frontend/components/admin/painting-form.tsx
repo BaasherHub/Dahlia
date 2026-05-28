@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import toast from "react-hot-toast";
-import { Trash2, ExternalLink } from "lucide-react";
+import { Trash2, ExternalLink, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,7 +16,12 @@ import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertModal } from "@/components/modals/alert-modal";
 import { ImageUpload } from "@/components/admin/image-upload";
-import { adminCreatePainting, adminUpdatePainting, adminDeletePainting } from "@/lib/api";
+import {
+  adminCreatePainting,
+  adminUpdatePainting,
+  adminDeletePainting,
+  adminDuplicatePainting,
+} from "@/lib/api";
 
 const formSchema = z
   .object({
@@ -122,6 +127,33 @@ export function PaintingForm({ initialData, collections }: PaintingFormProps) {
   });
 
   const sold = form.watch("sold");
+  const isDirty = form.formState.isDirty;
+
+  useEffect(() => {
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty && !loading) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [isDirty, loading]);
+
+  const onDuplicate = async () => {
+    if (!initialData) return;
+    setLoading(true);
+    try {
+      const copy = await adminDuplicatePainting(initialData.id);
+      toast.success("Duplicate created.");
+      router.push(`/admin/paintings/${copy.id}`);
+      router.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Duplicate failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const onSoldChange = (checked: boolean) => {
     form.setValue("sold", checked);
@@ -239,6 +271,17 @@ export function PaintingForm({ initialData, collections }: PaintingFormProps) {
                   </Button>
                 </Link>
                 <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  disabled={loading}
+                  onClick={onDuplicate}
+                >
+                  <Copy className="h-4 w-4" />
+                  Duplicate
+                </Button>
+                <Button
                   variant="destructive"
                   size="sm"
                   onClick={() => setDeleteOpen(true)}
@@ -251,6 +294,11 @@ export function PaintingForm({ initialData, collections }: PaintingFormProps) {
             )}
           </div>
         </div>
+        {isDirty && (
+          <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-sm px-4 py-2">
+            You have unsaved changes.
+          </p>
+        )}
         <Separator />
 
         <div className="flex gap-2 border-b border-charcoal/10 pb-2 flex-wrap">
@@ -391,7 +439,7 @@ export function PaintingForm({ initialData, collections }: PaintingFormProps) {
                     onChange={(e) => form.setValue("originalAvailable", e.target.checked)}
                     className="accent-gold w-4 h-4"
                   />
-                  <span className="text-sm text-graphite">Available for purchase</span>
+                  <span className="text-sm text-graphite">Live in gallery (available to buy)</span>
                 </label>
               </div>
             </div>

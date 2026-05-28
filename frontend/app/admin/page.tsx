@@ -6,14 +6,16 @@ import Link from "next/link";
 import { adminFetch } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ImageIcon, ShoppingBag, Settings, Plus, TrendingUp, Mail } from "lucide-react";
+import { ImageIcon, ShoppingBag, Settings, Plus, TrendingUp, Mail, Users } from "lucide-react";
 import { format } from "date-fns";
 
 interface Stats {
   totalPaintings: number;
+  availablePaintings?: number;
   totalOrders: number;
   totalRevenue: number;
   pendingInquiries: number;
+  newsletterSubscribers?: number;
   recentOrders: Array<{
     id: string;
     customerName: string;
@@ -42,10 +44,37 @@ export default function AdminDashboardPage() {
   }, [router]);
 
   const cards = [
-    { label: "Total Paintings", value: loading ? "…" : stats?.totalPaintings ?? 0, icon: ImageIcon, href: "/admin/paintings" },
-    { label: "Total Orders", value: loading ? "…" : stats?.totalOrders ?? 0, icon: ShoppingBag, href: "/admin/orders" },
-    { label: "Revenue", value: loading ? "…" : `$${(stats?.totalRevenue ?? 0).toFixed(2)}`, icon: TrendingUp, href: "/admin/orders" },
-    { label: "Commission Inquiries", value: loading ? "…" : stats?.pendingInquiries ?? 0, icon: Mail, href: "/admin/commissions" },
+    {
+      label: "Live in Gallery",
+      value: loading ? "…" : stats?.availablePaintings ?? 0,
+      sub: stats ? `of ${stats.totalPaintings} total` : undefined,
+      icon: ImageIcon,
+      href: "/admin/paintings",
+    },
+    {
+      label: "Total Orders",
+      value: loading ? "…" : stats?.totalOrders ?? 0,
+      icon: ShoppingBag,
+      href: "/admin/orders",
+    },
+    {
+      label: "Revenue",
+      value: loading ? "…" : `$${(stats?.totalRevenue ?? 0).toFixed(2)}`,
+      icon: TrendingUp,
+      href: "/admin/orders",
+    },
+    {
+      label: "New Inquiries",
+      value: loading ? "…" : stats?.pendingInquiries ?? 0,
+      icon: Mail,
+      href: "/admin/commissions",
+    },
+    {
+      label: "Newsletter",
+      value: loading ? "…" : stats?.newsletterSubscribers ?? 0,
+      icon: Users,
+      href: "/admin/newsletter",
+    },
   ];
 
   return (
@@ -57,7 +86,7 @@ export default function AdminDashboardPage() {
 
       <Separator />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         {cards.map((card) => (
           <Link key={card.label} href={card.href} className="block p-6 bg-cream rounded-sm border border-gold/20 hover:border-gold transition-colors duration-400">
             <div className="flex items-center justify-between mb-4">
@@ -65,6 +94,9 @@ export default function AdminDashboardPage() {
             </div>
             <p className="font-display text-3xl font-semibold text-charcoal">{card.value}</p>
             <p className="text-sm text-graphite mt-1">{card.label}</p>
+            {"sub" in card && card.sub && (
+              <p className="text-xs text-graphite/70 mt-0.5">{card.sub}</p>
+            )}
           </Link>
         ))}
       </div>
@@ -77,6 +109,7 @@ export default function AdminDashboardPage() {
           <Link href="/admin/paintings/new"><Button variant="outline" className="gap-2"><Plus className="h-4 w-4" />New Painting</Button></Link>
           <Link href="/admin/collections/new"><Button variant="outline" className="gap-2"><Plus className="h-4 w-4" />New Collection</Button></Link>
           <Link href="/admin/orders"><Button variant="outline" className="gap-2"><ShoppingBag className="h-4 w-4" />View Orders</Button></Link>
+          <Link href="/admin/newsletter"><Button variant="outline" className="gap-2"><Users className="h-4 w-4" />Newsletter</Button></Link>
           <Link href="/admin/settings"><Button variant="outline" className="gap-2"><Settings className="h-4 w-4" />Settings</Button></Link>
         </div>
       </div>

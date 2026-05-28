@@ -161,7 +161,7 @@ export async function releaseCheckoutHold(sessionId: string): Promise<void> {
   });
 }
 
-export async function adminFetchAllPaintings(page = 1, limit = 20) {
+export async function adminFetchAllPaintings(page = 1, limit = 50) {
   const res = await adminFetch(`/api/paintings/all?page=${page}&limit=${limit}`);
   if (!res.ok) throw new Error("Failed to fetch paintings");
   return res.json();
@@ -267,6 +267,42 @@ export async function adminUpdateCommissionStatus(id: string, status: string) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err?.error || "Failed to update inquiry");
   }
+  return res.json();
+}
+
+export async function adminPatchPaintingStatus(
+  id: string,
+  data: { sold?: boolean; originalAvailable?: boolean }
+) {
+  const res = await adminFetch(`/api/paintings/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    throw new Error(await parseApiErrorResponse(res));
+  }
+  return res.json();
+}
+
+export async function adminDuplicatePainting(id: string) {
+  const res = await adminFetch(`/api/paintings/${id}/duplicate`, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    throw new Error(await parseApiErrorResponse(res));
+  }
+  return res.json();
+}
+
+export async function adminFetchNewsletterSubscribers() {
+  const res = await adminFetch("/api/newsletter");
+  if (!res.ok) throw new Error("Failed to fetch subscribers");
+  return res.json();
+}
+
+export async function adminDeleteNewsletterSubscriber(id: string) {
+  const res = await adminFetch(`/api/newsletter/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to remove subscriber");
   return res.json();
 }
 

@@ -153,6 +153,71 @@ router.get('/', async (req, res) => {
   });
 });
 
+const PaintingStatusSchema = z
+  .object({
+    sold: z.boolean().optional(),
+    originalAvailable: z.boolean().optional(),
+  })
+  .refine((d) => d.sold !== undefined || d.originalAvailable !== undefined, {
+    message: 'Provide sold and/or originalAvailable',
+  });
+
+// PATCH quick status (admin) — mark sold / available
+router.patch('/:id/status', requireAdmin, async (req, res) => {
+  const body = PaintingStatusSchema.parse(req.body);
+  let data = { ...body };
+
+  if (data.sold === true) {
+    data = {
+      sold: true,
+      originalAvailable: false,
+      featured: false,
+      heroImage: false,
+    };
+  } else if (data.sold === false && data.originalAvailable === undefined) {
+    data.originalAvailable = true;
+  }
+
+  const painting = await prisma.painting.update({
+    where: { id: req.params.id },
+    data,
+  });
+  await ensureAtLeastOneHeroIfNeeded();
+  res.json(painting);
+});
+
+// POST duplicate painting (admin)
+router.post('/:id/duplicate', requireAdmin, async (req, res) => {
+  const source = await prisma.painting.findUnique({
+    where: { id: req.params.id },
+  });
+  if (!source) {
+    return res.status(404).json({ error: 'Painting not found' });
+  }
+
+  const painting = await prisma.painting.create({
+    data: {
+      title: `${source.title} (Copy)`,
+      description: source.description,
+      originalPrice: source.originalPrice,
+      originalAvailable: false,
+      printPrice: null,
+      printAvailable: false,
+      images: [...source.images],
+      dimensions: source.dimensions,
+      medium: source.medium,
+      year: source.year,
+      sold: false,
+      featured: false,
+      heroImage: false,
+      category: 'original',
+      collectionId: source.collectionId,
+    },
+  });
+
+  res.status(201).json(painting);
+});
+
 // GET single painting
 router.get('/:id', async (req, res) => {
   const painting = await prisma.painting.findUnique({

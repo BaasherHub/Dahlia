@@ -8,6 +8,7 @@ import {
   Library,
   ShoppingBag,
   Mail,
+  Users,
   Settings,
   LogOut,
   ChevronRight,
@@ -21,6 +22,7 @@ const navItems = [
   { label: "Collections", href: "/admin/collections", icon: Library },
   { label: "Orders", href: "/admin/orders", icon: ShoppingBag },
   { label: "Commissions", href: "/admin/commissions", icon: Mail },
+  { label: "Newsletter", href: "/admin/newsletter", icon: Users },
   { label: "Settings", href: "/admin/settings", icon: Settings },
 ];
 

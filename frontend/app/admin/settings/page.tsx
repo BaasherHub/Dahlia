@@ -274,8 +274,12 @@ export default function AdminSettingsPage() {
                   <Input value={ex.description || ""} onChange={(e) => updateExhibition(i, "description", e.target.value)} placeholder="One sentence" disabled={loading} />
                 </div>
                 <div className="space-y-1 md:col-span-2">
-                  <Label>Image URL (optional)</Label>
-                  <Input value={ex.imageUrl || ""} onChange={(e) => updateExhibition(i, "imageUrl", e.target.value)} placeholder="https://..." disabled={loading} />
+                  <Label>Image (optional)</Label>
+                  <ImageUpload
+                    value={ex.imageUrl ? [ex.imageUrl] : []}
+                    onChange={(urls) => updateExhibition(i, "imageUrl", urls[0] || "")}
+                    disabled={loading}
+                  />
                 </div>
               </div>
             </div>
@@ -315,8 +319,12 @@ export default function AdminSettingsPage() {
                   <Input value={pub.description || ""} onChange={(e) => updatePublication(i, "description", e.target.value)} placeholder="One sentence" disabled={loading} />
                 </div>
                 <div className="space-y-1 md:col-span-2">
-                  <Label>Image URL (optional)</Label>
-                  <Input value={pub.imageUrl || ""} onChange={(e) => updatePublication(i, "imageUrl", e.target.value)} placeholder="https://..." disabled={loading} />
+                  <Label>Image (optional)</Label>
+                  <ImageUpload
+                    value={pub.imageUrl ? [pub.imageUrl] : []}
+                    onChange={(urls) => updatePublication(i, "imageUrl", urls[0] || "")}
+                    disabled={loading}
+                  />
                 </div>
               </div>
             </div>

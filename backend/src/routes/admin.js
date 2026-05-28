@@ -49,8 +49,15 @@ router.get('/verify', requireAdmin, (req, res) => {
 
 router.get('/stats', requireAdmin, async (req, res) => {
   try {
-    const [totalPaintings, totalOrders, totalRevenue, recentOrders, pendingInquiries] =
-      await Promise.all([
+    const [
+      totalPaintings,
+      totalOrders,
+      totalRevenue,
+      recentOrders,
+      pendingInquiries,
+      newsletterSubscribers,
+      availablePaintings,
+    ] = await Promise.all([
         prisma.painting.count(),
         prisma.order.count(),
         prisma.order.aggregate({
@@ -63,6 +70,10 @@ router.get('/stats', requireAdmin, async (req, res) => {
           include: { items: { include: { painting: { select: { title: true } } } } },
         }),
         prisma.commissionInquiry.count({ where: { status: 'new' } }),
+        prisma.newsletterSubscriber.count(),
+        prisma.painting.count({
+          where: { sold: false, originalAvailable: true },
+        }),
       ]);
 
     res.json({
@@ -71,6 +82,8 @@ router.get('/stats', requireAdmin, async (req, res) => {
       totalRevenue: totalRevenue._sum.total || 0,
       recentOrders,
       pendingInquiries,
+      newsletterSubscribers,
+      availablePaintings,
     });
   } catch (error) {
     logError({ message: 'Error fetching admin stats', error: error.message });
