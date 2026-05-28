@@ -5,6 +5,8 @@ import { ChevronLeft } from "lucide-react";
 import { fetchPainting } from "@/lib/api";
 import { PaintingGallery } from "@/components/store/painting-gallery";
 import { PaintingInfo } from "@/components/store/painting-info";
+import { PaintingJsonLd } from "@/components/seo/painting-json-ld";
+import { buildPageMetadata } from "@/lib/seo";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -12,10 +14,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   try {
     const painting = await fetchPainting(id);
-    return {
+    return buildPageMetadata({
       title: painting.title,
-      description: painting.description?.slice(0, 160),
-    };
+      description: painting.description,
+      image: painting.images?.[0],
+      path: `/paintings/${id}`,
+      type: "article",
+    });
   } catch {
     return { title: "Painting" };
   }
@@ -31,6 +36,8 @@ export default async function PaintingDetailPage({ params }: Props) {
   }
 
   return (
+    <>
+      <PaintingJsonLd painting={painting} />
     <div className="section-padding container-wide">
       <nav className="flex flex-wrap items-center gap-2 text-sm text-graphite mb-8" aria-label="Breadcrumb">
         <Link
@@ -60,5 +67,6 @@ export default async function PaintingDetailPage({ params }: Props) {
         <PaintingInfo painting={painting} />
       </div>
     </div>
+    </>
   );
 }

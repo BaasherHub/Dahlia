@@ -1,19 +1,21 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { ColumnDef } from "@tanstack/react-table";
+import Link from "next/link";
 import { adminFetch, adminUpdateOrder } from "@/lib/api";
-import { DataTable } from "@/components/ui/data-table";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
+import { Copy, ExternalLink, Mail } from "lucide-react";
 import toast from "react-hot-toast";
 
 interface OrderItem {
   id: string;
   price: number;
-  painting?: { title: string };
+  version?: string;
+  paintingId?: string;
+  painting?: { id?: string; title: string; images?: string[] };
 }
 
 interface Order {
@@ -23,8 +25,18 @@ interface Order {
   createdAt: string;
   customerEmail: string;
   customerName: string;
+  shipName: string;
+  shipStreet: string;
+  shipCity: string;
+  shipState: string;
+  shipZip: string;
+  shipCountry: string;
+  shipPhone?: string;
   trackingCode?: string;
   carrier?: string;
+  labelUrl?: string;
+  stripePaymentId: string;
+  stripeSessionId: string;
   items: OrderItem[];
 }
 
@@ -37,6 +49,35 @@ const STATUS_COLORS: Record<string, string> = {
   PENDING: "text-yellow-600 font-medium",
   CANCELLED: "text-red-500 font-medium",
 };
+
+function copyText(label: string, value: string) {
+  navigator.clipboard.writeText(value).then(
+    () => toast.success(`${label} copied.`),
+    () => toast.error("Could not copy.")
+  );
+}
+
+function formatAddress(order: Order): string {
+  const lines = [
+    order.shipName,
+    order.shipStreet,
+    `${order.shipCity}, ${order.shipState} ${order.shipZip}`,
+    order.shipCountry,
+  ];
+  if (order.shipPhone) lines.push(order.shipPhone);
+  return lines.filter(Boolean).join("\n");
+}
+
+function stripePaymentUrl(id: string): string {
+  if (id.startsWith("pi_")) {
+    return `https://dashboard.stripe.com/payments/${id}`;
+  }
+  return `https://dashboard.stripe.com/search?query=${encodeURIComponent(id)}`;
+}
+
+function stripeSessionUrl(id: string): string {
+  return `https://dashboard.stripe.com/checkout/sessions/${id}`;
+}
 
 function OrderRow({ order, onUpdated }: { order: Order; onUpdated: (o: Order) => void }) {
   const [expanded, setExpanded] = useState(false);
@@ -59,12 +100,16 @@ function OrderRow({ order, onUpdated }: { order: Order; onUpdated: (o: Order) =>
     }
   };
 
+  const shipPreview = [order.shipCity, order.shipState, order.shipCountry]
+    .filter(Boolean)
+    .join(", ");
+
   return (
     <div className="border border-gold/10 rounded-sm overflow-hidden">
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
-        className="w-full grid grid-cols-[1fr_1.5fr_1fr_auto_auto_auto] gap-4 items-center px-4 py-3 text-left hover:bg-cream/50 transition-colors"
+        className="w-full grid grid-cols-[1fr_1.2fr_1fr_0.8fr_auto_auto] gap-3 items-center px-4 py-3 text-left hover:bg-cream/50 transition-colors"
       >
         <span className="font-mono text-xs text-graphite">{order.id.slice(0, 8)}…</span>
         <div>
@@ -72,17 +117,142 @@ function OrderRow({ order, onUpdated }: { order: Order; onUpdated: (o: Order) =>
           <p className="text-xs text-graphite">{order.customerEmail}</p>
         </div>
         <span className="text-sm text-graphite truncate">
+          {shipPreview || "—"}
+        </span>
+        <span className="text-sm text-graphite truncate hidden sm:block">
           {order.items?.map((i) => i.painting?.title || "Unknown").join(", ") || "—"}
         </span>
         <span className="text-sm font-medium text-charcoal">${order.total.toFixed(2)}</span>
         <span className={`text-sm ${STATUS_COLORS[order.status] || "text-graphite"}`}>{order.status}</span>
-        <span className="text-xs text-graphite">
-          {(() => { try { return format(new Date(order.createdAt), "MMM d, yyyy"); } catch { return "—"; } })()}
-        </span>
       </button>
 
       {expanded && (
-        <div className="border-t border-gold/10 bg-cream/30 px-4 py-4 space-y-4">
+        <div className="border-t border-gold/10 bg-cream/30 px-4 py-5 space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <h3 className="text-xs font-medium text-graphite uppercase tracking-wide">Shipping address</h3>
+              <pre className="text-sm text-charcoal whitespace-pre-wrap font-sans bg-ivory border border-gold/10 rounded-sm p-3">
+                {formatAddress(order)}
+              </pre>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5"
+                  onClick={() => copyText("Address", formatAddress(order))}
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                  Copy address
+                </Button>
+                <a href={`mailto:${order.customerEmail}`}>
+                  <Button type="button" size="sm" variant="outline" className="gap-1.5">
+                    <Mail className="h-3.5 w-3.5" />
+                    Email customer
+                  </Button>
+                </a>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="text-xs font-medium text-graphite uppercase tracking-wide">Payment & IDs</h3>
+              <dl className="text-sm space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <dt className="text-graphite w-28 shrink-0">Order ID</dt>
+                  <dd className="font-mono text-xs text-charcoal break-all">{order.id}</dd>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => copyText("Order ID", order.id)}
+                    aria-label="Copy order ID"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <dt className="text-graphite w-28 shrink-0">Stripe payment</dt>
+                  <dd className="font-mono text-xs text-charcoal break-all">{order.stripePaymentId}</dd>
+                  <a
+                    href={stripePaymentUrl(order.stripePaymentId)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gold-dark hover:text-charcoal"
+                    aria-label="Open in Stripe"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <dt className="text-graphite w-28 shrink-0">Checkout session</dt>
+                  <dd className="font-mono text-xs text-charcoal break-all">{order.stripeSessionId}</dd>
+                  <a
+                    href={stripeSessionUrl(order.stripeSessionId)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gold-dark hover:text-charcoal"
+                    aria-label="Open session in Stripe"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                </div>
+                <div>
+                  <dt className="text-graphite">Placed</dt>
+                  <dd className="text-charcoal">
+                    {(() => {
+                      try {
+                        return format(new Date(order.createdAt), "MMM d, yyyy 'at' h:mm a");
+                      } catch {
+                        return "—";
+                      }
+                    })()}
+                  </dd>
+                </div>
+              </dl>
+              {order.labelUrl && (
+                <a
+                  href={order.labelUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-gold-dark hover:underline inline-flex items-center gap-1"
+                >
+                  Shipping label <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-xs font-medium text-graphite uppercase tracking-wide mb-2">Line items</h3>
+            <ul className="space-y-2">
+              {order.items?.map((item) => (
+                <li
+                  key={item.id}
+                  className="flex flex-wrap items-center justify-between gap-2 text-sm border border-gold/10 rounded-sm px-3 py-2 bg-ivory"
+                >
+                  <span className="text-charcoal font-medium">
+                    {item.painting?.title || "Unknown"}
+                    {item.version && item.version !== "original" && (
+                      <span className="text-graphite font-normal"> ({item.version})</span>
+                    )}
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-charcoal">${item.price.toFixed(2)}</span>
+                    {(item.paintingId || item.painting?.id) && (
+                      <Link
+                        href={`/admin/paintings/${item.paintingId || item.painting?.id}`}
+                        className="text-gold-dark hover:text-charcoal text-xs"
+                      >
+                        View painting
+                      </Link>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1">
               <label className="text-xs font-medium text-graphite uppercase tracking-wide">Status</label>
@@ -154,13 +324,11 @@ export default function AdminOrdersPage() {
   useEffect(() => { load(); }, [load]);
 
   const handleUpdated = (updated: Order) => {
-    setOrders((prev) => prev.map((o) => (o.id === updated.id ? updated : o)));
-    setRevenue(
-      orders
-        .map((o) => (o.id === updated.id ? updated : o))
-        .filter((o) => o.status !== "CANCELLED")
-        .reduce((sum, o) => sum + o.total, 0)
-    );
+    setOrders((prev) => {
+      const next = prev.map((o) => (o.id === updated.id ? updated : o));
+      setRevenue(next.filter((o) => o.status !== "CANCELLED").reduce((sum, o) => sum + o.total, 0));
+      return next;
+    });
   };
 
   return (
@@ -169,7 +337,7 @@ export default function AdminOrdersPage() {
         <div>
           <p className="label-sm mb-1">Manage</p>
           <h1 className="font-display text-3xl font-semibold text-charcoal">Orders</h1>
-          <p className="text-sm text-graphite mt-1">{orders.length} total · click a row to edit</p>
+          <p className="text-sm text-graphite mt-1">{orders.length} total · click a row for full details</p>
         </div>
         {!loading && orders.length > 0 && (
           <div className="text-right">
@@ -188,13 +356,13 @@ export default function AdminOrdersPage() {
         </div>
       ) : (
         <div className="space-y-2">
-          <div className="grid grid-cols-[1fr_1.5fr_1fr_auto_auto_auto] gap-4 px-4 py-2 text-xs font-medium text-graphite uppercase tracking-wide">
+          <div className="hidden sm:grid grid-cols-[1fr_1.2fr_1fr_0.8fr_auto_auto] gap-3 px-4 py-2 text-xs font-medium text-graphite uppercase tracking-wide">
             <span>Order ID</span>
             <span>Customer</span>
+            <span>Ship to</span>
             <span>Paintings</span>
             <span>Total</span>
             <span>Status</span>
-            <span>Date</span>
           </div>
           {orders.map((order) => (
             <OrderRow key={order.id} order={order} onUpdated={handleUpdated} />

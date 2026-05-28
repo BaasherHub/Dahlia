@@ -120,6 +120,26 @@ router.get('/hero', async (req, res) => {
   res.json(painting || null);
 });
 
+// GET sitemap slugs (public, for SEO)
+router.get('/sitemap', async (req, res) => {
+  try {
+    const [paintings, collections] = await Promise.all([
+      prisma.painting.findMany({
+        select: { id: true, updatedAt: true },
+        orderBy: { updatedAt: 'desc' },
+      }),
+      prisma.collection.findMany({
+        select: { id: true, updatedAt: true },
+        orderBy: { updatedAt: 'desc' },
+      }),
+    ]);
+    res.json({ paintings, collections });
+  } catch (error) {
+    logError({ message: 'Error building sitemap data', error: error.message });
+    res.status(500).json({ error: 'Failed to build sitemap' });
+  }
+});
+
 // GET all available paintings (public) — originals only (prints not sold on site)
 router.get('/', async (req, res) => {
   const { collectionId, page, limit, featured } = PaginationSchema.parse(req.query);
@@ -161,6 +181,57 @@ const PaintingStatusSchema = z
   .refine((d) => d.sold !== undefined || d.originalAvailable !== undefined, {
     message: 'Provide sold and/or originalAvailable',
   });
+
+const BulkStatusSchema = z
+  .object({
+    ids: z.array(z.string().min(1)).min(1).max(100),
+    sold: z.boolean().optional(),
+    originalAvailable: z.boolean().optional(),
+    featured: z.boolean().optional(),
+  })
+  .refine(
+    (d) =>
+      d.sold !== undefined ||
+      d.originalAvailable !== undefined ||
+      d.featured !== undefined,
+    { message: 'Provide sold, originalAvailable, and/or featured' }
+  );
+
+// POST bulk status update (admin)
+router.post('/bulk/status', requireAdmin, async (req, res) => {
+  const { ids, sold, originalAvailable, featured } = BulkStatusSchema.parse(req.body);
+
+  let data = {};
+  if (sold === true) {
+    data = {
+      sold: true,
+      originalAvailable: false,
+      featured: false,
+      heroImage: false,
+    };
+  } else if (sold === false) {
+    data = {
+      sold: false,
+      originalAvailable: originalAvailable ?? true,
+      ...(featured !== undefined ? { featured } : {}),
+    };
+  } else if (originalAvailable !== undefined) {
+    data = { originalAvailable };
+  } else if (featured !== undefined) {
+    data = { featured };
+  }
+
+  const result = await prisma.painting.updateMany({
+    where: { id: { in: ids } },
+    data,
+  });
+
+  if (sold === true || data.heroImage === false) {
+    await ensureAtLeastOneHeroIfNeeded();
+  }
+
+  res.json({ updated: result.count });
+});
 
 // PATCH quick status (admin) — mark sold / available
 router.patch('/:id/status', requireAdmin, async (req, res) => {

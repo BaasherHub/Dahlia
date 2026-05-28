@@ -1,21 +1,40 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ToastProvider } from "@/providers/toast-provider";
+import { fetchHeroPainting } from "@/lib/api";
+import { buildPageMetadata } from "@/lib/seo";
+import { ARTIST_NAME, DEFAULT_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: {
-    default: "Dahlia | Fine Art",
-    template: "%s | Dahlia",
-  },
-  description:
-    "Original paintings and fine art prints by Dahlia Baasher. Explore the gallery, browse collections, and commission your own piece.",
-  openGraph: {
-    type: "website",
-    locale: "en_US",
-    url: "https://www.dahliabaasher.com",
-    siteName: "Dahlia Fine Art",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  let ogImage: string | undefined;
+  try {
+    const hero = await fetchHeroPainting();
+    ogImage = hero?.images?.[0];
+  } catch {
+    /* use defaults */
+  }
+
+  const og = buildPageMetadata({
+    title: SITE_NAME,
+    description: DEFAULT_DESCRIPTION,
+    image: ogImage,
+    path: "/",
+  });
+
+  return {
+    metadataBase: new URL(SITE_URL),
+    title: {
+      default: `${SITE_NAME} | ${ARTIST_NAME}`,
+      template: `%s | ${SITE_NAME}`,
+    },
+    description: DEFAULT_DESCRIPTION,
+    authors: [{ name: ARTIST_NAME }],
+    creator: ARTIST_NAME,
+    alternates: og.alternates,
+    openGraph: og.openGraph,
+    twitter: og.twitter,
+  };
+}
 
 export default function RootLayout({
   children,

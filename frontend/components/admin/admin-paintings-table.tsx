@@ -26,11 +26,50 @@ export interface AdminPaintingRow {
   collection?: { name: string } | null;
 }
 
+export type PaintingSelectionProps = {
+  selectedIds: Set<string>;
+  onToggle: (id: string) => void;
+  onToggleAll: (ids: string[], checked: boolean) => void;
+  pageIds: string[];
+};
+
 export function buildPaintingColumns(
   onUpdated: (p: AdminPaintingRow) => void,
-  onDuplicated: (p: AdminPaintingRow) => void
+  onDuplicated: (p: AdminPaintingRow) => void,
+  selection?: PaintingSelectionProps
 ): ColumnDef<AdminPaintingRow>[] {
-  return [
+  const cols: ColumnDef<AdminPaintingRow>[] = [];
+
+  if (selection) {
+    const allSelected =
+      selection.pageIds.length > 0 &&
+      selection.pageIds.every((id) => selection.selectedIds.has(id));
+    cols.push({
+      id: "select",
+      header: () => (
+        <input
+          type="checkbox"
+          checked={allSelected}
+          onChange={(e) =>
+            selection.onToggleAll(selection.pageIds, e.target.checked)
+          }
+          aria-label="Select all on page"
+          className="rounded border-charcoal/30"
+        />
+      ),
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          checked={selection.selectedIds.has(row.original.id)}
+          onChange={() => selection.onToggle(row.original.id)}
+          aria-label={`Select ${row.original.title}`}
+          className="rounded border-charcoal/30"
+        />
+      ),
+    });
+  }
+
+  cols.push(
     {
       accessorKey: "images",
       header: "",
@@ -112,8 +151,10 @@ export function buildPaintingColumns(
           onDuplicated={onDuplicated}
         />
       ),
-    },
-  ];
+    }
+  );
+
+  return cols;
 }
 
 function PaintingRowActions({

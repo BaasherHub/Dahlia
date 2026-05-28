@@ -97,7 +97,9 @@ router.get('/orders', requireAdmin, async (req, res) => {
       orderBy: { createdAt: 'desc' },
       include: {
         items: {
-          include: { painting: { select: { id: true, title: true } } },
+          include: {
+            painting: { select: { id: true, title: true, images: true } },
+          },
         },
       },
     });

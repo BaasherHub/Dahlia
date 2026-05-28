@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { fetchCollection } from "@/lib/api";
 import { PaintingCard } from "@/components/store/painting-card";
+import { buildPageMetadata } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -11,10 +12,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   try {
     const collection = await fetchCollection(id);
-    return {
+    const cover = collection.paintings?.[0]?.images?.[0];
+    return buildPageMetadata({
       title: collection.name,
       description: collection.description,
-    };
+      image: cover,
+      path: `/collections/${id}`,
+    });
   } catch {
     return { title: "Collection" };
   }

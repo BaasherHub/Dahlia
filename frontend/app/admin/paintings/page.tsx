@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { adminFetchAllPaintings } from "@/lib/api";
+import { adminBulkPaintingStatus, adminFetchAllPaintings } from "@/lib/api";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -20,6 +20,8 @@ export default function AdminPaintingsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [statusFilter, setStatusFilter] = useState<"all" | "live" | "sold" | "draft">("all");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
 
   const load = useCallback(async (p: number) => {
     setLoading(true);
@@ -53,10 +55,25 @@ export default function AdminPaintingsPage() {
     setTotal((t) => t + 1);
   }, []);
 
-  const columns = useMemo(
-    () => buildPaintingColumns(handleUpdated, handleDuplicated),
-    [handleUpdated, handleDuplicated]
-  );
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAll = useCallback((ids: string[], checked: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      for (const id of ids) {
+        if (checked) next.add(id);
+        else next.delete(id);
+      }
+      return next;
+    });
+  }, []);
 
   const filtered = useMemo(() => {
     return paintings.filter((p) => {
@@ -67,6 +84,43 @@ export default function AdminPaintingsPage() {
       return true;
     });
   }, [paintings, statusFilter]);
+
+  const pageIds = useMemo(() => filtered.map((p) => p.id), [filtered]);
+
+  const selection = useMemo(
+    () => ({
+      selectedIds,
+      onToggle: toggleSelect,
+      onToggleAll: toggleSelectAll,
+      pageIds,
+    }),
+    [selectedIds, toggleSelect, toggleSelectAll, pageIds]
+  );
+
+  const runBulk = async (payload: {
+    sold?: boolean;
+    originalAvailable?: boolean;
+    featured?: boolean;
+  }) => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    setBulkBusy(true);
+    try {
+      const { updated } = await adminBulkPaintingStatus({ ids, ...payload });
+      toast.success(`Updated ${updated} painting${updated === 1 ? "" : "s"}.`);
+      setSelectedIds(new Set());
+      await load(page);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Bulk update failed.");
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
+  const columns = useMemo(
+    () => buildPaintingColumns(handleUpdated, handleDuplicated, selection),
+    [handleUpdated, handleDuplicated, selection]
+  );
 
   return (
     <div className="space-y-6">
@@ -114,6 +168,53 @@ export default function AdminPaintingsPage() {
         <p className="text-graphite py-8">Loading paintings…</p>
       ) : (
         <>
+          {selectedIds.size > 0 && (
+            <div className="flex flex-wrap items-center gap-2 p-3 bg-cream border border-gold/20 rounded-sm">
+              <span className="text-sm text-charcoal font-medium mr-2">
+                {selectedIds.size} selected
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={bulkBusy}
+                onClick={() => runBulk({ sold: true })}
+              >
+                Mark sold
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={bulkBusy}
+                onClick={() => runBulk({ sold: false, originalAvailable: true })}
+              >
+                Mark live
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={bulkBusy}
+                onClick={() => runBulk({ featured: true })}
+              >
+                Feature
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={bulkBusy}
+                onClick={() => runBulk({ featured: false })}
+              >
+                Unfeature
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={bulkBusy}
+                onClick={() => setSelectedIds(new Set())}
+              >
+                Clear
+              </Button>
+            </div>
+          )}
           <DataTable
             columns={columns}
             data={filtered}

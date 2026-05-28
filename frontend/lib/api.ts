@@ -284,6 +284,22 @@ export async function adminPatchPaintingStatus(
   return res.json();
 }
 
+export async function adminBulkPaintingStatus(data: {
+  ids: string[];
+  sold?: boolean;
+  originalAvailable?: boolean;
+  featured?: boolean;
+}) {
+  const res = await adminFetch("/api/paintings/bulk/status", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    throw new Error(await parseApiErrorResponse(res));
+  }
+  return res.json() as Promise<{ updated: number }>;
+}
+
 export async function adminDuplicatePainting(id: string) {
   const res = await adminFetch(`/api/paintings/${id}/duplicate`, {
     method: "POST",
